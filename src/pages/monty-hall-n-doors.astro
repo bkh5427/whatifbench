@@ -1,0 +1,341 @@
+---
+import Base from "../layouts/Base.astro";
+import { tools_read_published, tools_read_category } from "../data/tools.js";
+
+const SLUG = "monty-hall-n-doors";
+const CATEGORY = "odds";
+const cat = tools_read_category(CATEGORY);
+const siblings = tools_read_published(CATEGORY).filter((t) => t.slug !== SLUG);
+const LAST_REVIEWED = "TODO";
+---
+
+<Base
+  title="Monty Hall with N doors: does switching still win?"
+  description="Move the door count and the number of doors the host opens, and watch the switching advantage collapse from 2x toward 1x. Exact probabilities plus a Monte Carlo simulation."
+  category={CATEGORY}
+  crumbTool={true}
+>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span aria-hidden="true">›</span>
+    <a href={cat.href}>{cat.name}</a> <span aria-hidden="true">›</span>
+    Monty Hall with N doors
+  </nav>
+
+  <h1>Monty Hall with N doors: does switching still win?</h1>
+
+  <p class="lead-kicker">September 1990</p>
+
+  <p class="lead">
+    A reader wrote to Marilyn vos Savant's column in <em>Parade</em>: three doors,
+    one car, two goats. You pick a door; the host opens another to show a goat and
+    offers the swap. She answered that switching wins two games in three, against
+    one in three for staying. Then the mail came — thousands of letters, many from
+    readers with doctorates, most telling her she had it wrong.
+  </p>
+
+  <p class="lead">
+    Five years later Andrew Vazsonyi put the same problem to Paul Erdős, a
+    houseguest at the time. By Vazsonyi's account Erdős rejected the answer, was
+    unmoved by a decision tree, and gave in only after watching a simulation run —
+    and still did not accept <em>why</em> until Ron Graham talked him through it
+    days later.
+  </p>
+
+  <p class="lead">
+    <span class="lead-turn">None of them settled it by arguing.</span> The
+    disagreement was never about arithmetic — it was about a rule the question never
+    pinned down, and about a number, the door count, that the model below does not
+    put in charge. Move the sliders and watch which one does.
+  </p>
+
+  <div data-widget="monty-hall-n-doors"></div>
+
+  <section class="math" aria-labelledby="math-title">
+    <h2 class="math-title" id="math-title">The mathematics behind the sliders</h2>
+
+    <p>
+      The first pick is made with no information, and the host never opens the
+      player's door. So the probability attached to that door is fixed at the
+      moment it is chosen, and everything the host does afterwards redistributes
+      the remaining probability among the doors the player did not pick.
+    </p>
+
+    <div class="math-eq">
+      <span>P<sub>stay</sub></span><span class="op">=</span>
+      <span class="frac"><span class="frac-num">1</span><span class="frac-den">N</span></span>
+    </div>
+
+    <div class="math-eq">
+      <span>P<sub>switch</sub></span><span class="op">=</span>
+      <span class="frac"><span class="frac-num">N − 1</span><span class="frac-den">N</span></span>
+      <span class="op">×</span>
+      <span class="frac"><span class="frac-num">1</span><span class="frac-den">R</span></span>
+      <span class="op">=</span>
+      <span class="frac"><span class="frac-num">N − 1</span><span class="frac-den">N (N − 1 − K)</span></span>
+    </div>
+
+    <dl class="math-where">
+      <dt>N</dt><dd>door count, 3 to 100</dd>
+      <dt>K</dt><dd>doors the host opens, 1 to N − 2 (never the player's door, never the prize)</dd>
+      <dt>R</dt><dd>doors left to switch into, R = N − 1 − K</dd>
+    </dl>
+
+    <div class="math-steps-scroll" tabindex="0" role="region" aria-label="Derivation steps">
+    <table class="math-steps">
+      <thead>
+        <tr>
+          <th scope="col">Step</th>
+          <th scope="col">Expression</th>
+          <th scope="col">Why</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>First pick holds the prize</td>
+          <td>1 / N</td>
+          <td>Uniform placement, no information yet</td>
+        </tr>
+        <tr>
+          <td>First pick is wrong</td>
+          <td>(N − 1) / N</td>
+          <td>Complement of row 1 — the prize is behind one of the N − 1 doors you did not pick</td>
+        </tr>
+        <tr>
+          <td>Host removes K losing doors</td>
+          <td>R = N − 1 − K</td>
+          <td>Of those N − 1, the host opens K, all losing — so R stay closed</td>
+        </tr>
+        <tr>
+          <td>Switch lands on the prize</td>
+          <td>1 / R</td>
+          <td>Given a wrong first pick, the prize is one of the R survivors</td>
+        </tr>
+        <tr class="math-result">
+          <td>Switching wins</td>
+          <td>(N − 1) / (N · R)</td>
+          <td>Row 2 × row 4</td>
+        </tr>
+        <tr class="math-result">
+          <td>Advantage over staying</td>
+          <td>(N − 1) / R</td>
+          <td>P<sub>switch</sub> ÷ P<sub>stay</sub> — doors not picked, over doors still closed</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p class="math-check">
+      <strong>Two checks.</strong> At N=3, K=1: R=1, so switching is 2/3 and the
+      two probabilities sum to 1. Whenever the host opens every door but one
+      (K = N−2, so R = 1) the same thing happens — the player faces exactly two
+      doors, and switching is (N−1)/N. The advantage term (N−1)/R is the whole
+      story: it compares the doors you did not pick against the doors still
+      closed. Raise N while holding K fixed and both grow together, so the ratio
+      slides toward 1 and the two probabilities converge.
+    </p>
+
+    <p>
+      One property makes the formula usable: the result does not depend on
+      <em>how</em> the host picks which losing doors to open. Under any rule the
+      prize survives and R doors stay closed, so a random switch hits it with
+      probability 1/R. These are unconditional probabilities — the whole
+      population of games, not one game whose opened doors you have already seen.
+    </p>
+  </section>
+
+  <h2>How to read what you are looking at</h2>
+
+  <p>
+    The chart has trials on the horizontal axis, on a logarithmic scale. The
+    vertical axis is the share of games won, and it rescales to fit whatever the
+    sliders are showing — at a hundred doors with one reveal both strategies land
+    near 1%, and a fixed 0–100% axis would stack them on top of each other. So read
+    the axis labels before comparing two settings; the window changes with the
+    setting. The curve begins where the running average has settled inside that
+    window, which the caption states.
+  </p>
+
+  <p>
+    Each strategy gets two lines in the same colour: the <strong>solid line</strong>
+    is the simulation's running average, the <strong>dashed line</strong> the exact
+    probability from the formula. When the solid line converges onto its dashed
+    partner, the simulation and the algebra agree.
+  </p>
+
+  <p>
+    The table underneath ignores the simulation entirely. It lists exact
+    probabilities for a fixed rule — the host opens every door except one — so you
+    can compare door counts without dragging anything.
+  </p>
+
+  <h2>What this model turns over</h2>
+
+  <p>
+    The famous answer is that switching wins two games in three, against the
+    intuition that two remaining doors must mean even odds. This model reproduces
+    that at N=3, K=1: it puts staying at 33.3% and switching at 66.7%.
+  </p>
+
+  <p>
+    Push both sliders to 100 doors and 98 reveals and the model separates the two
+    strategies further — switching at 99.0% against 1.00% for staying. That is the
+    version usually offered to make the result feel obvious.
+  </p>
+
+  <p>
+    The reversal in this model appears when the two sliders move independently.
+    Hold N at 100 and drag K back down to 1. The model now puts switching at 1.01%
+    and staying at 1.00% — an advantage of 1.01×, down from 2.00× at three doors.
+    A hundred doors, and in this model almost the whole benefit of switching is
+    gone. It never reaches zero: for every legal setting the model keeps switching
+    ahead, by a margin that shrinks toward nothing.
+  </p>
+
+  <p>
+    So the model does not say that more doors favour switching. It puts the
+    advantage at (N−1)/R — the doors you did not pick, divided by the doors still
+    closed. Adding doors without adding reveals raises both together. In this model
+    the quantity that moves the answer is <strong>how much the host reveals</strong>,
+    not how many doors there were to begin with.
+  </p>
+
+  <h2>Assumptions, and how the simulation is run</h2>
+
+  <p>
+    The formulas above hold under a specific set of rules, and every one of them
+    matters. One prize is placed uniformly at random among N doors. The player
+    picks one door. The host, who knows where the prize is, then opens K doors,
+    never the player's door and never the prize. The player may move to any one of
+    the R doors still closed, chosen at random rather than by a hunch.
+  </p>
+
+  <p>
+    <strong>The simulation.</strong> The Monte Carlo run does not evaluate the
+    closed forms above, but it is not fully independent of them either: it skips
+    the host entirely, drawing the switch target straight from the R survivors, so
+    it assumes the same symmetry step the derivation uses. A separate check in the
+    test file does build the doors, open them one at a time under two different host
+    rules, and let the player choose — that run and this one agree. Randomness comes
+    from a seeded generator rather than <code>Math.random</code>, so the seed in the
+    URL reproduces the exact curve you are looking at.
+  </p>
+
+  <p>
+    <strong>Sources.</strong> Steve Selvin posed the problem in "A Problem in
+    Probability", <a href="https://doi.org/10.1080/00031305.1975.10479121"><em>The
+    American Statistician</em> 29(1), February 1975, p. 67</a> — with three boxes,
+    not doors. He returned to it in "On the Monty Hall Problem",
+    <a href="https://doi.org/10.1080/00031305.1975.10477398">29(3), August 1975,
+    p. 134</a>, the earliest known appearance of that name in print. The N-door
+    generalisation follows from the same argument; it is commonly credited to a 1975
+    letter to Selvin from D. L. Ferguson, an attribution reported here rather than
+    verified — the original letter could not be consulted. The problem reached a
+    wide audience through Marilyn vos Savant's "Ask Marilyn" column in
+    <em>Parade</em>, 9 September 1990; the letter counts above are from
+    <a href="https://www2.math.upenn.edu/~kazdan/210/notes-misc/Monty_Hall.html">John
+    Tierney's report in <em>The New York Times</em>, 21 July 1991</a>. The Erdős
+    episode is
+    <a href="https://sites.oxy.edu/lengyel/M372/Vazsonyi2003/vazs30_1.pdf">Andrew
+    Vazsonyi's own account</a>. Jason Rosenhouse's
+    <a href="https://doi.org/10.1093/oso/9780195367898.001.0001"><em>The Monty Hall
+    Problem</em></a> (Oxford University Press, 2009) covers the variants.
+  </p>
+
+  <h2>One case, worked by hand</h2>
+
+  <p>Take N=4 and K=1, a case where the answer is neither 1/2 nor an obvious 1/N.</p>
+
+  <p>
+    Four doors, one prize. You pick door 1. Staying wins whenever the prize is
+    behind door 1, which happens in 1 of 4 games: <strong>25.0%</strong>.
+  </p>
+
+  <p>
+    Now the other branch. In 3 of those 4 games your pick is wrong and the prize is
+    behind door 2, 3 or 4. The host opens one losing door from that group. Since the
+    host never opens the prize door, two doors are left for you to move to, and the
+    prize is behind exactly one of them. Given a wrong first pick you switch into
+    the prize half the time: <code>(3/4) × (1/2) = 3/8 = 37.5%</code>.
+  </p>
+
+  <p>
+    In this model switching sits above staying — 37.5% against 25.0% — but 37.5% is
+    a long way from the 66.7% that the three-door version trains people to expect.
+    The remaining 37.5% of games are the ones where you switch to the wrong door of
+    the two: 25.0 + 37.5 + 37.5 = 100. Set the sliders to N=4, K=1 and the summary
+    line under the chart states those exact figures; the two win-rate cards show the
+    simulated averages, which land near them once enough games have run.
+  </p>
+
+  <h2>What this model does not cover</h2>
+
+  <p>
+    The result depends entirely on the host's rule, and this model fixes that rule:
+    the host always knows where the prize is, always opens losing doors, never opens
+    the player's door, and always offers the switch. Change any one of those and the
+    numbers change. A model in which the host opens doors at random, restricted to
+    the games where the prize happened to stay hidden, puts switching and staying
+    level. A model in which the switch is offered only when the player is already on
+    the prize puts switching at zero. Both look identical from the player's seat.
+  </p>
+
+  <p>
+    The model also assumes the prize is placed uniformly and that the switch target
+    is chosen at random rather than on a hunch. That last assumption does more work
+    than it appears to. A host with a habit — always opening the lowest-numbered
+    losing door, say — leaks information through <em>which</em> doors were opened. A
+    model that includes such a host, and a player who reasons from the habit, returns
+    a higher number than this one whenever more than one door is left to switch into:
+    at four doors and one reveal it gives 50% where this model gives 37.5%. Once the
+    host opens every door but one, the two models agree — with a single door left
+    there is nothing to choose, and the leak can never make staying the better bet.
+  </p>
+
+  <p>
+    Sampling noise sets a hard limit on what the curve can show, and at this page's
+    headline setting it bites. With a hundred doors and one reveal the exact gap is
+    0.01 percentage points, while the standard error at a million trials — the most
+    the slider offers — is about the same size. The dashed exact lines carry that
+    result; the solid simulated ones cannot resolve it at any setting available
+    here, and the chart says so in its caption when the two lines fall closer
+    together than the width of the ink.
+  </p>
+
+  <p>
+    One further limit is structural: the simulation never represents <em>which</em>
+    doors the host opened, only how many survive. Any variant that turns on which door was
+    opened — the biased host above among them — is outside what this widget can
+    compute, and the figures quoted for it come from working through every case by
+    hand rather than from the sliders. The generator is a seeded PRNG for
+    reproducibility, not a cryptographic source.
+  </p>
+
+  <h2>About this page</h2>
+
+  <p class="note">
+    Written by Planimeter. Model grade A (probability).<br />
+    Last reviewed: {LAST_REVIEWED}<br />
+    Sources are linked above. <a href="/about">How I check things</a>.
+  </p>
+
+  {
+    siblings.length > 0 && (
+      <>
+        <h3>Other tools in {cat.name}</h3>
+        <ul>
+          {siblings.map((t) => (
+            <li><a href={`/${t.slug}`}>{t.name}</a> — {t.blurb}</li>
+          ))}
+        </ul>
+      </>
+    )
+  }
+
+  <p style="font-size:var(--t-sm)">
+    <a href={cat.href}>All {cat.name} tools →</a>
+  </p>
+
+  <script>
+    import "../widgets/monty-hall-n-doors/widget.js";
+  </script>
+</Base>

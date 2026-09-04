@@ -1,3 +1,9 @@
+# 검수 전 미리보기 페이지 — 로컬에서만 본다. 푸시 = 배포이므로 구조적으로 막는다
+src/pages/preview-*.astro
+
+# 로컬 에디터/도구 설정
+.claude/
+
 # build output
 dist/
 # generated types

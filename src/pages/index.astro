@@ -1,17 +1,52 @@
 ---
+import Base from "../layouts/Base.astro";
+import { CATEGORIES, tools_read_published } from "../data/tools.js";
 
+const sections = CATEGORIES.map((c) => ({ ...c, tools: tools_read_published(c.key) }));
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Base
+  title={null}
+  description="Small interactive tools for questions where the arithmetic is easy and the answer still feels wrong."
+>
+  <section class="hero">
+    <h1>Move the number and see what happens.</h1>
+    <p>A textbook gives you one equation and one answer. Here you get the dial.</p>
+  </section>
+
+  <p>
+    I make small tools for questions where the arithmetic is short and the answer
+    still feels wrong. You drag a slider, a chart moves, and you can watch the
+    point where your intuition gives out.
+  </p>
+
+  <p>
+    Being told that switching doors wins two games in three convinces almost
+    nobody. Watching ten thousand simulated games settle onto 0.667 is a
+    different experience. That is the whole idea.
+  </p>
+
+  {
+    sections.map((section) => (
+      <section>
+        <h2><a href={section.href}>{section.name}</a></h2>
+        {section.tools.length > 0 ? (
+          <ul class="tool-list">
+            {section.tools.map((tool) => (
+              <li>
+                <a href={`/${tool.slug}`}>{tool.name}</a> — {tool.blurb}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="note">Still building this one.</p>
+        )}
+      </section>
+    ))
+  }
+
+  <p class="note">
+    Every tool has a written page under it: what the model assumes, and what it
+    leaves out. I add them when they are finished, not on a schedule.
+  </p>
+</Base>

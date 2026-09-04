@@ -1,22 +1,146 @@
-## Development
+# whatifbench.com — 프로젝트 규약
 
-When starting the dev server, use background mode:
+슬라이더로 파라미터를 바꿔가며 **1차 모델이 무엇을 말하는지** 보여주는 인터랙티브 사이트.
+영어권 대상. 1차 목표는 애드센스 승인, 2차가 트래픽.
+상세는 `../00_project_main/content-brief.md`.
 
-```
-astro dev --background
-```
+## 워크스페이스 / 인프라
 
-Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
+D:\0_blog\
+├─ 00_common\                   위젯 템플릿·체크리스트 (블로그 공용)
+└─ 01_blog_whatifbench\
+   ├─ 00_project_main\          기획문서
+   ├─ 01_drafts\                검수 전 초안 (Git 밖)
+   └─ site\                     ← 이 저장소. Astro. Claude Code는 여기서 실행
 
-## Documentation
+- 저장소 GitHub `bkh5427/whatifbench` (Private)
+- 배포 Cloudflare Pages 자동 (main 푸시 → 빌드). DNS Cloudflare, 등록 Namecheap
+- 재사용 가능한 위젯 패턴·체크리스트는 `../../00_common/`에 쌓는다
 
-Full documentation: https://docs.astro.build
+### 초안 워크플로 (중요)
+1. 초안은 `../01_drafts/<slug>.md`. **Git에 올리지 않는다.**
+2. 저자 검수 통과 후에만 `src/content/<slug>.md`로 옮긴다.
+3. main 푸시 = 배포. 검수 안 된 글이 푸시되면 그대로 공개된다.
 
-Consult these guides before working on related tasks:
+## 절대 규칙
 
-- [Adding pages, dynamic routes, or middleware](https://docs.astro.build/en/guides/routing/)
-- [Working with Astro components](https://docs.astro.build/en/basics/astro-components/)
-- [Using React, Vue, Svelte, or other framework components](https://docs.astro.build/en/guides/framework-components/)
-- [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
-- [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
-- [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+### 1. 단정하지 않는다 — 제1원칙
+주어는 **언제나 모델**이다. 현실이 아니라.
+- ❌ "댐퍼 교체가 밸런싱보다 효과적이다"
+- ✅ "1자유도 스프링-질량-감쇠 모델에서 감쇠비를 0.1→0.3으로 올리면 공진점 진폭이 약 1/3이 된다"
+본문에 "실제로 ~이다", "~하는 게 낫다", "권장한다"가 들어가면 잘못 쓴 것.
+이 규칙이 검수를 *판단*에서 *확인*으로 바꾼다.
+
+### 2. 모델 등급
+- A 기구학·산술·확률 (참/거짓이 갈림) → 런칭 포함
+- B 표준 공식 + 공표된 계수, 유효범위가 문헌에 있음 → 런칭 포함
+- C 계수가 조건마다 다르고 결론에 판단 필요 → **런칭 제외**
+C등급(세탁기 진동, 구름저항, 히트펌프 COP, EV 냉간, 사이클링 파워, 단열, 에어컨)은
+승인 전까지 만들지 않는다.
+
+### 3. YMYL 회피
+의료·금융·법률 판단 금지. 에너지 요금 *계산*은 되지만 "이 투자가 이득"은 안 된다.
+
+### 4. 저작권 위험 0
+- 이미지는 직접 만든 SVG/Canvas만. 스톡·사진·외부 아이콘 세트 금지
+- 게임·영화·IP 소재 금지. 가챠를 다뤄도 게임 이름·이미지 없이 메커니즘 파라미터만
+- 지리 데이터는 Natural Earth(퍼블릭 도메인)에서 직접 단순화
+- **"Powers of Ten"은 Eames Office 등록상표 — 사용 금지**
+
+### 5. AI 초안은 반드시 사람 검수 후 발행
+초안 상태로 `src/content/`에 커밋하지 않는다.
+`/methodology/`에 AI 사용 방식을 정직하게 고지한다(구글 정책이 명시적으로 묻는 항목).
+
+## 스택
+Astro 정적. 서버 없음, 계정 없음. 위젯은 vanilla JS + SVG/Canvas.
+외부 런타임 의존성 최소화, CDN 스크립트 지양. 테스트는 Vitest.
+**모든 계산 모델은 순수 함수로 분리해 단위테스트를 붙인다.**
+
+## 코드 규약
+
+### 네이밍
+- 전역 상수: 영문 대문자 / 함수: 영문 소문자 / 지역변수: 영문 대소문자
+- 단어 조합은 `_`로 `[영역-접두사]_[실행동작-동사]`
+- 영역: model_ sim_ widget_ slider_ chart_ display_ state_ url_
+- 동사: calculate run render update reset read write check format clamp
+
+const SPEED_OF_LIGHT_MS = 299792458;
+const MONTY_DOOR_MAX    = 100;
+function model_calculate_switch_win_rate(doorCount, openedCount) { }
+function chart_render_convergence(canvasEl, seriesData) { }
+
+### 하드코딩 금지
+숫자·임계값·물리상수·기본값·슬라이더 범위·단위 환산 계수는 전부 파일 상단 전역 상수로.
+계산식 안에 리터럴 숫자가 보이면 리팩터 대상. (단위 오류를 잡는 가장 값싼 방법)
+
+### 코드 출력 규칙
+- 수정 시: 수정 전 코드의 위/아래 위치와 함수 이름을 알려주고 **수정 후 핵심 코드만**
+- 함수 수정 시: 함수 이름 + **수정된 함수 전체**
+- 출력한 코드 중복 출력 금지. 파일 전체 출력 금지
+- 설명과 주석은 한글
+
+## 저장소 구조
+
+site/
+├─ CLAUDE.md
+├─ src/pages/
+│  ├─ <tool-slug>.astro        도구 페이지 — 루트 직하 평면
+│  ├─ odds/ scale/ physics/    카테고리 인덱스 (본문 250~400단어 필수)
+│  └─ about methodology contact privacy terms
+├─ src/widgets/<slug>/
+│  ├─ model.js                 순수 계산 함수만. DOM 접근 금지
+│  ├─ model.test.js            알려진 값 단위테스트
+│  └─ widget.js                DOM·이벤트·렌더
+└─ src/content/<slug>.md       8블록 본문 (검수 통과분만)
+
+**도구 URL에 카테고리를 넣지 않는다.** 재분류해도 URL이 안 깨지게.
+
+## 위젯·그래프 표준 (모든 위젯에 매번 점검)
+
+위젯을 만들거나 고칠 때마다 아래를 확인한다. 하나라도 어기면 사용자가
+"고장난 것 같다"고 느낀다. 실제로 몬티홀에서 전부 한 번씩 걸렸던 항목들이다.
+
+### 조작부
+- [ ] 각 슬라이더에 **설명(hint)이 라벨 바로 아래** 붙어 있다.
+      본문까지 내려가서 읽게 만들지 않는다. `aria-describedby`로 연결
+- [ ] 기본값이 채워지고 결과가 그려진 상태로 로드 (빈 폼 금지)
+- [ ] 터치 타깃 44px 이상, 키보드 조작 가능
+- [ ] 좁은 화면에서 라벨·설명이 슬라이더 위로 접힌다
+
+### 축
+- [ ] **x축·y축 모두 이름이 붙어 있다.** 단위·스케일 종류(로그/선형)까지 명시
+- [ ] **y축은 데이터에 맞춰 자동 스케일링.** 고정 0~100%로 두지 말 것.
+      파라미터를 밀면 값이 한 구석에 눌려 곡선이 겹쳐 보인다
+- [ ] 축 범위를 눈금 배수로 바깥 스냅하지 않는다. 애써 확대한 것이 도로 풀린다
+- [ ] 축 범위가 좁아지면 눈금 라벨 자릿수를 늘린다 (1% 단위로는 뭉개짐)
+- [ ] 라벨이 캔버스 밖으로 잘리지 않는다 (텍스트 폭을 재서 안쪽으로 민다)
+- [ ] 축 범위가 설정마다 달라지면 **본문에 "비교 전 축을 보라"고 적는다**
+
+### 곡선
+- [ ] **의미 없는 구간은 그리지 않는다.** 몬테카를로 초반 running average는
+      0~100%를 오간다. 확대된 축에서 그리면 세로 줄무늬만 남는다.
+      곡선이 축 안에 들어와 머무는 지점부터 그리고, 그 시작점을 캡션에 적는다
+- [ ] 범위를 벗어난 값을 축 경계에 눌러 붙이지 않는다 (없는 평평한 구간이 생긴다)
+
+### 색과 대비
+- [ ] 계열 색은 `--series-1`(파랑) / `--series-2`(주황). 명도까지 벌어져 있어
+      적록색각이상·흑백 출력에서도 구분된다
+- [ ] 판정 3색(`--hold`/`--edge`/`--break`)을 계열 색으로 전용하지 않는다.
+      그 셋은 "가정이 성립/경계/파탄"이라는 사이트의 논지 전용이다
+- [ ] 색만으로 구분하지 않는다. 실선/점선 등 형태 차이를 같이 준다
+- [ ] 범례에 색 견본과 함께 **선 종류의 뜻**을 글로 적는다
+
+## 커밋
+한 커밋에 한 페이지 또는 한 관심사. main 푸시 = 배포임을 항상 의식.
+feat(monty-hall): 위젯 모델 + 단위테스트
+docs(monty-hall): 본문 8블록 초안
+review(monty-hall): 검수 반영 — 4번 블록 주어 수정
+
+## 하지 말 것
+- 승인 전 광고 코드 삽입(ads.txt 포함). 레이아웃에 자리만 비워둔다
+- 검수 안 된 초안을 src/content/에 커밋 (푸시 즉시 공개)
+- 링크 목록만 있는 카테고리 인덱스 → Valuable inventory 조항 위반
+- 페이지 한꺼번에 대량 생성 → scaled content abuse 신호
+- 인사이트를 호버·툴팁 뒤에 숨기기 → 독자의 10~15%만 인터랙션을 건드린다
+- 결과를 숫자 하나로 끝내기 → 곡선·비교·표를 함께
+- localStorage 의존 핵심 기능 (상태는 URL 쿼리스트링으로)

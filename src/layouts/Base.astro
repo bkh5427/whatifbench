@@ -1,0 +1,112 @@
+---
+import "../styles/global.css";
+
+import { CATEGORIES } from "../data/tools.js";
+
+// category: 도구 페이지가 자기 카테고리를 알려주는 유일한 자리.
+// URL이 평면(/monty-hall-n-doors)이라 경로에서 유추할 수 없다.
+const { title, description, wide = false, category = null, crumbTool = false } = Astro.props;
+
+// 도구 페이지에만 브레드크럼 구조화 데이터를 붙인다.
+const crumb = crumbTool ? CATEGORIES.find((c) => c.key === category) : null;
+
+const SITE_NAME = "whatifbench";
+const fullTitle = title ? `${title} — ${SITE_NAME}` : SITE_NAME;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const path = Astro.url.pathname;
+const wrapClass = wide ? "wrap-wide" : "wrap";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    {
+      /* URL이 평면이라 이 도구가 어느 카테고리인지 알려줄 자리가 여기밖에 없다. */
+      crumb && (
+        <script
+          type="application/ld+json"
+          set:html={JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: new URL("/", Astro.site).href },
+              { "@type": "ListItem", position: 2, name: crumb.name, item: new URL(crumb.href, Astro.site).href },
+              { "@type": "ListItem", position: 3, name: title },
+            ],
+          })}
+        />
+      )
+    }
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap"
+    />
+  </head>
+
+  <body>
+    <header class="site-head">
+      <div class="wrap-wide site-head-inner">
+        <a class="brand" href="/">
+          <svg class="brand-logo" width="32" height="20" viewBox="0 0 32 20" aria-hidden="true" focusable="false">
+            <rect x="0" y="8" width="10.6" height="5" rx="1.5" style="fill:var(--hold)" />
+            <rect x="10.6" y="8" width="10.7" height="5" style="fill:var(--edge)" />
+            <rect x="21.3" y="8" width="10.7" height="5" rx="1.5" style="fill:var(--break)" />
+            <circle cx="21.3" cy="10.5" r="5.5" style="fill:var(--paper); stroke:var(--graphite); stroke-width:2" />
+          </svg>
+          whatifbench
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          {
+            CATEGORIES.map((c) => (
+              <a href={c.href} aria-current={category === c.key || path === c.href ? "page" : undefined}>
+                {c.short}
+              </a>
+            ))
+          }
+          <a href="/about" aria-current={path === "/about" ? "page" : undefined}>About</a>
+        </nav>
+      </div>
+      <div class="regime-band" aria-hidden="true"><span></span><span></span><span></span></div>
+    </header>
+
+    <main class={wrapClass}>
+      <slot />
+    </main>
+
+    <footer class="site-foot">
+      <div class="wrap-wide">
+        <div class="foot-groups">
+          <div>
+            <p class="foot-label">Tools</p>
+            {CATEGORIES.map((c) => <a href={c.href}>{c.name}</a>)}
+          </div>
+          <div>
+            <p class="foot-label">Site</p>
+            <a href="/about">About</a>
+            <a href="/contact">Contact</a>
+            <a href="/privacy">Privacy</a>
+          </div>
+        </div>
+        <p style="margin:0">
+          Made by one person, for fun. Check anything you're going to act on.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

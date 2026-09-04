@@ -1,0 +1,640 @@
+/* ============================================================
+   whatifbench.com — 전역 스타일
+   색 체계는 사이트의 논지를 그대로 따름:
+   hold(성립) → edge(경계) → break(파탄)
+   ============================================================ */
+
+:root {
+  /* 바탕과 잉크 */
+  --paper: #faf9f6;
+  --paper-sunk: #f0f0ea;
+  --surface: #ffffff;      /* 위젯처럼 종이 위에 얹히는 면 */
+  --surface-mark: #e4e5db; /* 표에서 '현재 행'을 실제로 보이게 하는 강조 */
+  --graphite: #2b2f33;
+  --graphite-soft: #5f666b;
+  --rule: #d6d8d1;
+
+  /* 판정 3색 — 위젯과 본문이 공유한다 */
+  --hold: #2f5d50;
+  --hold-bg: #e6efea;
+  --edge: #8a6414;
+  --edge-bg: #f5eeda;
+  --break: #a63d2e;
+  --break-bg: #f6e6e1;
+
+  --link: #1f4e79;
+
+  /* 그래프 계열 색 — 판정 3색(hold/edge/break)과 역할이 다르므로 따로 둔다.
+     파랑/주황은 적록색각이상에서도 구분되는 조합. 명도도 벌려 흑백 출력까지 견딘다. */
+  --series-1: #1f4e79;
+  --series-2: #c2570a;
+
+  /* 타이포 스케일 (약 1.26 등비) */
+  --t-xs: 0.8125rem;
+  --t-sm: 1rem;
+  --t-base: 1.1875rem;
+  --t-md: 1.3125rem;
+  --t-lg: 1.625rem;
+  --t-xl: 2.0625rem;
+  --t-2xl: 2.625rem;
+
+  /* 본문 칼럼 폭. 헤더·푸터(.wrap-wide)와 같은 60rem으로 맞춰 세로 줄을 정렬한다.
+     가독성 권장 폭(60~75자)보다 넓다는 것은 인지하고 택한 값이다. */
+  --measure: 60rem;
+  --gap: 1.5rem;
+
+  --sans: "IBM Plex Sans", system-ui, sans-serif;
+  --serif: "Source Serif 4", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--graphite);
+  font-family: var(--serif);
+  font-size: var(--t-base);
+  line-height: 1.68;
+  font-synthesis: none;
+}
+
+/* --- 레이아웃 골격 --- */
+
+.wrap {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+.wrap-wide {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+main { padding-top: 2.5rem; padding-bottom: 5rem; }
+
+/* --- 표제 --- */
+
+h1, h2, h3 {
+  font-family: var(--sans);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: var(--graphite);
+}
+
+h1 { font-size: var(--t-xl); margin: 0 0 1rem; }
+h2 { font-size: var(--t-md); margin: 2.75rem 0 0.75rem; }
+h3 { font-size: var(--t-base); margin: 2rem 0 0.5rem; }
+
+p { margin: 0 0 1.15rem; }
+
+a { color: var(--link); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { text-decoration-thickness: 2px; }
+
+:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 3px;
+}
+
+ul, ol { padding-left: 1.25rem; margin: 0 0 1.15rem; }
+li { margin-bottom: 0.35rem; }
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 2.5rem 0;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  background: var(--paper-sunk);
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+}
+
+/* --- 판정 띠: 이 사이트의 시그니처 --- */
+/* 초록에서 적색으로 넘어가는 세 칸. 콘텐츠의 구조를 그대로 시각화한다. */
+
+.regime-band {
+  display: flex;
+  height: 5px;
+  margin: 0;
+}
+.regime-band span { flex: 1; }
+.regime-band span:nth-child(1) { background: var(--hold); }
+.regime-band span:nth-child(2) { background: var(--edge); }
+.regime-band span:nth-child(3) { background: var(--break); }
+
+/* --- 머리말 --- */
+
+.site-head {
+  border-bottom: 1px solid var(--rule);
+}
+
+.site-head-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1rem 1.75rem;
+  padding-top: 1.15rem;
+  padding-bottom: 1.15rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  min-width: 0;
+  gap: 0.45rem;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: var(--t-lg);
+  letter-spacing: -0.02em;
+  color: var(--graphite);
+  text-decoration: none;
+  margin-right: auto;
+}
+.brand:hover { color: var(--link); }
+
+.brand-logo { flex-shrink: 0; }
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+}
+.site-nav a {
+  color: var(--graphite-soft);
+  text-decoration: none;
+  /* 터치 타깃 확보 */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.site-nav a:hover,
+.site-nav a[aria-current="page"] {
+  color: var(--graphite);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* --- 꼬리말 --- */
+
+.site-foot {
+  border-top: 1px solid var(--rule);
+  margin-top: 4rem;
+  padding: 1.75rem 0 3rem;
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+  color: var(--graphite-soft);
+}
+.site-foot a { color: var(--graphite-soft); }
+.tool-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem;
+}
+.tool-list li {
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.tool-list a { font-weight: 500; }
+
+.crumbs {
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+  color: var(--graphite-soft);
+  margin-bottom: 0.75rem;
+}
+.crumbs a { color: var(--graphite-soft); }
+.crumbs span { margin: 0 0.35rem; }
+
+.foot-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.foot-groups a {
+  display: block;
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+  color: var(--graphite-soft);
+  text-decoration: none;
+  padding: 0.3rem 0;
+}
+.foot-groups a:hover { color: var(--link); }
+.foot-label {
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--graphite);
+  margin: 0 0 0.4rem;
+}
+
+.foot-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+/* --- 첫 화면 --- */
+
+.hero { padding: 3.5rem 0 2.25rem; }
+
+.hero h1 {
+  font-size: var(--t-2xl);
+  max-width: 16ch;
+  margin-bottom: 1.25rem;
+}
+
+.hero p {
+  font-size: var(--t-md);
+  line-height: 1.5;
+  color: var(--graphite-soft);
+  max-width: 46ch;
+  margin-bottom: 0;
+}
+
+/* --- 분류 목록 --- */
+
+.shelf { margin: 2.5rem 0; }
+
+.shelf-item {
+  padding: 1.35rem 0;
+  border-top: 1px solid var(--rule);
+}
+.shelf-item:last-child { border-bottom: 1px solid var(--rule); }
+
+.shelf-item h2 {
+  margin: 0 0 0.35rem;
+  font-size: var(--t-base);
+}
+.shelf-item p {
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--graphite-soft);
+}
+
+/* --- 본문 안내문 --- */
+
+.note {
+  font-size: var(--t-sm);
+  color: var(--graphite-soft);
+  border-left: 3px solid var(--rule);
+  padding-left: 1rem;
+  margin: 1.75rem 0;
+}
+
+.legal-date {
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  color: var(--graphite-soft);
+  margin-bottom: 2rem;
+}
+
+/* --- 위젯 공용 (계산기 페이지에서 재사용) --- */
+
+.widget {
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  padding: 1.5rem;
+  margin: 2rem 0;
+}
+
+.widget-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem 1.1rem;
+  margin-bottom: 1.1rem;
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+}
+.widget-row label { white-space: nowrap; color: var(--graphite-soft); }
+
+/* 라벨 + 설명. 무엇을 조작하는지 손 옆에서 읽히게 한다. */
+.widget-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 0 0 min(15rem, 45%);
+  min-width: 0;
+}
+.widget-label label {
+  color: var(--graphite);
+  font-weight: 500;
+  white-space: normal;
+}
+.widget-hint {
+  font-size: var(--t-xs);
+  line-height: 1.35;
+  color: var(--graphite-soft);
+}
+/* 터치 타깃 44px 확보 — 모바일에서 손가락으로 끌 수 있어야 한다 */
+.widget-row input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  accent-color: var(--link);
+}
+.widget-out {
+  font-family: var(--mono);
+  font-weight: 500;
+  min-width: 5ch;
+  text-align: right;
+}
+
+.widget-controls { min-width: 0; }
+
+/* rem 기준 최소 폭은 글꼴을 키우면 같이 커져 컨테이너를 밀어낸다(WCAG 1.4.4).
+   min()으로 상한을 걸어 200% 확대에서도 접히게 한다. */
+.readouts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
+  gap: 0.85rem;
+  margin: 1.25rem 0;
+}
+.readout {
+  background: var(--paper-sunk);
+  padding: 0.9rem 1rem;
+}
+.readout-label {
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  color: var(--graphite-soft);
+  margin: 0 0 0.25rem;
+}
+.readout-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.45rem;
+  margin: 0;
+}
+.readout-value {
+  font-family: var(--mono);
+  font-size: var(--t-md);
+  margin: 0;
+}
+.readout-unit {
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  color: var(--graphite-soft);
+  margin: 0;
+}
+
+/* 좁은 화면에서는 라벨·설명이 슬라이더 위로 올라간다 */
+@media (max-width: 46rem) {
+  .widget-row { flex-wrap: wrap; }
+  .widget-label { flex: 1 1 100%; }
+  .widget-row input[type="range"] { flex: 1 1 60%; }
+}
+
+.verdict {
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+  padding: 0.7rem 1rem;
+  margin: 1.25rem 0 0;
+}
+.verdict[data-state="hold"]  { background: var(--hold-bg);  color: var(--hold); }
+.verdict[data-state="edge"]  { background: var(--edge-bg);  color: var(--edge); }
+.verdict[data-state="break"] { background: var(--break-bg); color: var(--break); }
+/* 상태가 아직 안 붙은 순간에도 배너로 보이게 한다 */
+.verdict:not([data-state]) { background: var(--paper-sunk); color: var(--graphite-soft); }
+
+/* --- 위젯 그래프 --- */
+
+.widget-chart {
+  display: block;
+  width: 100%;
+  margin: 1.25rem 0 0.5rem;
+}
+
+.widget-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  color: var(--graphite-soft);
+  margin: 0 0 0.5rem;
+}
+.legend-key {
+  width: 1.1rem;
+  height: 3px;
+  display: inline-block;
+}
+/* 견본 굵기도 곡선과 맞춘다 — 색각이상에서 색 대신 굵기로 짝을 찾는다 */
+.legend-switch { background: var(--series-1); height: 2px; }
+.legend-stay { background: var(--series-2); height: 4px; }
+.legend-note { flex-basis: 100%; }
+
+/* --- 위젯 민감도 표 --- */
+
+/* 표가 컨테이너를 밀어내면 페이지 전체에 가로 스크롤이 생긴다 (WCAG 1.4.10 Reflow).
+   표만 따로 스크롤시킨다. */
+.widget-table-scroll {
+  overflow-x: auto;
+  margin-top: 1.5rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.widget-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+}
+.widget-table caption {
+  font-size: var(--t-xs);
+  color: var(--graphite-soft);
+  text-align: left;
+  margin-bottom: 0.5rem;
+}
+.widget-table th,
+.widget-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--rule);
+  text-align: right;
+}
+.widget-table th:first-child,
+.widget-table td:first-child { text-align: left; }
+.widget-table thead th {
+  font-weight: 500;
+  color: var(--graphite-soft);
+  font-size: var(--t-xs);
+}
+.widget-table td { font-family: var(--mono); }
+/* 현재 행: paper-sunk는 흰 배경 대비 1.14:1로 사실상 안 보인다.
+   색만으로 구분하지 않도록 왼쪽 표시선도 같이 준다. */
+.widget-table tr[aria-current="true"] td {
+  background: var(--surface-mark);
+  font-weight: 500;
+}
+.widget-table tr[aria-current="true"] td:first-child {
+  box-shadow: inset 3px 0 0 var(--graphite);
+}
+
+/* --- 도입부 리드 --- */
+/* 제목과 위젯 사이. 왜 이 주제를 건드리는지 짧게 세운다. */
+
+.lead {
+  font-size: var(--t-md);
+  line-height: 1.55;
+  color: var(--graphite);
+  margin: 0 0 1.25rem;
+}
+.lead-kicker {
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--graphite-soft);
+  margin: 0 0 0.6rem;
+}
+.lead-turn {
+  font-family: var(--sans);
+  font-weight: 500;
+  color: var(--break);
+}
+
+/* --- 수식 블록 --- */
+/* 외부 수식 라이브러리 없이 CSS만으로 조판한다. */
+
+.math {
+  border-top: 2px solid var(--graphite);
+  border-bottom: 1px solid var(--rule);
+  padding: 1.25rem 0 1.5rem;
+  margin: 2rem 0;
+}
+.math-title {
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--graphite-soft);
+  margin: 0 0 1.25rem;
+}
+
+.math-eq {
+  font-family: var(--mono);
+  font-size: var(--t-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.25rem 0;
+  overflow-x: auto;
+}
+.math-eq .op { color: var(--graphite-soft); }
+
+/* 분수 */
+.frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 0.15rem;
+}
+.frac-num { padding: 0 0.4rem 0.15rem; }
+.frac-den {
+  padding: 0.15rem 0.4rem 0;
+  border-top: 1px solid var(--graphite);
+}
+
+/* 기호 정의 */
+.math-where {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 1rem;
+  font-size: var(--t-sm);
+  margin: 1.25rem 0 0;
+  padding-left: 0.25rem;
+}
+.math-where dt {
+  font-family: var(--mono);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.math-where dd {
+  margin: 0;
+  color: var(--graphite-soft);
+}
+
+/* 유도 단계 */
+/* 표는 글꼴을 키우면 컨테이너를 밀어낸다. 표만 따로 스크롤시킨다. */
+.math-steps-scroll {
+  overflow-x: auto;
+  margin: 1.25rem 0 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.math-steps {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-sm);
+}
+.math-steps th {
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  color: var(--graphite-soft);
+  text-align: left;
+  padding: 0.4rem 0.75rem 0.4rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.math-steps td {
+  padding: 0.55rem 0.75rem 0.55rem 0;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+.math-steps td:nth-child(2) { font-family: var(--mono); white-space: nowrap; }
+.math-steps tbody tr:last-child td { border-bottom: 0; }
+.math-result td { background: var(--paper-sunk); font-weight: 500; }
+
+.math-check {
+  font-size: var(--t-sm);
+  color: var(--graphite-soft);
+  border-left: 3px solid var(--hold);
+  padding-left: 1rem;
+  margin: 1.5rem 0 0;
+}
+
+@media (max-width: 34rem) {
+  .math-steps td:nth-child(2) { white-space: normal; }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 34rem) {
+  :root { --t-2xl: 2rem; --t-xl: 1.75rem; }
+  .hero { padding: 2.5rem 0 1.75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

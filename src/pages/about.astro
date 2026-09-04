@@ -1,0 +1,89 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base
+  title="About"
+  description="Who I am, why I make these, and how I check the numbers."
+>
+  <h1>About</h1>
+
+  <p>
+    I make small interactive tools here. You move the parameter that matters, a
+    chart moves, and you get to see the shape of the thing instead of one number.
+  </p>
+
+  <p>
+    I write as <strong>Planimeter</strong>, a pen name. I build and validate
+    numerical models for a living. Most of that work is finding out where a model
+    stops being trustworthy, which is more or less what this is about.
+  </p>
+
+  <p>
+    A planimeter is a mechanical instrument that measures the area under a curve
+    by tracing its outline. It is a calculating device from before calculators:
+    you move it by hand and read the answer off a dial. That is roughly what these
+    tools are, and the name is a reminder that the reading is only as good as the
+    instrument.
+  </p>
+
+  <h2>What these are</h2>
+
+  <p>
+    Toys for thinking with. Each one runs a simple model and draws what it says.
+    A hobby, mostly — I make them because I want to see the curve myself, and
+    putting them online costs nothing extra. There is no company behind it and no
+    plan beyond finishing the next one.
+  </p>
+
+  <p>
+    None of it is advice. If you are going to act on a number, check it somewhere
+    else too.
+  </p>
+
+  <h2>How I check the numbers</h2>
+
+  <p>
+    Every tool says what model it uses and what that model assumes, and cites its
+    formula to something you can open. Where I could not verify a source, the page
+    says so instead of linking to a good guess.
+  </p>
+
+  <p>
+    The maths for each tool sits in its own file with unit tests on it, away from
+    anything that draws. Where I can, I check a formula against a second version I
+    wrote separately, because running the same model twice is not a check.
+  </p>
+
+  <p>
+    Every page also lists what its model leaves out. That is usually the most
+    useful part.
+  </p>
+
+  <h2>Getting things wrong</h2>
+
+  <p>
+    I will. If you find an error I would genuinely like to know — the
+    <a href="/contact">contact page</a> has my email. I fix them and note what
+    changed on the page, with the date. Typos I just fix quietly.
+  </p>
+
+  <h2>Copying</h2>
+
+  <p>
+    The writing, the diagrams and the code are mine. Read them, link to them,
+    quote a bit with credit, use the tools for whatever you like. Please don't
+    republish the articles wholesale or lift the calculators onto another site.
+    If you want to do something bigger with them, just ask.
+  </p>
+
+  <p>
+    The maths belongs to nobody. Formulas come from published sources and are
+    cited on the page that uses them.
+  </p>
+
+  <p class="note">
+    Everything here is provided as is, with no promise that it's accurate or
+    working. It's a hobby site.
+  </p>
+</Base>

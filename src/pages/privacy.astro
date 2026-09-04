@@ -1,0 +1,146 @@
+---
+import Base from "../layouts/Base.astro";
+const EMAIL = "contact@whatifbench.com";
+const UPDATED = "2 September 2026";
+---
+
+<Base
+  title="Privacy Policy"
+  description="What data whatifbench collects, how advertising cookies are used, and the choices available to you."
+>
+  <h1>Privacy Policy</h1>
+  <p class="legal-date">Last updated: {UPDATED}</p>
+
+  <p>
+    This policy explains what happens to data when you visit whatifbench.com.
+    The short version: the site has no accounts, no newsletter, and no login,
+    and the calculators run entirely in your browser.
+  </p>
+
+  <h2>What the calculators do with your input</h2>
+
+  <p>
+    Values you type or drag into a calculator are processed by JavaScript
+    running on your own device. They are never transmitted to a server, stored,
+    or logged. Closing the page discards them.
+  </p>
+
+  <h2>Information collected automatically</h2>
+
+  <p>
+    This site is served through Cloudflare, which processes technical data
+    needed to deliver pages and to protect the site from abuse. This includes
+    your IP address, browser and device type, the pages requested, and the time
+    of the request. Cloudflare may set a cookie to distinguish legitimate
+    visitors from automated traffic. This data is used for security and
+    reliability, not to build a profile of you.
+  </p>
+
+  <h2>Fonts</h2>
+
+  <p>
+    Pages load their typefaces from Google Fonts. That request goes to Google's
+    servers and carries your IP address and browser details, in the same way any
+    request for a file does. Google states that it does not use Google Fonts
+    requests to build advertising profiles. No cookie is set by this.
+  </p>
+
+  <h2>Advertising</h2>
+
+  <p>
+    This site does not currently show advertising. It is intended to carry
+    advertising supplied by Google, including Google AdSense, and this section
+    describes what happens when it does. Third-party vendors, including Google,
+    use cookies to serve ads based on your prior visits to this and other
+    websites.
+  </p>
+
+  <p>
+    Google's use of advertising cookies enables it and its partners to serve ads
+    to you based on your visit to this site and other sites on the internet. You
+    can opt out of personalised advertising by visiting
+    <a
+      href="https://www.google.com/settings/ads"
+      rel="nofollow noopener"
+      target="_blank">Google Ads Settings</a
+    >. You can also opt out of third-party vendor cookies for personalised
+    advertising at
+    <a
+      href="https://www.aboutads.info/choices/"
+      rel="nofollow noopener"
+      target="_blank">aboutads.info</a
+    >.
+  </p>
+
+  <p>
+    Third-party advertising vendors operate under their own privacy policies.
+    Google's is available at
+    <a
+      href="https://policies.google.com/technologies/partner-sites"
+      rel="nofollow noopener"
+      target="_blank">policies.google.com</a
+    >.
+  </p>
+
+  <h2>Cookies</h2>
+
+  <p>
+    Cookies are small files stored by your browser. This site uses them only for
+    the security and advertising purposes described above. Every current browser
+    lets you block or delete cookies through its settings. Blocking them will
+    not affect the calculators, which do not depend on cookies.
+  </p>
+
+  <h2>If you are in the European Economic Area or the United Kingdom</h2>
+
+  <p>
+    Where the GDPR applies, the legal basis for processing technical data is
+    legitimate interest in operating and securing the site. The legal basis for
+    personalised advertising is your consent. Since the site does not yet show
+    advertising, no consent notice is displayed; one will be shown, and will be
+    changeable at any time, before any advertising cookie is set.
+  </p>
+
+  <p>
+    You have the right to request access to your personal data, correction or
+    deletion of it, restriction of processing, and to object to processing. To
+    exercise any of these, email <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.
+  </p>
+
+  <h2>If you are in California</h2>
+
+  <p>
+    Under the CCPA you have the right to know what personal information is
+    collected, to request its deletion, and to opt out of its sale or sharing.
+    This site does not sell personal information. To make a request, use the
+    email address above.
+  </p>
+
+  <h2>Children</h2>
+
+  <p>
+    This site is not directed at children under 13 and does not knowingly
+    collect their personal information. If you believe a child has provided such
+    information, contact me and it will be removed.
+  </p>
+
+  <h2>External links</h2>
+
+  <p>
+    Pages here may link to other sites. Those sites have their own policies and
+    are outside my control.
+  </p>
+
+  <h2>Changes</h2>
+
+  <p>
+    This policy may be updated. The date at the top reflects the most recent
+    revision. Material changes will be noted on this page.
+  </p>
+
+  <h2>Contact</h2>
+
+  <p>
+    Questions about this policy: <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.
+  </p>
+</Base>

@@ -1,0 +1,40 @@
+---
+import Base from "../layouts/Base.astro";
+import { CATEGORIES, tools_read_published } from "../data/tools.js";
+import { INTROS } from "../data/category-intros.js";
+
+export function getStaticPaths() {
+  return CATEGORIES.map((c) => ({ params: { category: c.key }, props: { category: c } }));
+}
+
+const { category } = Astro.props;
+const intro = INTROS[category.key];
+const tools = tools_read_published(category.key);
+---
+
+<Base title={category.name} description={intro.description} category={category.key}>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span aria-hidden="true">›</span> {category.name}
+  </nav>
+
+  <h1>{category.name}</h1>
+
+  {intro.paragraphs.map((text) => <p>{text}</p>)}
+
+  {
+    tools.length > 0 ? (
+      <div class="shelf">
+        {tools.map((tool) => (
+          <div class="shelf-item">
+            <h2><a href={`/${tool.slug}`}>{tool.name}</a></h2>
+            <p>{tool.blurb}</p>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <p class="note">
+        Nothing finished here yet. The other sections have tools you can use now.
+      </p>
+    )
+  }
+</Base>

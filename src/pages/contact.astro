@@ -1,0 +1,50 @@
+---
+import Base from "../layouts/Base.astro";
+const EMAIL = "contact@whatifbench.com";
+---
+
+<Base
+  title="Contact"
+  description="How to reach whatifbench about corrections, questions, or requests for a specific calculator."
+>
+  <h1>Contact</h1>
+
+  <p>
+    Email is the only channel. I read everything, though replies can take a few
+    days.
+  </p>
+
+  <p style="font-family:var(--sans); font-size:var(--t-md)">
+    <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
+  </p>
+
+  <h2>Things worth emailing about</h2>
+
+  <ul>
+    <li>
+      <strong>Corrections.</strong> A wrong coefficient, a broken slider, a
+      derivation that does not hold. Include the page and what you expected
+      instead.
+    </li>
+    <li>
+      <strong>Requests.</strong> A calculation you keep doing by hand that would
+      be better as a tool.
+    </li>
+    <li>
+      <strong>Questions about the models.</strong> Why a particular assumption
+      is used, or where a coefficient comes from.
+    </li>
+  </ul>
+
+  <h2>What I can't help with</h2>
+
+  <p>
+    I can't do your homework, and I can't tell you whether a number is safe to
+    act on. If something you're building depends on the answer, ask someone who
+    can be held to it.
+  </p>
+
+  <p class="note">
+    It's a plain inbox, so don't send me anything you'd mind other people seeing.
+  </p>
+</Base>
