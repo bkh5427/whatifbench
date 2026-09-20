@@ -1,0 +1,15 @@
+#!/bin/sh
+# 푸시 게이트. **푸시 = 배포**이므로 여기가 마지막 방어선이다.
+#
+# 여기가 **유일한** 집행 지점이다. `package.json`에 `prepush`를 두지 않는 이유가
+# 이것이다 — `npm run push`가 check:full을 돌리고 이어지는 `git push`가 이 훅에서
+# 또 돌려 Astro 빌드가 두 번 됐다. 훅은 `npm run push`가 아닌 경로(직접 `git push`,
+# IDE의 푸시 버튼)까지 덮으므로 prepush의 진짜 상위집합이다. 훅만 남긴다.
+#
+# 활성화: `npm install`이 `prepare` 스크립트로 core.hooksPath를 여기로 맞춘다.
+#         수동으로는 `git config core.hooksPath .githooks`.
+#         이 배선 자체를 게이트의 `gate_check_wiring`이 검사한다.
+# 우회(정말 필요할 때만): `git push --no-verify`
+set -e
+echo "푸시 게이트 — 빌드 후 검사한다."
+npm run --silent check:full

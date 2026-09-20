@@ -1,0 +1,94 @@
+---
+/**
+ * 도입 삽화 — 문제 한 장면. 리드 맨 앞에 놓아 "무엇을 묻는 글인가"를 한눈에 보인다.
+ *
+ * MontyGameSteps(규칙 4단)와 역할이 다르다 — 이쪽은 규칙이 아니라 **질문**을 그린다.
+ * 닫힌 두 문에 물음표를 똑같이 찍는 것이 이 그림의 전부다: 독자의 직관은 여기서
+ * 반반이라 말하고, 본문이 그것을 뒤집는다.
+ *
+ * 가로형 짧은 띠로 그린 이유: 리드와 위젯 사이는 세로 예산이 가장 빡빡한 자리다.
+ * 상태는 색이 아니라 테두리 굵기·점선·염소로 구분한다 (색각 대비).
+ * 염소는 직접 그린 실루엣이다. 사진·외부 아이콘 없음 (저작권 위험 0 조항).
+ */
+
+// ── 판 크기 ────────────────────────────────────────────────
+const FIG_W = 420;                       // 도해 표준: 가로 420 이하
+const FIG_H = 106;                       // 도입 삽화 표준: 110 이하
+
+// ── 문 배치 ────────────────────────────────────────────────
+const DOOR_W = 86;
+const DOOR_H = 78;
+const DOOR_Y = 20;
+const DOOR_X = [25, 167, 309];           // 여백 25 · 간격 56 · 좌우 대칭
+const KNOB_DX = 74;                      // 문 왼쪽 모서리에서 손잡이까지
+const MARK_DX = 36;                      // 문 왼쪽 모서리에서 물음표 중심까지
+const LABEL_Y = 13;
+const KNOB_R = 3;
+
+// ── 고른 문의 색. 굵기와 함께 쓴다 — 색만으로 구분하지 않는다(색각 대비) ──
+const COLOUR_PICKED = "var(--break)";
+
+// ── 선 굵기 — 색을 못 보아도 상태가 구분되어야 한다 ──────────
+const STROKE_PICKED = 3.5;               // 참가자가 고른 문
+const STROKE_PLAIN = 2;
+const DASH_OPENED = "4 3";               // 열린 문
+
+// ── 염소 ───────────────────────────────────────────────────
+const GOAT_W = 46;
+const GOAT_H = 55;
+
+const door_centre = (i) => DOOR_X[i] + DOOR_W / 2;
+const door_mark_x = (i) => DOOR_X[i] + MARK_DX;
+const door_knob_x = (i) => DOOR_X[i] + KNOB_DX;
+const DOOR_MID_Y = DOOR_Y + DOOR_H / 2;
+const MARK_Y = DOOR_MID_Y + 10;          // 물음표 baseline 보정
+// 물음표 둘은 반드시 같은 색이다. 이 그림의 요지가 "닫힌 두 문은 겉으로 구분되지
+// 않는다"이므로, 한쪽만 색을 달리하면 그림이 스스로 자기 주장을 무너뜨린다.
+const GOAT_X = door_centre(1) - GOAT_W / 2;
+const GOAT_Y = DOOR_Y + (DOOR_H - GOAT_H) / 2;
+
+const FIG_ALT =
+  "Three doors in a row. The left door is outlined thickly and marked with a " +
+  "question mark: the door you picked. The middle door stands open, drawn with a " +
+  "dashed outline and showing a goat as a simple silhouette. The right door is " +
+  "closed and also marked with a question mark: the door you could switch to. " +
+  "Two doors remain closed and neither shows what is behind it.";
+---
+
+<svg class="fig-svg" viewBox={`0 0 ${FIG_W} ${FIG_H}`} role="img" aria-label={FIG_ALT}>
+  <defs>
+    <symbol id="q-goat" viewBox="0 0 84 100">
+      <path d="M18,44 Q16,40 22,40 L46,40 Q54,40 56,46 L56,58 Q56,64 48,64 L22,64 Q16,64 16,56 Z" />
+      <path d="M48,46 L48,32 Q48,26 56,24 L64,24 Q70,24 72,30 L74,36 Q75,40 71,41 L62,41 Q56,41 54,46 Z" />
+      <path d="M54,26 Q44,14 32,4 Q46,4 58,12 Q66,18 64,25 Z" />
+      <path d="M62,22 L74,17 L67,28 Z" />
+      <path d="M68,40 L75,40 L71,54 Z" />
+      <rect x="21" y="63" width="6" height="26" rx="2" />
+      <rect x="31" y="63" width="6" height="26" rx="2" />
+      <rect x="42" y="63" width="6" height="26" rx="2" />
+      <rect x="50" y="63" width="6" height="26" rx="2" />
+      <path d="M16,42 L11,29 L20,37 Z" />
+      <circle cx="64" cy="32" r="2.6" fill="var(--paper)" />
+    </symbol>
+  </defs>
+
+  <!-- 왼쪽 — 참가자가 고른 문. 굵은 테두리로 이중 부호화 -->
+  <text x={door_centre(0)} y={LABEL_Y} class="fig-label" fill={COLOUR_PICKED} text-anchor="middle">you picked</text>
+  <rect x={DOOR_X[0]} y={DOOR_Y} width={DOOR_W} height={DOOR_H} rx="2"
+        fill="var(--surface)" stroke={COLOUR_PICKED} stroke-width={STROKE_PICKED} />
+  <circle cx={door_knob_x(0)} cy={DOOR_MID_Y} r={KNOB_R} fill={COLOUR_PICKED} />
+  <text x={door_mark_x(0)} y={MARK_Y} class="fig-mark" fill="var(--graphite)" text-anchor="middle">?</text>
+
+  <!-- 가운데 — 진행자가 연 문. 점선 + 가라앉은 바탕 + 염소로 삼중 부호화 -->
+  <text x={door_centre(1)} y={LABEL_Y} class="fig-label" fill="var(--graphite-soft)" text-anchor="middle">host opened it</text>
+  <rect x={DOOR_X[1]} y={DOOR_Y} width={DOOR_W} height={DOOR_H} rx="2"
+        fill="var(--paper-sunk)" stroke="var(--rule)" stroke-width={STROKE_PLAIN} stroke-dasharray={DASH_OPENED} />
+  <use href="#q-goat" x={GOAT_X} y={GOAT_Y} width={GOAT_W} height={GOAT_H} fill="var(--graphite-soft)" />
+
+  <!-- 오른쪽 — 바꿀 수 있는 문 -->
+  <text x={door_centre(2)} y={LABEL_Y} class="fig-label" fill="var(--graphite)" text-anchor="middle">the swap</text>
+  <rect x={DOOR_X[2]} y={DOOR_Y} width={DOOR_W} height={DOOR_H} rx="2"
+        fill="var(--surface)" stroke="var(--graphite)" stroke-width={STROKE_PLAIN} />
+  <circle cx={door_knob_x(2)} cy={DOOR_MID_Y} r={KNOB_R} fill="var(--graphite)" />
+  <text x={door_mark_x(2)} y={MARK_Y} class="fig-mark" fill="var(--graphite)" text-anchor="middle">?</text>
+</svg>

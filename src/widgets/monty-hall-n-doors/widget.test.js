@@ -25,6 +25,7 @@ import {
   slider_calculate_trial_count,
   slider_calculate_trial_position,
   url_read_state,
+  preset_check_matching,
 } from './widget.js';
 
 describe('시행 횟수 슬라이더 (1-2-5 눈금)', () => {
@@ -123,22 +124,30 @@ describe('y축 자동 스케일', () => {
     return { scale: chart_calculate_scale(result), result };
   }
 
-  // 주의: chart_calculate_scale은 values에 이론값 2개를 먼저 넣고 min/max를 잡는다.
-  // 따라서 "rateMin <= stayTheory" 류의 단언은 정의상 항상 참인 동어반복이다.
-  // 실측 점을 실제로 반영하는지, 패딩이 있는지를 봐야 한다.
+  // 주의: chart_calculate_scale은 values에 이론값 2개를 먼저 넣고, 정착 구간의
+  // 실측 점을 같은 비율(0.1)로 골라 min/max를 잡는다. 그래서 여기서 같은 비율로
+  // 같은 집합을 다시 만들어 "축 안에 있는가"를 묻는 것은 **어떤 구현이든 정의상 참**이다.
+  // 앞선 판에서 이 파일은 그 함정을 위에 적어 놓고 그대로 밟았다.
+  // 축이 무엇에 반응해야 하는가로 바꿔 묻는다.
 
-  it('축이 수렴 구간의 실측 점을 실제로 담는다 (이론값만 보고 정하지 않는다)', () => {
-    for (const [doorCount, openedCount] of [[3, 1], [18, 2], [100, 1]]) {
-      const { scale, result } = scale_read_for(doorCount, openedCount);
-      const settled = result.points.filter((point) => point.trial >= result.trialCount * 0.1);
-      expect(settled.length).toBeGreaterThan(0);
-      for (const point of settled) {
-        expect(point.stayWinRate).toBeGreaterThanOrEqual(scale.rateMin);
-        expect(point.stayWinRate).toBeLessThanOrEqual(scale.rateMax);
-        expect(point.switchWinRate).toBeGreaterThanOrEqual(scale.rateMin);
-        expect(point.switchWinRate).toBeLessThanOrEqual(scale.rateMax);
-      }
-    }
+  it('축이 실측을 반영한다 — 시드를 바꾸면 축 경계가 달라진다', () => {
+    // 이론값은 시드와 무관하다. 축이 이론값만 보고 정해졌다면 두 시드가
+    // **완전히 같은 축**을 낸다. 이 단언은 그 구현에서만 실패한다.
+    const first = chart_calculate_scale(sim_run_convergence(3, 1, 10000, { seed: 20260904 }));
+    const second = chart_calculate_scale(sim_run_convergence(3, 1, 10000, { seed: 777 }));
+    expect([first.rateMin, first.rateMax]).not.toEqual([second.rateMin, second.rateMax]);
+  });
+
+  it('초반 요동 점은 축이 담으려 하지 않는다 — 담으면 확대가 통째로 풀린다', () => {
+    // 첫 표본 점(trial=1)의 running average는 0 아니면 1이다.
+    // 축이 모든 점을 담으려 하면 0~100%로 벌어져 두 곡선이 바닥에 붙는다.
+    const result = sim_run_convergence(3, 1, 10000, { seed: 20260904 });
+    const scale = chart_calculate_scale(result);
+    const first = result.points[0];
+    expect(first.trial).toBe(1);
+    const outside = (rate) => rate < scale.rateMin || rate > scale.rateMax;
+    expect(outside(first.stayWinRate)).toBe(true);
+    expect(outside(first.switchWinRate)).toBe(true);
   });
 
   it('축에 여백이 있다 — 데이터가 창에 딱 붙지 않는다', () => {
@@ -175,13 +184,25 @@ describe('y축 자동 스케일', () => {
     for (const doorCount of [3, 5, 10, 25, 56, 100]) {
       for (const openedCount of [1, Math.max(1, doorCount - 2)]) {
         const { scale } = scale_read_for(doorCount, openedCount);
-        expect(scale.rateMin).toBeGreaterThanOrEqual(0);
-        expect(scale.rateMax).toBeLessThanOrEqual(1);
         expect(scale.rateMax).toBeGreaterThan(scale.rateMin);
         expect(scale.step).toBeGreaterThan(0);
         expect(Number.isFinite(scale.step)).toBe(true);
       }
     }
+  });
+
+  it('0%·100% 경계는 필요할 때만 걸린다', () => {
+    // `rateMin >= 0`·`rateMax <= 1`은 코드가 Math.max(0,…)/Math.min(1,…)이라
+    // 정의상 참이다. 경계가 **실제로 걸리는 경우와 안 걸리는 경우**를 나눠 본다.
+    //
+    // N=100, K=98은 0.01~0.99에 여백 35%를 더하면 양쪽으로 넘친다 → 정확히 0과 1.
+    const wide = scale_read_for(100, 98).scale;
+    expect(wide.rateMin).toBe(0);
+    expect(wide.rateMax).toBe(1);
+    // N=3, K=1은 넘칠 이유가 없다. 여기서 0/1이 나오면 확대가 통째로 죽은 것이다.
+    const narrow = scale_read_for(3, 1).scale;
+    expect(narrow.rateMin).toBeGreaterThan(0.15);
+    expect(narrow.rateMax).toBeLessThan(0.85);
   });
 
   it('눈금 간격은 1-2-2.5-5 계열이다', () => {
@@ -271,6 +292,16 @@ describe('판정 배너 — 사이트 시그니처', () => {
     expect(state_calculate_verdict(1.0)).toBe('break');
   });
 
+  it('두 임계값의 바로 아래쪽도 짚는다 — 위쪽만 걸면 임계를 내려도 통과한다', () => {
+    // `2.0 → hold`만 못박아 두면 임계를 1.9로 내려도 전부 통과한다.
+    // 경계는 양쪽에서 눌러야 값이 고정된다.
+    expect(state_calculate_verdict(2)).toBe('hold');
+    expect(state_calculate_verdict(1.99)).toBe('edge');
+    expect(state_calculate_verdict(1.9999)).toBe('edge');
+    expect(state_calculate_verdict(1.1)).toBe('edge');
+    expect(state_calculate_verdict(1.0999)).toBe('break');
+  });
+
   it('3문 교과서 설정은 hold, 문만 늘린 설정은 break', () => {
     expect(state_calculate_verdict(model_calculate_switch_advantage(3, 1))).toBe('hold');
     expect(state_calculate_verdict(model_calculate_switch_advantage(100, 98))).toBe('hold');
@@ -347,5 +378,23 @@ describe('표시 형식', () => {
         expect(Math.abs(parseFloat(label) - value * 100)).toBeLessThan(1e-6);
       }
     }
+  });
+});
+
+describe('프리셋 칩 눌림 상태', () => {
+  // 회귀: 이 동기화가 아예 없어서 aria-pressed가 영영 'false'였다.
+  it('프리셋과 같은 값이면 그 key를 돌려준다', () => {
+    expect(preset_check_matching(3, 1)).toBe('classic');
+    expect(preset_check_matching(10, 1)).toBe('ten-doors');
+    expect(preset_check_matching(100, 1)).toBe('hundred-doors');
+  });
+
+  it('문 개수만 같고 여는 개수가 다르면 눌리지 않는다', () => {
+    expect(preset_check_matching(10, 8)).toBe(null);
+    expect(preset_check_matching(100, 98)).toBe(null);
+  });
+
+  it('어느 프리셋과도 다르면 null이다', () => {
+    expect(preset_check_matching(7, 2)).toBe(null);
   });
 });

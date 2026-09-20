@@ -50,7 +50,8 @@ describe('검수 포인트 — N=3, K=1', () => {
 
   it('몬테카를로가 2/3에 수렴한다', () => {
     const result = sim_run_convergence(3, 1, TEST_TRIAL_COUNT, { seed: TEST_SEED });
-    expect(result.switchWinRate).toBeCloseTo(2 / 3, 2);
+    // `toBeCloseTo(2/3, 2)`는 이 시행 수에서 4.74 SE다 — 이 파일이 세운 4 SE 기준을
+    // 넘고, 시행 수를 줄이면 조용히 더 커진다. 허용오차는 전부 표준오차로 잡는다.
     expect(test_calculate_z(result.switchWinRate, 2 / 3, TEST_TRIAL_COUNT)).toBeLessThan(
       MONTE_CARLO_Z_LIMIT,
     );
@@ -97,7 +98,8 @@ describe('이론 승률 — 일반 N, K', () => {
       let previous = 0;
       for (let openedCount = 1; openedCount <= openedMax; openedCount += 1) {
         const switchRate = model_calculate_switch_win_rate(doorCount, openedCount);
-        expect(switchRate).toBeGreaterThanOrEqual(model_calculate_stay_win_rate(doorCount));
+        // K ≥ 1이므로 순부등호다. `>=`로 두면 두 승률이 같아지는 구현도 통과한다.
+        expect(switchRate).toBeGreaterThan(model_calculate_stay_win_rate(doorCount));
         expect(switchRate).toBeGreaterThan(previous);
         previous = switchRate;
       }
@@ -150,8 +152,22 @@ describe('몬테카를로가 이론값을 따라간다', () => {
   });
 
   it('유지 승리와 스위치 승리는 한 시행에서 동시에 일어나지 않는다', () => {
-    const result = sim_run_trials(3, 1, MONTY_TRIAL_MIN, { seed: TEST_SEED });
-    expect(result.stayWinCount + result.switchWinCount).toBeLessThanOrEqual(result.trialCount);
+    // `합 <= 시행 수`만 걸면 **한 판도 못 이기는 시뮬레이터도 통과한다.**
+    // 배타성을 실제로 재려면 합이 얼마여야 하는지를 알아야 한다.
+    //
+    // N=3, K=1은 호스트가 연 뒤 남는 문이 하나뿐이다. 그래서 "스위치 승"은
+    // "유지 패"와 정확히 같은 사건이고, 둘의 합은 시행 수와 **정확히** 일치한다.
+    const tight = sim_run_trials(3, 1, MONTY_TRIAL_MIN, { seed: TEST_SEED });
+    expect(tight.stayWinCount + tight.switchWinCount).toBe(tight.trialCount);
+    expect(tight.stayWinCount).toBeGreaterThan(0);
+    expect(tight.switchWinCount).toBeGreaterThan(0);
+
+    // N=10, K=1은 남는 문이 여덟 개다. 둘 다 지는 시행이 생기므로 합이 모자란다.
+    // 여기서 합이 시행 수와 같아지면 둘 중 하나가 반드시 이기는 잘못된 판정이다.
+    const loose = sim_run_trials(10, 1, MONTY_TRIAL_MIN, { seed: TEST_SEED });
+    expect(loose.stayWinCount + loose.switchWinCount).toBeLessThan(loose.trialCount);
+    expect(loose.stayWinCount).toBeGreaterThan(0);
+    expect(loose.switchWinCount).toBeGreaterThan(0);
   });
 });
 
@@ -366,7 +382,11 @@ describe('난수 발생기', () => {
     let total = 0;
     const sampleCount = 100000;
     for (let i = 0; i < sampleCount; i += 1) total += random();
-    expect(total / sampleCount).toBeCloseTo(0.5, 2);
+    // `toBeCloseTo(0.5, 2)`는 이 표본 수에서 5.48 SE다 — 이 파일이 세운 4 SE
+    // 기준을 넘고, 대신 봐 줄 검정도 없다. 균등분포의 표준편차 1/√12로 정규화한다.
+    const standardError = Math.sqrt(1 / 12 / sampleCount);
+    const z = Math.abs(total / sampleCount - 0.5) / standardError;
+    expect(z).toBeLessThan(MONTE_CARLO_Z_LIMIT);
   });
 });
 
@@ -403,10 +423,15 @@ describe('수렴 곡선 표본', () => {
     expect(backSpan).toBeGreaterThan(frontSpan * 10);
   });
 
-  it('표본 점 개수가 곡선을 그릴 만큼 충분하다', () => {
+  it('표본 점 개수가 곡선을 그릴 만큼 충분하되, 픽셀보다 촘촘하지는 않다', () => {
     // 140 → 3 으로 줄여도 기존 단언은 전부 통과했다. 곡선이 꺾은선이 된다.
-    expect(sim_calculate_checkpoints(MONTY_TRIAL_MAX).length).toBeGreaterThan(50);
-    expect(sim_calculate_checkpoints(MONTY_TRIAL_MIN).length).toBeGreaterThan(30);
+    // 하한만 걸면 반대 방향(140 → 400)이 그대로 통과한다. 그러면 캔버스 폭보다
+    // 점이 많아져 시행 루프 안의 기록 비용만 늘고 그림은 달라지지 않는다.
+    // 중복 제거 뒤 실제로 남는 개수를 양쪽에서 못박는다.
+    expect(sim_calculate_checkpoints(MONTY_TRIAL_MAX)).toHaveLength(126);
+    expect(sim_calculate_checkpoints(MONTY_TRIAL_MIN)).toHaveLength(99);
+    // 표본 점은 요청한 개수를 절대 넘지 않는다 (중복만 걷어낸다)
+    expect(sim_calculate_checkpoints(MONTY_TRIAL_MAX).length).toBeLessThanOrEqual(140);
   });
 
   it('유효하지 않은 시행 수에서 NaN 배열을 만들지 않는다', () => {
@@ -495,6 +520,18 @@ describe('유효범위 밖 입력', () => {
     expect(model_clamp_opened_count(MONTY_OPENED_DEFAULT, MONTY_DOOR_DEFAULT)).toBe(MONTY_OPENED_DEFAULT);
     expect(model_clamp_trial_count(MONTY_TRIAL_DEFAULT)).toBe(MONTY_TRIAL_DEFAULT);
     expect(model_clamp_seed(MONTY_SEED_DEFAULT)).toBe(MONTY_SEED_DEFAULT);
+  });
+
+  it('기본 시드가 시드 유효범위 안에 있다 — 밖이면 로드 즉시 잘린다', () => {
+    // 규약의 점검 항목이다. `model_clamp_seed(기본값) === 기본값`만으로는
+    // 클램프와 기본값이 같이 틀려도 통과할 수 있으므로 **범위를 리터럴로** 박는다.
+    // (`_shared/random.js`의 RNG_SEED_MIN=1 / RNG_SEED_MAX=99999999)
+    expect(MONTY_SEED_DEFAULT).toBeGreaterThanOrEqual(1);
+    expect(MONTY_SEED_DEFAULT).toBeLessThanOrEqual(99999999);
+    expect(Number.isInteger(MONTY_SEED_DEFAULT)).toBe(true);
+    // 범위 밖 시드는 실제로 잘린다 — 클램프가 살아 있다는 대조.
+    expect(model_clamp_seed(0)).toBe(1);
+    expect(model_clamp_seed(1e12)).toBe(99999999);
   });
 
   it('클램프를 거친 값은 언제나 검사를 통과한다', () => {

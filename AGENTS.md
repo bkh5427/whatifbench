@@ -1,22 +1,8 @@
-## Development
+# AGENTS
 
-When starting the dev server, use background mode:
+이 저장소의 규약은 `CLAUDE.md`에 있다. 그것을 읽어라.
 
-```
-astro dev --background
-```
+프로젝트 전체 지도는 상위 폴더의 `../CLAUDE.md`.
+현재 진행 상황과 미결 판단은 `../.claude/STATUS.md` (`/save`가 쓴다).
 
-Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
-
-## Documentation
-
-Full documentation: https://docs.astro.build
-
-Consult these guides before working on related tasks:
-
-- [Adding pages, dynamic routes, or middleware](https://docs.astro.build/en/guides/routing/)
-- [Working with Astro components](https://docs.astro.build/en/basics/astro-components/)
-- [Using React, Vue, Svelte, or other framework components](https://docs.astro.build/en/guides/framework-components/)
-- [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
-- [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
-- [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+푸시 전에 `npm run check:full`. `git push`는 `.githooks/pre-push`가 같은 게이트를 돌린다.

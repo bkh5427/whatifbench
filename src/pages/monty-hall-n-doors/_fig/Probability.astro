@@ -1,0 +1,100 @@
+---
+/*
+  몬티홀 — 확률이 어디 앉아 있는가. **이 페이지의 핵심 통찰인데 지금은 수식뿐이다.**
+  블록 2.5가 (N−1)/(N·R)을 대수로 유도하지만, "왜 그렇게 되는가"는 한 장이면 보인다:
+  내 문의 몫은 고르는 순간 얼어붙고, 나머지 몫은 **떠나지 않은 채** 살아남은 문에
+  다시 나뉜다. 띠의 총 너비가 같고 칸 수만 줄어드는 것이 그림의 전부다.
+
+  N=8, K=5로 그린다. N=3은 두 칸뿐이라 "다시 나뉜다"가 안 보이고, 큰 N은
+  내 문의 몫이 실처럼 가늘어진다. 8은 둘 다 읽히는 자리다.
+
+  2026-09-10: 가로 660폭 2단 띠 → 세로형(viewBox 420폭 이하)으로 재배치.
+  "고르기 직전" 띠를 위, "호스트가 5개를 연 뒤" 띠를 아래에 쌓는다. 내 문 칸은
+  두 띠에서 같은 x·같은 폭에 그려 눈으로 바로 맞춰 보이게 하고, 점선 세로선으로
+  한 번 더 잇는다 — 이 파일이 나르는 논지가 그 하나이므로.
+
+  규약 4: 직접 그린 SVG만. **화면 글자는 전부 영어.** 색은 토큰 + 하드코딩 폴백.
+  판정 3색(--hold/--edge/--break)은 논지 전용이라 쓰지 않는다.
+*/
+const N = 8;
+const K = 5;
+const R = N - 1 - K; // 2
+
+const X0 = 14;
+const W = 392;
+const UNIT = W / N; // 49
+const MINE_W = UNIT;
+const REST_X = X0 + MINE_W; // 63
+const REST_W = W - MINE_W; // 343
+
+const BAR_H = 44;
+const Y1 = 30; // 위 띠(고른 직후) 상단
+const ARROW_Y0 = Y1 + BAR_H + 10; // 84 — 호스트 화살표 시작
+const ARROW_CX = 210; // 전체 폭 중앙
+const Y2 = 158; // 아래 띠(호스트가 연 뒤) 상단
+const TOTAL_H = Y2 + BAR_H + 56; // 258
+
+const MINE = "fill:var(--series-1,#1f4e79)";
+const OTHER = "fill:var(--surface,#fff);stroke:var(--graphite,#2b2f33);stroke-width:1.5";
+const GONE = "fill:var(--paper-sunk,#f0f0ea);stroke:var(--rule,#d6d8d1);stroke-width:1.5";
+const SURVIVOR = "fill:var(--series-2,#c2570a);fill-opacity:0.18;stroke:var(--series-2,#c2570a);stroke-width:2";
+
+const pct = (v) => `${(v * 100).toFixed(1)}%`;
+---
+
+<figure class="fig">
+  <svg class="fig-svg" viewBox={`0 0 420 ${TOTAL_H}`} role="img"
+       aria-label={`Two stacked probability bars for ${N} doors. Top: right after you pick, your door holds one eighth and the other seven doors share seven eighths in equal slices. Bottom: after the host opens ${K} of them, your door still holds one eighth — the slice is unchanged, shown by a dashed line connecting the two bars — and the same seven eighths now sits on the ${R} doors left, so each of them is wider than before.`}>
+
+    {/* ── 띠 1: 고른 직후 ── */}
+    <text x={X0} y="22" class="fig-label-dim">Right after you pick</text>
+    <rect x={X0} y={Y1} width={MINE_W} height={BAR_H} style={MINE} />
+    {Array.from({ length: N - 1 }, (_, i) => (
+      <rect x={REST_X + i * UNIT} y={Y1} width={UNIT} height={BAR_H} style={OTHER} />
+    ))}
+    <text x={X0 + MINE_W / 2} y={Y1 + 28} text-anchor="middle" class="fig-num"
+          style="fill:var(--surface,#fff)">{pct(1 / N)}</text>
+    <text x={REST_X + REST_W / 2} y={Y1 + 28} text-anchor="middle" class="fig-label">
+      {pct((N - 1) / N)} spread over {N - 1} doors
+    </text>
+
+    {/* ── 호스트의 행동 ── */}
+    <g style="stroke:var(--graphite-soft,#5f666b);stroke-width:2;fill:none" stroke-linecap="round">
+      <path d={`M${ARROW_CX} ${ARROW_Y0} v22`} />
+      <path d={`M${ARROW_CX - 6} ${ARROW_Y0 + 22} l6 6 6 -6`} />
+    </g>
+    <text x={ARROW_CX} y={ARROW_Y0 + 44} text-anchor="middle" class="fig-label-dim">
+      the host opens {K} of them — all losing
+    </text>
+
+    {/* ── 띠 2: 호스트가 연 뒤 ── */}
+    <text x={X0} y={Y2 - 8} class="fig-label-dim">After the host opens</text>
+    <rect x={X0} y={Y2} width={MINE_W} height={BAR_H} style={MINE} />
+    {Array.from({ length: R }, (_, i) => (
+      <rect x={REST_X + i * (REST_W / R)} y={Y2} width={REST_W / R} height={BAR_H} style={SURVIVOR} />
+    ))}
+    <text x={X0 + MINE_W / 2} y={Y2 + 28} text-anchor="middle" class="fig-num"
+          style="fill:var(--surface,#fff)">{pct(1 / N)}</text>
+    {Array.from({ length: R }, (_, i) => (
+      <text x={REST_X + (i + 0.5) * (REST_W / R)} y={Y2 + 28} text-anchor="middle" class="fig-num"
+            style="fill:var(--series-2,#c2570a)">{pct((N - 1) / (N * R))}</text>
+    ))}
+
+    {/* 내 문의 몫이 안 변한다는 것 — 두 띠를 세로선으로 잇는다 */}
+    <path d={`M${X0 + MINE_W} ${Y1 + BAR_H} V${Y2}`}
+          style="stroke:var(--series-1,#1f4e79);stroke-width:1.5;stroke-dasharray:3 4;fill:none" />
+    <text x={X0} y={Y2 + BAR_H + 22} class="fig-label-dim" style="fill:var(--series-1,#1f4e79)">
+      your door: unchanged
+    </text>
+    <text x={X0} y={Y2 + BAR_H + 40} class="fig-label-dim" style="fill:var(--series-2,#c2570a)">
+      same {pct((N - 1) / N)}, now on {R} doors
+    </text>
+  </svg>
+  <figcaption>
+    <b>Why opening doors moves the answer.</b> The probability on your door is fixed
+    the moment you choose it — nothing the host does afterwards touches it. What the
+    host changes is how many doors the rest of it has to sit on. In this model that
+    is the whole mechanism, and it is why the count that matters is how many doors
+    are <em>left</em>, not how many there were.
+  </figcaption>
+</figure>

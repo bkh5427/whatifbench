@@ -1,0 +1,18 @@
+---
+/**
+ * 본문 도해 한 장. 안에 들어오는 것은 **직접 그린 SVG 하나**다 (저작권 위험 0 조항).
+ *
+ * 위젯 캔버스와 다른 물건이다. 캔버스는 JS가 돌아야 그려지고, 이것은 HTML에 그대로
+ * 있어서 검색 결과·공유 카드·JS가 꺼진 화면에서도 보인다. 그래서 페이지가 말로
+ * 설명하는 것 중 **그림이 더 빨리 말하는 것**만 여기 담는다.
+ *
+ * caption은 모델의 목소리로 쓴다 (절대규칙 1) — "이렇다"가 아니라 "이 모델에서는 이렇다".
+ */
+const { caption, variant } = Astro.props;
+if (!caption) throw new Error("도해에는 설명이 필요하다 — caption 없이 쓰지 않는다");
+---
+
+<figure class={variant ? `fig fig-${variant}` : "fig"}>
+  <slot />
+  <figcaption class="fig-cap">{caption}</figcaption>
+</figure>

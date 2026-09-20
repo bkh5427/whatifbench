@@ -1,43 +1,14 @@
-# Astro Starter Kit: Minimal
+# whatifbench.com
 
-```sh
-npm create astro@latest -- --template minimal
+Astro 정적 사이트. 개인 운영.
+
+```bash
+npm install          # prepare가 git 훅 경로를 .githooks로 맞춘다
+npm run dev          # localhost:4321
+npm test             # Vitest
+npm run build        # dist/
+npm run check:full   # 빌드 + 푸시 게이트
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
-
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
-
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+규약은 `CLAUDE.md`. main 푸시 = Cloudflare Pages 자동 배포.
+`git push`는 `.githooks/pre-push`가 게이트를 돌려 검수 안 된 페이지를 막는다.

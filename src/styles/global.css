@@ -5,31 +5,60 @@
    ============================================================ */
 
 :root {
+  /* ── Industry 디자인 시스템 ──────────────────────────────────
+     강철 블루 하나에 기술 도면의 밝은 바탕. 카드·도해·버튼은 채워진 덩어리가
+     아니라 **선으로 그린 물건**이고, 네 모서리에 등록 마크(+)가 붙는다.
+     이름은 예전 것을 그대로 쓴다 — 위젯 수십 곳이 이 이름을 읽는다. */
+
   /* 바탕과 잉크 */
-  --paper: #faf9f6;
-  --paper-sunk: #f0f0ea;
-  --surface: #ffffff;      /* 위젯처럼 종이 위에 얹히는 면 */
-  --surface-mark: #e4e5db; /* 표에서 '현재 행'을 실제로 보이게 하는 강조 */
-  --graphite: #2b2f33;
-  --graphite-soft: #5f666b;
-  --rule: #d6d8d1;
+  --paper: #f2f2f3;
+  --paper-sunk: #e9e9ea;
+  --surface: #f5f5f8;      /* 위젯처럼 바탕 위에 얹히는 면 */
+  --surface-mark: #e7e7ea; /* 표에서 '현재 행'을 실제로 보이게 하는 강조 */
+  --graphite: #1d1f20;
+  --graphite-soft: #5d5d60;
+  --rule: color-mix(in srgb, #1d1f20 16%, transparent);
+  /* 컨트롤 경계용. --rule(1.38:1)은 장식선 전용이다 — 버튼·입력에는 WCAG 1.4.11이
+     3:1을 요구한다. 45%면 --paper 위에서 약 4.1:1이다. */
+  --rule-strong: color-mix(in srgb, #1d1f20 45%, transparent);
+
+  /* 강철 계조 — OKLCH 한 척도에서 뽑아 같은 단계면 같은 무게로 읽힌다 */
+  --steel-100: #eef6ff;
+  --steel-200: #d6ebff;
+  --steel-300: #b5d9fd;
+  --steel-400: #94bce3;
+  --steel-500: #749dc4;
+  --steel: #5980a6;
+  --steel-600: #597ea3;
+  --steel-700: #416180;
+  --steel-800: #2c455d;
+  --steel-900: #1d2d3d;
 
   /* 판정 3색 — 위젯과 본문이 공유한다 */
   --hold: #2f5d50;
-  --hold-bg: #e6efea;
+  --hold-bg: #e4ece8;
   --edge: #8a6414;
-  --edge-bg: #f5eeda;
+  --edge-bg: #f3ecd8;
   --break: #a63d2e;
-  --break-bg: #f6e6e1;
+  --break-bg: #f4e4df;
 
-  --link: #1f4e79;
+  --link: #416180;
 
   /* 그래프 계열 색 — 판정 3색(hold/edge/break)과 역할이 다르므로 따로 둔다.
      파랑/주황은 적록색각이상에서도 구분되는 조합. 명도도 벌려 흑백 출력까지 견딘다. */
-  --series-1: #1f4e79;
+  --series-1: #2c455d;
   --series-2: #c2570a;
 
-  /* 타이포 스케일 (약 1.26 등비) */
+  /* 타이포 스케일 (약 1.26 등비)
+     ── 글자 크기 계약 ─────────────────────────────────────────
+     크기는 **세 층뿐**이고, 층을 정하는 것은 '어디에 있는가'가 아니라 '무엇인가'다.
+       표제  h1 42 / h2 33 / h3 26 — 문서 위계. 상자 안이라고 줄이지 않는다
+       본문  19px — 흐름 속의 문장. p · li · 리드 상자의 문장
+       보조  16px — 문장이 아닌 것. 캡션 · 바이라인 · 브레드크럼 · 안내문(.note)
+                    · 위젯 UI(라벨·버튼·출력) · 수식 상자의 기호표와 유도표
+       미세  13px — 계기판 라벨. 위젯 판독 라벨 · 범례 · 표 머리
+     도입부(덱·리드)만 21px로 한 단계 크다. **의도한 예외**다 —
+     첫 화면에서 눈이 가장 먼저 닿는 두 줄이고, 여기서 읽을지 말지가 갈린다. */
   --t-xs: 0.8125rem;
   --t-sm: 1rem;
   --t-base: 1.1875rem;
@@ -38,13 +67,18 @@
   --t-xl: 2.0625rem;
   --t-2xl: 2.625rem;
 
-  /* 본문 칼럼 폭. 헤더·푸터(.wrap-wide)와 같은 60rem으로 맞춰 세로 줄을 정렬한다.
-     가독성 권장 폭(60~75자)보다 넓다는 것은 인지하고 택한 값이다. */
-  --measure: 60rem;
+  /* 지면 폭 **하나**. 머리말·꼬리말(.wrap-wide)·산문·위젯·차트·표가 전부 이 값을 쓴다.
+     60rem이던 때 산문 한 줄이 110~113자로 실측됐다(권장 상한 75자의 1.5배). 그래서
+     산문만 44rem으로 좁히는 2열 격자를 한 번 썼는데, 그러면 산문과 위젯의 **오른쪽
+     끝이 216px 어긋난다**. 왼쪽 기준선이 같아도 그 어긋남이 눈에 걸린다는 판단이라
+     격자를 걷고 전부 46rem으로 맞췄다 — 본문 696px, 한 줄 약 81~87자다.
+     차트 플롯은 782 → 558px로 좁아지지만 로그 눈금 다섯 개는 그대로 들어간다
+     (필요 간격 44px, 실제 140px). 잃는 것은 도구 격자가 3열에서 2열이 되는 것뿐이다. */
+  --measure: 46rem;
   --gap: 1.5rem;
 
-  --sans: "IBM Plex Sans", system-ui, sans-serif;
-  --serif: "Source Serif 4", Georgia, serif;
+  --sans: "Barlow", system-ui, sans-serif;
+  --serif: "Barlow Condensed", "Barlow", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
@@ -56,9 +90,12 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--graphite);
-  font-family: var(--serif);
+  /* 본문은 Barlow(--sans). --serif(Barlow Condensed)는 **표제 전용**이다 —
+     좁은 글자로 19px 산문을 길게 깔면 줄이 빽빽해져 읽는 속도가 떨어진다. */
+  font-family: var(--sans);
   font-size: var(--t-base);
-  line-height: 1.68;
+  font-weight: 400;
+  line-height: 1.62;
   font-synthesis: none;
 }
 
@@ -70,29 +107,76 @@ body {
   padding: 0 1.25rem;
 }
 
+/* 머리말·꼬리말. 본문과 같은 폭을 써야 세로 줄이 맞는다. 60rem을 여기에 한 번 더
+   적어두면 --measure를 줄일 때 이쪽만 남아 어긋난다 — 같은 변수를 읽는다. */
 .wrap-wide {
-  max-width: 60rem;
+  max-width: var(--measure);
   margin: 0 auto;
   padding: 0 1.25rem;
 }
 
 main { padding-top: 2.5rem; padding-bottom: 5rem; }
 
+/* 스킵 링크로 포커스를 받은 <main>에는 테두리를 그리지 않는다. 프로그램적으로
+   옮긴 포커스라 :focus-visible에는 걸리지 않으므로, 키보드 사용자에게 보이는
+   포커스 링은 그대로 남는다. */
+main[tabindex="-1"]:focus:not(:focus-visible) { outline: none; }
+
+/* --- 반복 블록 건너뛰기 (WCAG 2.4.1) ---
+   페이지마다 같은 헤더가 똑같이 반복된다. 그 앞을 건너뛰는 유일한 길.
+   화면 밖으로 밀어두되 DOM과 포커스 순서에는 남긴다 — display:none이나
+   visibility:hidden으로 숨기면 Tab이 닿지 않아 있으나 마나가 된다. */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0.75rem;
+  z-index: 10;
+  transform: translateY(-150%);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1rem;
+  background: var(--surface);
+  color: var(--link);
+  border: 1px solid var(--rule);
+  border-bottom: 3px solid var(--link);
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+  text-decoration: none;
+}
+.skip-link:focus { transform: translateY(0); }
+
 /* --- 표제 --- */
 
 h1, h2, h3 {
-  font-family: var(--sans);
+  /* Barlow Condensed. 좁은 글자라 같은 크기에서도 덜 무겁게 보이므로
+     한 단계 크게 잡고 자간을 조인다. 대문자 소제목은 별도 규칙이 처리한다. */
+  font-family: var(--serif);
   font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.015em;
+  line-height: 1.04;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
   color: var(--graphite);
 }
 
-h1 { font-size: var(--t-xl); margin: 0 0 1rem; }
-h2 { font-size: var(--t-md); margin: 2.75rem 0 0.75rem; }
-h3 { font-size: var(--t-base); margin: 2rem 0 0.5rem; }
+/* 위계가 보여야 스캔이 된다. 본문 19px에 h2가 21px이면 한 눈에는 같은 크기라
+   섹션의 경계가 안 잡힌다. 33 / 26 / 21 / 19로 벌린다. */
+h1 { font-size: var(--t-2xl); margin: 0 0 1rem; }
+h2 {
+  font-size: var(--t-xl);
+  /* 격자를 걷으면서 앞 문단의 아래 마진(1.15rem)이 다시 상쇄된다 — 예전 3.9rem이
+     2.75rem으로 줄어 절 경계가 흐려졌다. 그만큼을 여기서 되돌린다. */
+  margin: 3.4rem 0 0.75rem;
+}
+h3 { font-size: var(--t-lg); margin: 2rem 0 0.5rem; }
 
 p { margin: 0 0 1.15rem; }
+
+/* --- 산문 줄 길이 ---
+   산문에 별도 상한을 두지 않는다. `.wrap`의 --measure 하나가 글과 그림의
+   폭을 함께 정한다. 여기에 max-width를 다시 걸면 그 순간 h2·p만 좁아지고
+   위젯·표·차트는 그대로 남아 좌우 끝이 어긋난다.
+   좁히고 싶으면 --measure를 줄인다 — 글과 그림이 같이 좁아진다. */
 
 a { color: var(--link); text-decoration-thickness: 1px; text-underline-offset: 2px; }
 a:hover { text-decoration-thickness: 2px; }
@@ -111,6 +195,9 @@ hr {
   margin: 2.5rem 0;
 }
 
+/* 0.9em은 스케일의 새 단계가 아니라 글꼴 사이의 광학 보정이다. 캔버스로 잰
+   x-높이 비(Source Serif 4 : IBM Plex Mono)가 0.879, 대문자 높이 비가 0.956이다.
+   1em으로 두면 code가 본문보다 커 보인다. 상대값이므로 본문 크기를 바꾸면 따라간다. */
 code {
   font-family: var(--mono);
   font-size: 0.9em;
@@ -120,21 +207,26 @@ code {
 }
 
 /* --- 판정 띠: 이 사이트의 시그니처 --- */
-/* 초록에서 적색으로 넘어가는 세 칸. 콘텐츠의 구조를 그대로 시각화한다. */
+/* 성립 → 경계 → 파탄. 예전에는 초록·노랑·빨강 세 칸이었는데, 머리띠에 놓으면
+   '신호등'으로 읽혀 페이지 어디에도 없는 세 번째 색 체계가 생겼다.
+   판정 3색(--hold/--edge/--break)은 뜻을 지고 있으므로 위젯 안에 그대로 두고,
+   머리띠는 강철 계조 3단으로만 넘어가게 한다 — 단계는 보이고 색은 하나다. */
 
 .regime-band {
   display: flex;
-  height: 5px;
+  height: 3px;
   margin: 0;
 }
 .regime-band span { flex: 1; }
-.regime-band span:nth-child(1) { background: var(--hold); }
-.regime-band span:nth-child(2) { background: var(--edge); }
-.regime-band span:nth-child(3) { background: var(--break); }
+.regime-band span:nth-child(1) { background: var(--steel-300); }
+.regime-band span:nth-child(2) { background: var(--steel-600); }
+.regime-band span:nth-child(3) { background: var(--steel-900); }
 
 /* --- 머리말 --- */
 
 .site-head {
+  /* Tools 패널이 이 상자를 기준으로 헤더 바로 아래 자리잡는다. */
+  position: relative;
   border-bottom: 1px solid var(--rule);
 }
 
@@ -172,7 +264,8 @@ code {
   font-family: var(--sans);
   font-size: var(--t-sm);
 }
-.site-nav a {
+.site-nav a,
+.nav-tools-summary {
   color: var(--graphite-soft);
   text-decoration: none;
   /* 터치 타깃 확보 */
@@ -181,10 +274,99 @@ code {
   min-height: 44px;
 }
 .site-nav a:hover,
-.site-nav a[aria-current="page"] {
+.site-nav a[aria-current="page"],
+.nav-tools-summary:hover,
+.nav-tools-summary[aria-current="true"] {
   color: var(--graphite);
   text-decoration: underline;
   text-underline-offset: 4px;
+}
+
+/* --- Tools 디스클로저 ---
+   카테고리 4개(=nav 5항목)까지는 평면 나열이 360px에서 한 줄이었다.
+   5개부터 두 줄로 깨진다(`tools.js`의 CATEGORY_MAX_BEFORE_HEADER_CHANGE) —
+   그 계획대로 로고 + Tools + About 세 항목으로 줄이고 카테고리·도구를
+   패널 하나에 담는다. `<details>/<summary>`라 열고 닫는 동작 자체는
+   JS 없이도 탭·클릭·키보드·스크린리더 전부 된다. */
+.nav-tools { position: static; }
+.nav-tools-summary {
+  gap: 0.4rem;
+  cursor: pointer;
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* 브라우저 기본 삼각형 마커를 지우고 우리 SVG 화살표로 바꾼다 */
+.nav-tools-summary::-webkit-details-marker { display: none; }
+.nav-tools-summary::marker { content: ""; }
+.nav-caret { flex-shrink: 0; transition: transform 150ms ease-out; }
+.nav-tools[open] .nav-caret { transform: rotate(180deg); }
+
+/* 패널은 헤더(=position:relative 기준) 바로 아래, 화면 폭 전체에 뜬다.
+   안쪽 콘텐츠만 .wrap-wide로 본문과 같은 폭에 맞춘다 — 드롭다운 배경은
+   가장자리까지, 글은 나머지 지면과 같은 세로줄에 정렬되게. */
+.nav-panel {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  z-index: 20;
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.nav-panel-inner {
+  display: grid;
+  /* auto-fit + minmax: 카테고리가 늘어도 열이 알아서 접힌다(.foot-groups·.tool-grid와
+     같은 관용구). 360px에서는 1열, 60rem 지면 폭에서는 3열 안팎으로 스스로 줄을 짠다.
+     카테고리가 6~8개로 늘면 열 수는 그대로 버티고 세로로 줄이 늘 뿐이다 —
+     짧은 뷰포트에서 그 세로 길이를 감당하는 것이 위 max-height + 스크롤이다. */
+  grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+  gap: 0.5rem 2rem;
+  padding: 1.5rem 1.25rem 1.75rem;
+}
+.nav-panel-group {
+  min-width: 0;
+  padding-top: 0.75rem;
+}
+.nav-panel-heading {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: 0.2rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: var(--t-sm);
+  color: var(--graphite);
+  text-decoration: none;
+}
+.nav-panel-heading:hover,
+.nav-panel-heading[aria-current] {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.nav-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.nav-panel-list a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+  color: var(--graphite-soft);
+  text-decoration: none;
+}
+.nav-panel-list a:hover,
+.nav-panel-list a[aria-current="page"] {
+  color: var(--graphite);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* --- 꼬리말 --- */
@@ -215,7 +397,13 @@ code {
   color: var(--graphite-soft);
   margin-bottom: 0.75rem;
 }
-.crumbs a { color: var(--graphite-soft); }
+/* 인라인 링크지만 손가락으로도 눌린다 — 세로 패딩은 줄 높이를 바꾸지 않고
+   히트 영역만 24px 위로 늘린다 (WCAG 2.5.8). */
+.crumbs a {
+  color: var(--graphite-soft);
+  display: inline-block;
+  padding: 0.16rem 0;
+}
 .crumbs span { margin: 0 0.35rem; }
 
 .foot-groups {
@@ -224,13 +412,20 @@ code {
   gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
+/* 터치 타깃 44px — 헤더 nav·슬라이더·토글과 같은 기준이다.
+   padding으로 키우면 글꼴 크기에 따라 값이 흔들린다. min-height로 못 박고
+   flex 세로 중앙정렬로 텍스트를 가운데 둔다 (block + min-height면 글자가
+   상자 위쪽에 붙어 링크 사이 간격만 벌어진다).
+   box-sizing: border-box이므로 min-height가 곧 최종 높이다:
+   max(줄상자 1rem × 1.68 = 26.88px, 44px) = 44px. */
 .foot-groups a {
-  display: block;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
   font-family: var(--sans);
   font-size: var(--t-sm);
   color: var(--graphite-soft);
   text-decoration: none;
-  padding: 0.3rem 0;
 }
 .foot-groups a:hover { color: var(--link); }
 .foot-label {
@@ -253,18 +448,30 @@ code {
 
 .hero { padding: 3.5rem 0 2.25rem; }
 
+/* 연락처 주소 한 줄. 페이지에 인라인 style로 박혀 있어 스케일을 여기서 못 잡았다. */
+.contact-address {
+  font-family: var(--sans);
+  font-size: var(--t-md);
+}
+
+/*
+  히어로만 `ch` 폭을 따로 갖고 있었다. 표제는 16ch라 36자 문장이 세 줄로
+  강제로 끊겼고("Move the number / and see what / happens."), 본문이 920px로
+  넓어진 뒤에는 홈만 좁아 보였다. **폭 제약을 두지 않는다** — 나머지 산문과
+  같은 컨테이너 폭에서 자연스럽게 끊긴다.
+*/
 .hero h1 {
   font-size: var(--t-2xl);
-  max-width: 16ch;
   margin-bottom: 1.25rem;
+  text-wrap: balance; /* 두 줄 이상이 될 때 줄 길이를 고르게. 미지원 브라우저는 무시 */
 }
 
 .hero p {
   font-size: var(--t-md);
   line-height: 1.5;
   color: var(--graphite-soft);
-  max-width: 46ch;
   margin-bottom: 0;
+  text-wrap: pretty;
 }
 
 /* --- 분류 목록 --- */
@@ -297,9 +504,10 @@ code {
   margin: 1.75rem 0;
 }
 
+/* 위 .lead-kicker와 같은 이유로 --t-sm. 본문 흐름 안의 날짜 줄이다. */
 .legal-date {
   font-family: var(--sans);
-  font-size: var(--t-xs);
+  font-size: var(--t-sm);
   color: var(--graphite-soft);
   margin-bottom: 2rem;
 }
@@ -439,7 +647,244 @@ code {
 /* 견본 굵기도 곡선과 맞춘다 — 색각이상에서 색 대신 굵기로 짝을 찾는다 */
 .legend-switch { background: var(--series-1); height: 2px; }
 .legend-stay { background: var(--series-2); height: 4px; }
-.legend-note { flex-basis: 100%; }
+/* 범례 아래 붙는 설명 한 줄. 본문 크기로 렌더되면 그림 설명이 아니라
+   본문처럼 읽힌다 — 8개 위젯이 이 클래스를 쓴다. */
+.legend-note {
+  flex-basis: 100%;
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  color: var(--graphite-soft);
+  margin: 0 0 0.5rem;
+}
+/* 종이접기: 두께 곡선(실선)과 기준선(점선). 굵기로도 갈린다 */
+.legend-thickness { background: var(--series-1); height: 3px; }
+.legend-reference {
+  background: none;
+  border-top: 2px dashed var(--graphite);
+  height: 0;
+  opacity: 0.55;
+}
+
+/* --- 축 토글 (linear / log) ---
+   사이트에 버튼·탭 선례가 없다. 라디오 그룹으로 만들어 화살표 키 이동을 그대로 쓴다.
+   선택 상태를 색으로만 표시하지 않는다 — 아래 밑줄이 색 아닌 표시다. */
+/* 토글 행의 라벨은 <label>이 아니라 <span>이다 (div를 라벨할 수 없다).
+   슬라이더 행과 같은 모양으로 보이게 맞춘다. */
+.widget-label > span:not(.widget-hint) {
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+}
+/* --- 도구 카드 그리드 ---
+   홈과 카테고리 인덱스가 같은 것을 쓴다. 같은 도구가 두 페이지에서 다르게 보이면
+   "같은 것"이라는 신호가 약해진다.
+   gap을 1px로 두고 컨테이너 배경을 --rule로 깔면 카드 사이가 헤어라인 한 줄이 된다 —
+   카드마다 테두리를 그리면 맞닿은 변에서 2px로 겹친다. 반경·그림자 없음. */
+.tool-grid {
+  display: grid;
+  /* auto-fit이 아니라 **auto-fill**이다. auto-fit은 카드가 하나일 때 60rem 전폭으로
+     늘려 거대한 빈 상자를 만든다. 발행 1개는 실제로 일어나는 상태다. */
+  grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin: 1.25rem 0 2.5rem;
+}
+.tool-card {
+  position: relative; /* 제목 링크의 확장 히트영역 기준 */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--surface);
+  padding: 1.15rem;
+}
+.tool-card:hover { background: var(--paper-sunk); }
+.tool-card :is(h2, h3) { margin: 0; font-size: var(--t-base); }
+.tool-card :is(h2, h3) a { text-decoration: none; }
+/* 카드 전체를 클릭 영역으로 덮는다. 링크는 제목 하나뿐이라 중첩 링크가 없고,
+   스크린리더는 도구 이름만 짧게 읽는다 (blurb·숫자가 링크 이름에 섞이지 않는다). */
+.tool-card :is(h2, h3) a::after { content: ""; position: absolute; inset: 0; }
+.tool-card :is(h2, h3) a:hover { text-decoration: underline; text-underline-offset: 2px; }
+.tool-card p { margin: 0; font-size: var(--t-sm); color: var(--graphite-soft); }
+/* 핵심 숫자. .readout과 같은 관용구를 쓴다 — 새 시각 언어를 만들지 않는다.
+   margin-top:auto로 카드 바닥에 붙어 카드 높이가 달라도 줄이 맞는다. */
+.tool-figure {
+  margin-top: auto;
+  padding: 0.7rem 0.85rem;
+  background: var(--paper-sunk);
+}
+.tool-card:hover .tool-figure { background: var(--surface-mark); }
+.tool-figure-value {
+  display: block;
+  font-family: var(--mono);
+  font-size: var(--t-lg);
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.tool-figure-label {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  line-height: 1.35;
+  color: var(--graphite-soft);
+}
+/* 포커스 링을 링크 텍스트가 아니라 실제 클릭 영역(카드)에 그린다.
+   카드끼리 맞닿아 있으므로 outline을 안쪽으로 넣는다. */
+.tool-card:has(a:focus-visible) { outline: 2px solid var(--link); outline-offset: -3px; }
+.tool-card a:focus-visible { outline: none; }
+/* 한 장뿐일 때 가로 피처 카드로 승격. 빈 열이 남지 않는다. */
+.tool-card:only-child { grid-column: 1 / -1; flex-direction: row; align-items: flex-start; gap: 1.5rem; }
+.tool-card:only-child .tool-figure { margin-top: 0; flex: 0 0 12rem; }
+.tool-card:only-child .tool-body { min-width: 0; }
+@media (max-width: 34rem) {
+  .tool-card:only-child { flex-direction: column; }
+  .tool-card:only-child .tool-figure { flex: 0 0 auto; margin-top: 0.25rem; }
+}
+/* 카테고리 섹션 제목 아래의 한 줄 설명. INTROS의 description을 **본문 텍스트로** 쓴다 —
+   title 속성이나 접힘 뒤에 두면 "호버 뒤에 숨기지 말 것" 규약 위반이다. */
+.section-lede {
+  margin: 0.35rem 0 0;
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+  color: var(--graphite-soft);
+}
+
+/* --- 스케일 히어로 ---
+   슬라이더를 끌면 배지가 넘어가고 숫자가 굴러간다. 이 위젯의 주인공.
+   계열색(--series-*)과 판정 3색은 쓰지 않는다 — 그 색들은 다른 뜻을 갖고 있다. */
+.scale-hero {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: var(--paper-sunk);
+  padding: 1.1rem 1.25rem;
+  margin: 1.25rem 0 0;
+}
+.scale-badge {
+  flex: 0 0 auto;
+  width: 6rem;
+  height: 6rem;
+  border: 2px solid var(--graphite);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  position: relative;
+  background: var(--surface);
+}
+.scale-badge-card {
+  grid-area: 1 / 1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--graphite);
+  transition: transform 180ms ease-out, opacity 180ms ease-out;
+}
+/* 아직 아무것도 못 넘은 상태 — 다음 목표를 흐리게 보여준다 */
+.scale-badge[data-state="ahead"] .scale-badge-card { color: var(--graphite-soft); opacity: 0.55; }
+/* 지름의 74%. 원에 내접하는 정사각(70.7%)보다 크지만 도형이 모서리를 채우지 않아
+   테두리에 닿지 않는다 — 가장 멀리 뻗는 것(태양의 광선)까지 반지름 안에 있다. */
+.scale-badge-icon { width: 4.45rem; height: 4.45rem; }
+/* 나가는 장·들어오는 장. 접기가 늘면 아래에서 위로, 줄이면 반대로. */
+.scale-badge-card.is-leaving-up { transform: translateY(-115%); opacity: 0; }
+.scale-badge-card.is-leaving-down { transform: translateY(115%); opacity: 0; }
+.scale-badge-card.is-entering-up { transform: translateY(115%); opacity: 0; }
+.scale-badge-card.is-entering-down { transform: translateY(-115%); opacity: 0; }
+
+.scale-figures { min-width: 0; }
+.scale-value {
+  font-family: var(--mono);
+  font-size: var(--t-xl);
+  line-height: 1.1;
+  margin: 0;
+  /* 자릿수가 바뀔 때 줄이 흔들리지 않게 폭을 고정한다 */
+  font-variant-numeric: tabular-nums;
+}
+.scale-human {
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+  color: var(--graphite-soft);
+  margin: 0.15rem 0 0;
+}
+.scale-caption {
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  color: var(--graphite-soft);
+  margin: 0.4rem 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.scale-caption strong { color: var(--graphite); font-weight: 600; letter-spacing: 0; text-transform: none; }
+
+@media (max-width: 34rem) {
+  .scale-hero { gap: 0.9rem; padding: 0.9rem 1rem; }
+  .scale-badge { width: 4.75rem; height: 4.75rem; }
+  .scale-badge-icon { width: 3.5rem; height: 3.5rem; }
+  .scale-value { font-size: var(--t-md); }
+}
+
+.row-icon {
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.22em;
+  margin-right: 0.45em;
+  color: var(--graphite);
+}
+
+.legend-cursor { background: var(--series-2); height: 4px; }
+.legend-comb { background: var(--series-1); width: 3px; height: 0.7rem; }
+.legend-dot {
+  background: var(--graphite);
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
+.widget-toggle {
+  display: flex;
+  border: 1px solid var(--rule);
+  flex: 0 0 auto;
+}
+.widget-toggle-option {
+  display: block;
+  cursor: pointer;
+}
+.widget-toggle-option + .widget-toggle-option { border-left: 1px solid var(--rule); }
+.widget-toggle-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+.widget-toggle-option span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 0.9rem;
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+  background: var(--paper-sunk);
+  color: var(--graphite-soft);
+  box-shadow: inset 0 -3px 0 transparent;
+}
+.widget-toggle-option input:checked + span {
+  background: var(--surface-mark);
+  color: var(--graphite);
+  font-weight: 500;
+  box-shadow: inset 0 -3px 0 var(--graphite);
+}
+/* 라디오 원을 숨겼으므로 포커스 링을 라벨로 옮긴다 */
+.widget-toggle-option input:focus-visible + span {
+  outline: 2px solid var(--link);
+  outline-offset: -2px;
+}
 
 /* --- 위젯 민감도 표 --- */
 
@@ -496,9 +941,11 @@ code {
   color: var(--graphite);
   margin: 0 0 1.25rem;
 }
+/* 읽는 흐름 안의 글은 13px까지 내려가지 않는다. 13px(--t-xs)은 위젯 내부
+   — 표 머리·캡션·힌트·범례 — 전용이다. 대문자·자간 확장은 그대로라 본문과 섞이지 않는다. */
 .lead-kicker {
   font-family: var(--sans);
-  font-size: var(--t-xs);
+  font-size: var(--t-sm);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--graphite-soft);
@@ -510,6 +957,34 @@ code {
   color: var(--break);
 }
 
+/* --- 화면 읽는 법 (블록 3) --- */
+/* 위젯 바로 다음에 온다. 그래프를 보여줬으면 어떻게 보는지가 딸려와야 하고,
+   유도식(.math)을 먼저 만나면 독자가 거기서 이탈한다.
+   시각적으로도 위젯 카드의 아랫단에 이어 붙여 한 덩어리로 읽히게 한다. */
+.howto {
+  padding: 1.4rem 1.5rem 0.4rem;
+  margin: 0 0 2.75rem;
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+}
+/* 위젯 클래스는 JS가 붙인다. 스크립트가 안 돌면 이 선택자도 안 맞아
+   음수 여백이 리드 문단 위로 올라타는 일이 생기지 않는다. */
+/* 한때 `.widget + .howto`로 '읽는 법' 상자를 위젯 카드 바로 아래에 붙였다.
+   지금은 위젯과 그 상자 사이에 결론 절이 통째로 들어가므로 인접 선택자가 맞지 않는다.
+   결론을 먼저 주는 순서가 옳다고 판단했으니, 죽은 규칙을 지운다. */
+/* 상자 안에 있어도 <h2>다. **크기를 따로 주지 않는다** — 상자라는 사실은 배경·테두리가
+   이미 말하고 있으므로 크기로 또 말하지 않는다.
+   회귀 이력: 표제 스케일을 한 단계 올렸을 때(h2 26 → 33px) 여기와 `.math-title`만
+   --t-lg에 묶여 있어 h2가 화면에서 두 크기로 갈렸다. 그래서 override를 지웠다. */
+.howto > h2 {
+  margin: 0 0 0.9rem;
+}
+.howto p { margin-bottom: 1rem; }
+
+@media (max-width: 34rem) {
+  .howto { padding: 1.1rem 1rem 0.3rem; }
+}
+
 /* --- 수식 블록 --- */
 /* 외부 수식 라이브러리 없이 CSS만으로 조판한다. */
 
@@ -519,13 +994,10 @@ code {
   padding: 1.25rem 0 1.5rem;
   margin: 2rem 0;
 }
+/* 이것은 <h2>다. 한때 혼자 13px 대문자 캡션이었고, 그 다음에는 혼자 26px이었다.
+   둘 다 "문서 위계상 같은 층인데 화면에서는 다른 층"이라는 같은 결함이다.
+   **크기를 주지 않는다** — 여백만 잡는다. */
 .math-title {
-  font-family: var(--sans);
-  font-size: var(--t-xs);
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--graphite-soft);
   margin: 0 0 1.25rem;
 }
 
@@ -637,4 +1109,624 @@ code {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ── 바이라인 / 아바타 ──────────────────────────────────────
+   제목 바로 아래. 본문을 읽기 전에 "누가 썼고 어느 등급인가"가 보여야 한다.
+   아바타는 SVG라 크기를 픽셀로 받는다 — 여기서 다시 늘리지 않는다. */
+.byline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin: 0 0 1.6rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--rule);
+}
+.avatar { display: block; flex: 0 0 auto; border-radius: 50%; }
+.byline-text {
+  margin: 0;
+  font-size: var(--t-sm);
+  line-height: 1.45;
+  color: var(--graphite-soft);
+}
+.byline-text a { font-weight: 600; color: var(--link); }
+.byline-grade { color: var(--graphite-soft); }
+.byline-dim { color: var(--graphite-soft); font-variant-numeric: tabular-nums; }
+
+/* 좁은 화면에서는 등급 설명을 줄로 내린다. 한 줄에 밀어 넣으면 3줄로 흐른다. */
+@media (max-width: 30rem) {
+  .byline-sep { display: none; }
+}
+
+/* ── 페이지 끝 "Read next" ──────────────────────────────────
+   여기가 비면 도구 페이지가 막다른 골목이 된다. */
+.read-next { margin-top: 2.5rem; }
+.read-next > .note { margin-top: 0.9rem; }
+
+/* ── About의 저자 카드 ──────────────────────────────────────
+   E-E-A-T 신호는 문단 속에 묻어두면 스캔하는 독자에게 닿지 않는다. */
+.author-card {
+  display: flex;
+  gap: 1.4rem;
+  align-items: flex-start;
+  margin: 0 0 2rem;
+  padding: 1.2rem;
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+}
+.author-name {
+  margin: 0 0 0.2rem;
+  font-weight: 600;
+  font-size: var(--t-base);
+}
+.author-line { margin: 0 0 0.7rem; font-size: var(--t-sm); color: var(--graphite-soft); }
+.author-facts { margin: 0; padding-left: 1.1rem; font-size: var(--t-sm); }
+.author-facts li { margin: 0.2rem 0; color: var(--graphite-soft); }
+
+@media (max-width: 30rem) {
+  .author-card { flex-direction: column; gap: 0.9rem; }
+}
+
+/* ── 프리셋 버튼 묶음 (_shared/controls.js) ─────────────────
+   라디오가 아니라 버튼이다 — 프리셋은 상태의 이름이 아니라 동작이고,
+   슬라이더를 한 칸만 움직여도 어느 프리셋도 선택된 상태가 아니게 된다.
+   지금 상태가 어느 프리셋과 같은지는 aria-pressed가 알린다. */
+.widget-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1.4rem;
+}
+.widget-presets-label {
+  flex-basis: 100%;
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  color: var(--graphite-soft);
+}
+.widget-preset {
+  min-height: 44px;
+  padding: 0 0.9rem;
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+  color: var(--graphite);
+  background: var(--paper-sunk);
+  border: 1px solid var(--rule);
+  cursor: pointer;
+}
+.widget-preset:hover { background: var(--surface-mark); }
+.widget-preset[aria-pressed="true"] {
+  background: var(--surface);
+  border-color: var(--graphite);
+  box-shadow: inset 0 -3px 0 var(--link);
+}
+
+/* 슬라이더를 그룹으로 묶는다. 여덟 개가 한 줄로 쌓이면 어느 것이 어느 그룹인지
+   손 옆에서 알 수 없다. fieldset/legend라 스크린리더도 같은 묶음을 듣는다. */
+.widget-group {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 0 0 1.2rem;
+  padding: 0.9rem 0 0;
+  /* `<fieldset>`은 기본 `min-inline-size: min-content`라 **자식보다 좁아지지 않는다.**
+     안에 긴 옵션을 가진 `<select>`가 하나만 있어도 360px에서 페이지 전체가
+     가로로 스크롤된다(WCAG Reflow 위반). 실측으로 잡았다 — 다른 요소에는
+     이 기본값이 없어서 fieldset을 처음 쓴 위젯에서만 드러났다. */
+  min-inline-size: 0;
+  min-width: 0;
+}
+.widget-group-title {
+  padding: 0;
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--graphite);
+}
+
+/* ── 비율 막대 ──────────────────────────────────────────────
+   막대의 기준선은 언제나 0이다. 데이터에 맞춰 축을 조이면 그림이 거짓말을 한다 —
+   두 막대가 구분되지 않을 때는 축을 조이는 대신 캡션이 "구분 불가"라고 적는다. */
+.bars { margin: 1.5rem 0 0.5rem; }
+/* 블록 하나가 그리드 하나다. 줄마다 그리드를 따로 두면 라벨 길이에 따라
+   트랙 폭이 줄마다 달라져 "두 막대는 같은 축"이라는 전제가 깨진다
+   (실측: 같은 블록 안에서 530px 대 504px). 줄은 display:contents로 흘린다. */
+.bar-block {
+  margin: 0 0 1.3rem;
+  display: grid;
+  grid-template-columns: minmax(5rem, 9rem) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+}
+/* 제목·설명 문단은 격자를 가로지른다 */
+.bar-block > p { grid-column: 1 / -1; }
+/* 가중치 띠 블록은 칸이 셋이다 (라벨·띠·값). 막대 블록과 칸 수가 다르다. */
+.strip-block { grid-template-columns: minmax(5rem, 9rem) minmax(0, 1fr) auto; }
+.bar-block[data-pooled="true"] {
+  border-top: 2px solid var(--graphite);
+  padding-top: 0.9rem;
+}
+.bar-block-title {
+  margin: 0 0 0.5rem;
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--graphite-soft);
+}
+.bar-row,
+.strip-row { display: contents; }
+.bar-label { color: var(--graphite-soft); }
+.bar-track,
+.strip-track {
+  display: flex;
+  height: 1.1rem;
+  min-width: 0;
+  background: var(--paper-sunk);
+}
+.bar-fill { display: block; height: 100%; }
+/* 색만으로 구분하지 않는다 — 두 계열은 색과 함께 무늬로도 갈린다.
+   흑백 출력과 적록색각이상에서 남는 것은 무늬 쪽이다. */
+.bar-fill[data-series="1"] { background: var(--series-1); }
+.bar-fill[data-series="2"] {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--series-2),
+    var(--series-2) 5px,
+    color-mix(in srgb, var(--series-2) 70%, #fff) 5px,
+    color-mix(in srgb, var(--series-2) 70%, #fff) 10px
+  );
+}
+.bar-value {
+  font-family: var(--mono);
+  min-width: 5ch;
+  text-align: right;
+}
+.bar-share {
+  font-size: var(--t-xs);
+  color: var(--graphite-soft);
+  min-width: 10ch;
+  text-align: right;
+}
+
+/* 가중치 띠 — 각 선택지의 시도가 두 그룹에 어떻게 갈렸는지.
+   역전을 만드는 것이 이 띠라는 것이 페이지의 논지다. */
+.strip-part { display: block; height: 100%; }
+.strip-part[data-part="1"] { background: var(--graphite); }
+.strip-part[data-part="2"] { background: var(--rule); }
+
+@media (max-width: 34rem) {
+  /* 좁은 화면에서는 한 줄이 세 단으로 접힌다 — 이때는 줄마다 격자를 되돌린다.
+     이름 붙인 영역은 줄 단위로만 성립하기 때문이다. */
+  .bar-block { display: block; }
+  .bar-row,
+  .strip-row {
+    display: grid;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin: 0 0 0.4rem;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "label value"
+      "track track"
+      "share share";
+  }
+  .bar-label { grid-area: label; }
+  .bar-value { grid-area: value; }
+  .bar-track, .strip-track { grid-area: track; }
+  .bar-share { grid-area: share; text-align: left; }
+}
+
+/* ── 대기열 애니메이션 히어로 (one-line-or-many) ───────────
+   스크롤 없이 보이는 자리에 둔다. 캔버스는 자기 높이를 JS가 잡는다. */
+.hero-canvas {
+  background: var(--paper-sunk);
+  margin: 0 0 0.6rem;
+}
+
+/* one-line-or-many 범례 — 기존 패턴을 그대로 따른다:
+   견본은 `.legend-key`(폭·높이는 위에서 정의됨) + 수식 클래스, 줄은 `.legend-item`.
+   **`.legend-key` 자체를 덮어쓰지 않는다** — 그 클래스는 몬티홀·종이접기의
+   견본이기도 해서, 여기서 display를 바꾸면 그 두 위젯의 범례가 같이 깨진다. */
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.legend-mean-1 { background: var(--series-1); height: 2px; }
+.legend-mean-2 { background: var(--series-2); height: 4px; }
+.legend-tail-1 {
+  background: none;
+  border-top: 2px dashed var(--series-1);
+  height: 0;
+}
+.legend-tail-2 {
+  background: none;
+  border-top: 3px dashed var(--series-2);
+  height: 0;
+}
+
+/* ── 슬라이더가 아닌 조작부 ─────────────────────────────────
+   숫자·글자 입력, 드롭다운, 체크박스. 슬라이더만 있던 동안에는 규칙이 없었고,
+   브라우저 기본 폭은 360px에서 한 줄을 넘겨 **페이지를 가로로 스크롤시킨다**
+   (WCAG Reflow 위반). flex 기저를 rem으로 주고 min-width:0으로 접히게 한다.
+   터치 타깃 44px은 슬라이더와 같은 값이다. */
+.widget-row :is(input[type="number"], input[type="text"], select) {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 0.55rem;
+  font-size: var(--t-sm);
+  color: var(--graphite);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 0;
+}
+.widget-row :is(input[type="number"], input[type="text"]) { font-family: var(--mono); }
+.widget-row select {
+  font-family: var(--sans);
+  flex: 1 1 12rem;
+  background: var(--paper-sunk);
+}
+.widget-row input[type="number"] { flex: 1 1 5rem; max-width: 8rem; }
+.widget-row input[type="text"] { flex: 1 1 12rem; }
+/* 단가처럼 "비어 있음"이 0과 다른 상태인 칸. 좁게 두고 늘어나지 않게 한다. */
+.widget-row input[type="text"].widget-price { flex: 0 1 12rem; }
+.widget-price::placeholder { color: var(--graphite-soft); }
+.widget-row :is(input[type="number"], input[type="text"], select):focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 1px;
+}
+
+/* 터치 목표는 24px 아래로 내려가지 않는다 (WCAG 2.2 Target Size, Minimum).
+   1.15rem은 16px 기준 18.4px이라 부족했다. */
+.widget-row input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  margin: 0 auto 0 0;
+  accent-color: var(--link);
+}
+.widget-row:has(input[type="checkbox"]) { min-height: 44px; }
+
+/* 슬라이더 바로 아래 눈금 줄. 열 너비는 .widget-label / .widget-out 이 이미 잡는다. */
+.widget-scale {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+@media (max-width: 46rem) {
+  .widget-row input[type="text"].widget-price { flex: 1 1 60%; }
+}
+
+
+/* PC에서 먼저 만들어진 그림 규약. 클라우드 사본이 이 블록 없이 갈라져 있었고,
+   2026-09-10에 다시 합쳤다. 아래 `.fig-svg` 블록은 그 위에 얹힌 것이다 —
+   `figure.fig`가 바깥 여백과 캡션을, `.fig-svg`가 세로형 도해의 최대 폭을 맡는다. */
+/* ── 그림 (직접 그린 SVG) ──────────────────────────────────
+   규약 4: 이미지는 직접 만든 SVG/Canvas만. 스톡·사진·외부 아이콘 금지.
+
+   그림은 **논지를 나르는 것만** 싣는다. 위젯이 이미 그리는 것을 다시 그리지
+   않는다 — 그리려면 위젯이 못 보여주는 것(설정·기구·왜 그렇게 되는가)이어야 한다.
+   장식용 그림은 본문과 위젯 사이의 거리만 늘린다. */
+figure.fig {
+  margin: 2.25rem 0;
+  padding: 0;
+}
+/* 도입 삽화 — 리드 문단 사이에 끼므로 본문 도해보다 좁게 붙인다.
+   위젯이 주목 구간에서 밀려나지 않도록 세로를 아끼는 자리다. */
+figure.fig.fig-lede { margin: 1.1rem 0 1.3rem; }
+
+figure.fig svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+}
+
+figure.fig figcaption {
+  margin-top: 0.6rem;
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+  color: var(--graphite-soft);
+}
+
+figure.fig figcaption b {
+  color: var(--graphite);
+  font-weight: 600;
+}
+
+/* 그림 안 글자. SVG는 rem을 안 받으므로 viewBox 단위로 쓴다. */
+.fig-label { font-family: var(--sans); font-size: 15px; fill: var(--graphite); }
+.fig-label-dim { font-family: var(--sans); font-size: 14px; fill: var(--graphite-soft); }
+.fig-num { font-family: var(--mono); font-size: 16px; fill: var(--graphite); }
+/* 도해 안의 큰 기호(물음표 등). 작은 라벨과 달리 한눈에 잡혀야 한다. */
+.fig-mark { font-family: var(--serif); font-size: 30px; font-weight: 600; fill: var(--graphite); }
+
+/* ── 본문 도해 ──────────────────────────────────────────────
+   위젯 캔버스와 다른 물건이다. 캔버스는 JS가 돌아야 보이고, 이것은 HTML에 그대로
+   있어 검색 결과·공유 카드·JS가 꺼진 화면에도 남는다. 직접 그린 SVG만 들어온다.
+   색은 SVG 자신의 속성이 정한다 — 여기서 fill을 덮어쓰면 도해가 한 색이 된다. */
+.fig { margin: 1.8rem 0; }
+/* 도해는 세로형으로 그린다 — viewBox 폭 420 이하, SVG 글자 14 이상.
+   360px 화면에서 그림의 실제 폭이 약 330px이라 배율이 0.79가 되고, 그래야 글자가
+   11px로 남는다. 폭 900짜리를 넣었더니 글자가 5px가 됐다(실측). 이 상한을 넘는
+   도해는 아래 최대 폭에 걸려 가운데 정렬로 남는다 — 페이지가 가로로 넘치지 않는다. */
+.fig-svg { max-width: 26rem; margin-inline: auto; }
+.fig-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  /* 자기 fill이 없는 도형의 기본값. 자기 fill이 있으면 그쪽이 이긴다 */
+  fill: var(--graphite);
+}
+.fig-svg text { font-family: var(--sans); }
+.fig-svg .fig-label { font-size: 15px; }
+.fig-svg .fig-value { font-family: var(--mono); font-size: 15px; }
+.fig-cap {
+  margin: 0.5rem 0 0;
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  color: var(--graphite-soft);
+}
+
+
+/* ══ 청사진 틀 ═══════════════════════════════════════════════════
+   이 시스템에서 카드·도해·위젯은 **채워진 덩어리가 아니라 선으로 그린 물건**이다.
+   직각 모서리, 머리카락 굵기 테두리, 네 귀퉁이에 등록 마크(+).
+   마크는 가짜 요소로 그린다 — 마크업을 네 줄 늘리지 않기 위해서다.
+   `::before`/`::after`로는 둘뿐이라, 왼쪽 두 개는 요소 자신이, 오른쪽 두 개는
+   배경 그러데이션이 아니라 두 번째 레이어가 맡는다. */
+.bp {
+  position: relative;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  background: transparent;
+}
+.bp::before,
+.bp::after {
+  content: "+ +";
+  position: absolute;
+  left: -0.42em;
+  right: -0.42em;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--steel);
+  pointer-events: none;
+  word-spacing: 100vw;   /* 두 글자를 양 끝으로 벌린다 */
+  overflow: hidden;
+}
+.bp::before { top: -0.42em; }
+.bp::after { bottom: -0.42em; }
+
+/* 대문자 소제목 — 스펙시트의 라벨. 조판이 이 사이트의 성격을 말한다 */
+.kicker,
+.lead-kicker,
+.fig-cap b,
+.site-foot-head {
+  font-family: var(--serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--steel-700);
+}
+
+/* 숫자는 항상 자리를 맞춘다 — 표에서 자릿수가 흔들리면 비교가 안 된다 */
+.tool-figure-value,
+.fig-value,
+td, th {
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* 카드·도해·위젯이 청사진 틀을 입는다. 마크업을 안 고치고 규칙만 얹는다 —
+   `.bp`의 내용을 그대로 상속시키되, 각자의 기존 배경은 지운다. */
+.tool-card,
+figure.fig,
+[data-widget] > * {
+  border-radius: 0;
+}
+.tool-card {
+  position: relative;
+  background: transparent;
+  border: 1px solid var(--rule);
+}
+/* 네 모서리의 등록 마크(+). 글자 "+ +"를 양끝으로 미는 방법을 먼저 썼는데,
+   한 줄 텍스트라 오른쪽 하나가 상자 밖으로 밀려 잘렸다 — 배경 그라디언트로
+   십자를 직접 그린다. 상자 하나에 마크 넷, 마크 하나에 선 둘, 총 여덟 겹.
+   덧붙이는 마크업이 없으므로 카드·도해·위젯 어디에나 규칙만 얹으면 된다. */
+.tool-card,
+figure.fig,
+.widget {
+  --mark-size: 11px;   /* 십자 한 획의 길이 */
+  --mark-thin: 1px;    /* 획 두께 */
+  --mark-off: 5px;     /* 획이 교차하는 지점 = (mark-size - mark-thin) / 2 */
+  --mark-ink: var(--steel-500);
+}
+.tool-card::before,
+figure.fig::before,
+.widget::before {
+  content: "";
+  position: absolute;
+  inset: calc(var(--mark-size) / -2);
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-image:
+    linear-gradient(var(--mark-ink), var(--mark-ink)),
+    linear-gradient(var(--mark-ink), var(--mark-ink)),
+    linear-gradient(var(--mark-ink), var(--mark-ink)),
+    linear-gradient(var(--mark-ink), var(--mark-ink)),
+    linear-gradient(var(--mark-ink), var(--mark-ink)),
+    linear-gradient(var(--mark-ink), var(--mark-ink)),
+    linear-gradient(var(--mark-ink), var(--mark-ink)),
+    linear-gradient(var(--mark-ink), var(--mark-ink));
+  background-size:
+    var(--mark-thin) var(--mark-size), var(--mark-size) var(--mark-thin),
+    var(--mark-thin) var(--mark-size), var(--mark-size) var(--mark-thin),
+    var(--mark-thin) var(--mark-size), var(--mark-size) var(--mark-thin),
+    var(--mark-thin) var(--mark-size), var(--mark-size) var(--mark-thin);
+  background-position:
+    left var(--mark-off) top 0,     left 0 top var(--mark-off),
+    right var(--mark-off) top 0,    right 0 top var(--mark-off),
+    left var(--mark-off) bottom 0,  left 0 bottom var(--mark-off),
+    right var(--mark-off) bottom 0, right 0 bottom var(--mark-off);
+}
+.tool-card:hover { background: var(--steel-100); }
+figure.fig { position: relative; border: 1px solid var(--rule); padding: 0; }
+figure.fig .fig-svg { border: none; background: transparent; }
+figure.fig .fig-cap { padding: 0 1rem 0.9rem; }
+
+/* 도구 격자. 한때 1px 헤어라인 한 판으로 붙여놨더니, 카드가 맞닿은 탓에
+   등록 마크(+)를 지워야 했다 — 이 시스템에서 카드를 '도면 위의 물건'으로
+   만드는 바로 그 표식이다. 카드를 떼어놓고 마크를 살린다. */
+.tool-grid {
+  gap: 1.75rem 1.5rem;
+  background: none;
+  border: none;
+}
+.tool-grid .tool-card { background: transparent; }
+
+/* 분류 제목: 밑줄 친 링크가 아니라 도면의 구역 표찰로 읽히게 한다.
+   제목 자체는 링크를 유지한다(분류 페이지로 가는 길이 여기 하나뿐이다). */
+.home-cat { margin-top: 3.25rem; }
+.home-cat > h2 {
+  margin: 0;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--t-lg);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.home-cat > h2 a { color: var(--graphite); text-decoration: none; }
+.home-cat > h2 a:hover { color: var(--link); }
+.home-cat > .section-lede { margin-top: 0.55rem; }
+
+/* 첫 화면의 눈썹 표찰 — 표제 위에 놓이는 한 줄. */
+.hero-kicker { margin: 0 0 0.6rem; }
+
+/* 머리띠: 스티키 + 워드마크 소문자 */
+.site-head { position: sticky; top: 0; z-index: 20; background: var(--paper); }
+
+/* 바닥: 강철 계조의 가장 깊은 단계를 한 판으로 쓴다 */
+.site-foot {
+  background: var(--steel-900);
+  color: var(--steel-200);
+  border-top: none;
+}
+.site-foot a { color: #e7e7ea; }
+.site-foot a:hover { color: var(--steel-300); }
+
+
+/* --- 위젯 판: 채워진 상자에서 도면 위의 장치로 ---
+   회색으로 채운 큰 상자 하나가 페이지에서 가장 무거운 덩어리였다. 이 시스템에서
+   물건은 **선으로 그린다** — 바탕을 비우고 실선 테두리와 등록 마크만 남긴다. */
+.widget {
+  position: relative;
+  background: transparent;
+}
+
+/* 프리셋 칩. 눌린 것 하나만 강철로 채워 '지금 이 설정'을 한눈에 보이게 한다. */
+.widget-preset {
+  background: transparent;
+  font-variant-numeric: tabular-nums;
+}
+.widget-preset:hover { background: var(--steel-100); }
+.widget-preset[aria-pressed="true"] {
+  background: var(--steel-700);
+  border-color: var(--steel-700);
+  color: var(--paper);
+  box-shadow: none;
+}
+.widget-preset[aria-pressed="true"]:hover { background: var(--steel-800); }
+
+/* 위젯 안의 작은 면들(그룹·표·범례 배경)은 바탕보다 한 단계만 가라앉힌다 */
+.widget-group { background: transparent; }
+
+/* 판독 타일·통계 판도 선으로 그린다. 회색으로 채우면 위젯 안에 회색 덩어리가
+   넷 생겨 정작 읽어야 할 숫자보다 상자가 먼저 보인다. 왼쪽에 강철 눈금 한 줄을
+   세워 '계기판의 한 칸'이라는 성격만 남긴다. */
+.readout {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--steel-500);
+}
+.tool-figure {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--steel-500);
+}
+.tool-card:hover .tool-figure { background: var(--steel-100); }
+
+
+/* --- 이음매(§5.5) 교정 --- */
+
+/* S5. 폰에서 판독 타일 넷이 1열로 400px을 먹어, 슬라이더를 움직여도 바뀌는 숫자가
+   화면 밖이었다(컨트롤 첫 줄 → 첫 판독값 895px > 844px). 2×2로 접는다. */
+@media (max-width: 34rem) {
+  .readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+  .readout { padding: 0.7rem 0.8rem; }
+  .readout-value { font-size: var(--t-md); }
+}
+
+/* 접근성 — 프리셋 칩의 테두리가 --rule(대비 1.38:1)뿐이라 경계가 안 보였다.
+   칩은 장식이 아니라 컨트롤이므로 1.4.11에 따라 3:1 이상이어야 한다. */
+.widget-preset { border-color: var(--rule-strong); }
+
+/* 강제 색 모드에서는 배경이 치환되어 눌림/비눌림이 같아 보인다.
+   윤곽선은 강제 색 모드에서도 살아남는 유일한 표식이다. */
+@media (forced-colors: active) {
+  .widget-preset[aria-pressed="true"] { outline: 3px solid ButtonText; outline-offset: -3px; }
+  .tool-card::before, figure.fig::before, .widget::before { forced-color-adjust: none; }
+}
+
+/* 위젯 맨 위 규칙 한 줄. 컨트롤보다 위에 있어야 하고, 컨트롤보다 조용해야 한다. */
+.widget-rules {
+  margin: 0 0 1.1rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+  color: var(--graphite-soft);
+}
+
+/* 그림 아래로 내려간 Trials 슬라이더. 위쪽 컨트롤 묶음과 같은 물건임을 보이되,
+   범례와 붙지 않게 선 하나로 띄운다. */
+.widget-controls-trailing {
+  margin-top: 1.1rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--rule);
+}
+
+
+/* --- 첫 화면 --- */
+
+/* 덱: H1 바로 아래 한 줄. 예전에는 "September 1990" 킥커가 이 자리를 썼는데,
+   그것은 (여기서 무엇을 할 수 있나)도 (왜 읽나)도 답하지 않으면서 바로 아래
+   검수일과 충돌해 "옛날 글"로 읽혔다. 폰 첫 화면 844px 안에 드는 마지막 자리다. */
+.deck {
+  margin: 0 0 1.1rem;
+  font-size: var(--t-md);
+  line-height: 1.45;
+  color: var(--graphite-soft);
+  text-wrap: pretty;
+}
+
+@media (max-width: 30rem) {
+  /* 폰에서 바이라인이 세 줄을 먹어 첫 화면을 밀어낸다. 등급 설명은 접고
+     이름·등급·검수일만 남긴다 — 애드센스 심사가 실제로 읽는 항목이라 지우지 않는다. */
+  .byline-grade-detail { display: none; }
+  /* 도입 삽화의 틀·캡션이 그림(88px)보다 자리를 더 먹었다. 여백만 줄인다. */
+  .fig-lede .fig-svg { padding: 0.35rem 0; }
+  .fig-lede .fig-cap { padding: 0 0.75rem 0.6rem; }
 }

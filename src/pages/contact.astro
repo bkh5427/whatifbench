@@ -1,6 +1,13 @@
 ---
-import Base from "../layouts/Base.astro";
+import Base from "@layouts/Base.astro";
+import { tools_read_published } from "@data/tools.js";
+
 const EMAIL = "contact@whatifbench.com";
+
+// 본문에서 나가는 길. 헤더·푸터로만 나갈 수 있으면 이 페이지는 막다른 골목이다.
+// 도구 이름을 하드코딩하지 않는다 — tools.js가 진실 원본이고, 발행된 것이
+// 하나도 없으면 그 절이 통째로 사라져야 한다 (없는 페이지를 가리키지 않는다).
+const named = tools_read_published()[0] ?? null;
 ---
 
 <Base
@@ -14,7 +21,7 @@ const EMAIL = "contact@whatifbench.com";
     days.
   </p>
 
-  <p style="font-family:var(--sans); font-size:var(--t-md)">
+  <p class="contact-address">
     <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
   </p>
 
@@ -35,6 +42,18 @@ const EMAIL = "contact@whatifbench.com";
       is used, or where a coefficient comes from.
     </li>
   </ul>
+
+  <p>
+    It helps to name the page you mean. Each tool page states the model it runs,
+    what that model assumes and what it leaves out{
+      named && (
+        <>
+          , as <a href={`/${named.slug}`}>{named.name}</a> does
+        </>
+      )
+    }, so the assumption behind a number is already written down where you can
+    point at it.
+  </p>
 
   <h2>What I can't help with</h2>
 

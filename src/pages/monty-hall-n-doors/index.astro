@@ -1,0 +1,394 @@
+---
+import Base from "@layouts/Base.astro";
+import Byline from "@components/Byline.astro";
+import RelatedTools from "@components/RelatedTools.astro";
+import Figure from "@components/Figure.astro";
+// PC에서 먼저 만든 두 장(MontyGame·MontyProbability)과 클라우드에서 만든 세 장을
+// 2026-09-10에 합쳤다. 설정 → 단계 → 세 경우 → 확률 분포 → 문이 늘어나면 순서다.
+import Probability from "./_fig/Probability.astro";
+import TheQuestion from "./_fig/TheQuestion.astro";
+import GameSteps from "./_fig/GameSteps.astro";
+import ThreeCases from "./_fig/ThreeCases.astro";
+import { tools_read_category } from "@data/tools.js";
+
+// 등급·검수일은 Byline이 tools.js에서 읽는다. 페이지가 다시 말하지 않는다.
+const SLUG = "monty-hall-n-doors";
+const CATEGORY = "chance";
+const cat = tools_read_category(CATEGORY);
+
+// 브레드크럼 이름. 화면과 구조화 데이터가 **같은 상수 하나**를 읽는다.
+// 문자열을 두 번 적으면 갈라지고, 갈라지면 마크업이 화면과 다른 것을 말한다.
+const CRUMB = "Monty Hall with N doors";
+---
+
+<Base
+  title="Monty Hall with N doors: does switching still win?"
+  description="Move the door count and the number of doors the host opens, and watch the model's switching advantage collapse from 2x toward 1x. Exact probabilities plus a Monte Carlo simulation."
+  category={CATEGORY}
+  crumbTool={true}
+  crumbLabel={CRUMB}
+>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span aria-hidden="true">›</span>
+    <a href={cat.href}>{cat.name}</a> <span aria-hidden="true">›</span>
+    {CRUMB}
+  </nav>
+
+  <h1>Monty Hall with N doors: does switching still win?</h1>
+
+  <p class="deck">
+    Three doors. You pick one. The host opens an empty one and offers a swap.
+    Should you take it? And does the answer hold with a hundred doors?
+  </p>
+
+  <Byline slug={SLUG} />
+
+  <Figure variant="lede" caption="In this model, the host never opens the door you picked.">
+    <TheQuestion />
+  </Figure>
+
+  <p class="lead">
+    Three doors. One hides a car. Two hide goats. In 1990 Marilyn vos Savant
+    answered this in her <em>Parade</em> column. Swap, she said, and you win two
+    games out of three. Stay and you win one. Thousands of letters told her she was
+    wrong. Many came from readers with doctorates.
+  </p>
+
+  <p class="lead">
+    Five years later Andrew Vazsonyi put the problem to the mathematician Paul
+    Erdős. A decision tree did not convince him. Watching a simulation did.
+  </p>
+
+  <p class="lead">
+    <span class="lead-turn">Arguing settled neither dispute.</span> So this page
+    argues nothing. It plays the game instead. Two sliders: how many doors, and how
+    many doors the host opens. Move both. Only one of them moves the answer.
+  </p>
+
+  <div id="sliders" data-widget="monty-hall-n-doors"></div>
+
+  <h2>Adding doors does not help. Opening them does.</h2>
+
+  <p>
+    The first slider sets how many doors the game starts with. The second sets how
+    many the host opens before the swap. The working below calls them N and K.
+  </p>
+
+  <Figure caption="In this model the order is fixed: you pick, the host opens, then the switch is offered.">
+    <GameSteps />
+  </Figure>
+
+  <p>
+    <strong>Three doors, one opened.</strong> That is the 1990 setting, and the
+    model gives the famous answer. Staying wins one game in three. Swapping wins
+    two. Swapping wins twice as often. Two closed doors do not mean even odds.
+  </p>
+
+  <p>
+    Now open more. At 100 doors with 98 opened, swapping wins 99 games in 100.
+    Staying wins 1. The gap is enormous.
+  </p>
+
+  <Figure caption="In this model, three placements of the car are the whole sample space.">
+    <ThreeCases />
+  </Figure>
+
+
+  <p>
+    Here is the surprise. Keep the 100 doors, but let the host open only one. Press
+    the <strong>100 doors, one opened</strong> button and watch. Swapping now wins
+    1.01 games for every 1 the staying player wins. Almost the whole advantage is
+    gone — at a hundred doors.
+  </p>
+
+  <p>
+    So more doors do not help. What helps is the host opening them. Everything you
+    did not pick is one big share of the odds, and the host never throws that share
+    away. He piles it onto fewer and fewer doors. Open one door out of a hundred
+    and the share barely moves. Open 98 and it lands almost entirely on the one
+    door left.
+  </p>
+
+  <p>
+    The model puts the advantage at the doors you did not pick, divided by the
+    doors still closed — <strong>(N−1)/R</strong> in the working below. Add doors
+    without opening them and both numbers grow together, so nothing changes. The
+    chart above draws all of this. Here is how to read it.
+  </p>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 id="howto-title">How to read what you are looking at</h2>
+
+    <p>
+      <strong>The chart shows the share of games won so far.</strong> Left to right
+      is games played. Each labelled mark is ten times the one before it, so a
+      million games still fit on screen.
+    </p>
+
+    <p>
+      Each strategy gets two lines in one colour. The <strong>solid line</strong> is
+      the score so far in the played games. It jumps about early and settles later.
+      The <strong>dashed line</strong> is the exact answer, worked out in advance.
+      When the solid line settles onto the dashed one, the games and the maths
+      agree.
+    </p>
+
+    <p>
+      The up-and-down axis changes range to fit the sliders. At 100 doors with one
+      opened, both lines sit near 1%. So read the labels before you compare two
+      settings. The table below the chart drops the played games. It fixes one
+      rule — the host opens every door but one — so you can compare door counts on
+      their own.
+    </p>
+  </section>
+  <section class="math" aria-labelledby="math-title">
+    <h2 class="math-title" id="math-title">Why the advantage is (N−1)/R</h2>
+
+    <p>
+      The first pick carries no information, and the host never opens the player's
+      door — so that door's probability is fixed right there, at 1/N. Nothing the
+      host does afterward can move it. That is why <strong>K never appears in
+      P<sub>stay</sub></strong> below. Each door he opens only shares the rest among
+      the doors you did not pick. So the second slider moves one line, not both.
+    </p>
+
+    <Probability />
+
+    <div class="math-eq">
+      <span>P<sub>stay</sub></span><span class="op">=</span>
+      <span class="frac"><span class="frac-num">1</span><span class="frac-den">N</span></span>
+    </div>
+
+    <div class="math-eq">
+      <span>P<sub>switch</sub></span><span class="op">=</span>
+      <span class="frac"><span class="frac-num">N − 1</span><span class="frac-den">N</span></span>
+      <span class="op">×</span>
+      <span class="frac"><span class="frac-num">1</span><span class="frac-den">R</span></span>
+      <span class="op">=</span>
+      <span class="frac"><span class="frac-num">N − 1</span><span class="frac-den">N (N − 1 − K)</span></span>
+    </div>
+
+    <dl class="math-where">
+      <dt>N</dt><dd>how many doors the game starts with, 3 to 100 — the first slider</dd>
+      <dt>K</dt><dd>how many the host opens, 1 to N − 2 — the second slider</dd>
+      <dt>R</dt><dd>doors you could swap to, R = N − 1 − K</dd>
+    </dl>
+
+    <div class="math-steps-scroll" tabindex="0" role="region" aria-label="Derivation steps">
+    <table class="math-steps">
+      <thead>
+        <tr>
+          <th scope="col">Step</th>
+          <th scope="col">Expression</th>
+          <th scope="col">Why</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>First pick holds the prize</td>
+          <td>1 / N</td>
+          <td>Uniform placement, no information yet</td>
+        </tr>
+        <tr>
+          <td>First pick is wrong</td>
+          <td>(N − 1) / N</td>
+          <td>Complement of row 1 — one of the N − 1 unpicked doors</td>
+        </tr>
+        <tr>
+          <td>Host removes K losing doors</td>
+          <td>R = N − 1 − K</td>
+          <td>Host opens K of those, all losing, leaving R closed</td>
+        </tr>
+        <tr>
+          <td>Switch lands on the prize</td>
+          <td>1 / R</td>
+          <td>The prize is one of the R survivors</td>
+        </tr>
+        <tr class="math-result">
+          <td>Switching wins</td>
+          <td>(N − 1) / (N · R)</td>
+          <td>Row 2 × row 4</td>
+        </tr>
+        <tr class="math-result">
+          <td>Advantage over staying</td>
+          <td>(N − 1) / R</td>
+          <td>P<sub>switch</sub> ÷ P<sub>stay</sub></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p class="math-check">
+      <strong>Two checks.</strong> At N=3, K=1: R=1, so switching is 2/3 and
+      staying 1/3, summing to 1. The same holds whenever the host opens every
+      door but one (K = N−2, R = 1): two doors remain, and switching is
+      (N−1)/N.
+    </p>
+
+    <p>
+      The formula does not care <em>how</em> the host picks the losing doors. Under
+      any such rule the prize still sits among the R closed doors. A random swap
+      finds it 1 time in R. Count a small case by hand and the formula gets easier
+      to trust.
+    </p>
+  </section>
+  <h2>Four doors, counted by hand</h2>
+
+  <p>
+    Take four doors and one opened. You pick door 1. Staying wins whenever the prize
+    is behind door 1. That happens in 1 game out of 4, so staying wins
+    <strong>25.0%</strong> of the time.
+  </p>
+
+  <p>
+    In the other 3 games your pick is wrong. The prize hides behind door 2, 3 or 4.
+    The host opens one empty door from that group, never the prize. Two doors stay
+    shut, and the prize sits behind one of them. So a wrong first pick becomes a win
+    half the time: <code>(3/4) × (1/2) = 3/8 = 37.5%</code>.
+  </p>
+
+  <p>
+    Swapping beats staying, 37.5% to 25.0%. But that is far below the 66.7% of the
+    three-door game. The games left over are the ones where the swap lands on the
+    wrong door of the two. All of it rests on four rules.
+  </p>
+
+  <h2>Four rules, all load-bearing</h2>
+
+  <p>
+    Every game on this page follows these four. Drop any one and the numbers above
+    stop meaning what they say.
+  </p>
+
+  <ol>
+    <li>The model hides one prize behind a random door.</li>
+    <li>The player picks one door.</li>
+    <li>
+      The host knows the prize door. He opens K doors, never yours and never the
+      prize.
+    </li>
+    <li>
+      The player may swap to one of the R doors still closed. The swap is random,
+      not a hunch.
+    </li>
+  </ol>
+
+  <p>
+    <strong>The played games.</strong> The page plays many random games. It assumes
+    the same even odds the maths does. A separate test builds the doors under two
+    host rules and agrees. A seeded generator makes the randomness, not
+    <code>Math.random</code>. The seed rides in the URL, so the curve repeats.
+  </p>
+
+  <p class="note"><a href="#sliders">Back to the sliders ↑</a></p>
+
+  <h2>A different host breaks every number here</h2>
+
+  <p>
+    <strong>The host's rule.</strong> Say the host opens doors at random. Count only
+    the games where he misses the prize, and the model ties swapping with staying.
+    Say he offers the swap only to players who are already right. The advantage
+    drops to nothing. On screen all three hosts look the same.
+  </p>
+
+  <p>
+    <strong>A host with a habit.</strong> This model opens at random. A host who
+    always opens the lowest empty door leaks a clue through <em>which</em> door he
+    opens. The model puts a player who reads that habit at 50%, not 37.5%. That is
+    four doors with one opened, worked by hand.
+  </p>
+
+  <p>
+    <strong>Too small to see.</strong> At 100 doors with one opened, the true gap is
+    about 1 game in 10,000. Even a million played games wobble by about that much,
+    and a million is the slider's limit. The dashed line shows the gap. The solid
+    line cannot. The caption says so when the two sit too close.
+  </p>
+
+  <p>
+    <strong>Two limits of the display.</strong> Both strategies play the same games
+    and only one can win each. So the two lines are tied together, not independent.
+    The banner changes wording at lines I chose — 2.00× and 1.10×. No statistical
+    test sets them. The two curves do meet, in the end. Meeting is not explaining.
+  </p>
+
+  <p class="note"><a href="#sliders">Back to the sliders ↑</a></p>
+
+  <h2>The simulation agreed. It did not explain.</h2>
+
+  <p>
+    Vazsonyi's account of the Erdős conversation has three steps, and they did not
+    arrive together. The decision tree did not persuade him. A simulation did. The
+    reason why came days later, and from someone else — Ron Graham.
+  </p>
+
+  <p>
+    The first two steps are on the same screen above. Neither line is offered as
+    proof of the other — they are two routes to the same number, and the only claim
+    being made is that they meet.
+  </p>
+
+  <p>
+    The third step is the one a page cannot hand over. Seeing swapping win two games
+    in three is not the same as seeing <em>why</em>. Your door was locked at 1 in 3
+    the moment you touched it, and the host may not open it, so nothing he does can
+    change it. The hand count above is the closest this page gets.
+  </p>
+
+  <p>
+    The arithmetic is older than the game show. Martin Gardner published the same
+    problem in <em>Scientific American</em> in 1959. He called it the Three Prisoners
+    Problem: three condemned men, one pardon drawn at random, and a warden who names
+    one of the other two. Selvin's doors came sixteen years later.
+    Rosenhouse's book, linked above, treats the two as one problem: same model,
+    different furniture.
+  </p>
+
+  <h2>About this page</h2>
+
+  <p class="note">
+    The exact probabilities come from the formula above. <a href="/about">How I
+    check things</a>.
+  </p>
+
+  <p><strong>Sources.</strong></p>
+
+  <ul>
+    <li>
+      Steve Selvin posed the problem in "A Problem in Probability", <a
+      href="https://doi.org/10.1080/00031305.1975.10479121"><em>The American
+      Statistician</em> 29(1), February 1975, p. 67</a> — with three boxes, not
+      doors.
+    </li>
+    <li>
+      He returned to it in "On the Monty Hall Problem", <a
+      href="https://doi.org/10.1080/00031305.1975.10477398">29(3), August 1975,
+      p. 134</a>, the earliest known appearance of that name in print.
+    </li>
+    <li>
+      The N-door generalisation follows from the same argument; it is commonly
+      credited to a 1975 letter to Selvin from D. L. Ferguson, an attribution
+      reported here rather than verified — the original letter could not be
+      consulted.
+    </li>
+    <li>
+      The problem reached a wide audience through Marilyn vos Savant's "Ask
+      Marilyn" column in <em>Parade</em>, 9 September 1990; the letter counts
+      above are from John Tierney's report in <em>The New York Times</em>,
+      21 July 1991.
+    </li>
+    <li>The Erdős episode is Andrew Vazsonyi's own account of it, published in <em>Decision Line</em> 30(1), 1999.</li>
+    <li>
+      Jason Rosenhouse's <a
+      href="https://doi.org/10.1093/oso/9780195367898.001.0001"><em>The Monty
+      Hall Problem</em></a> (Oxford University Press, 2009) covers the variants.
+    </li>
+  </ul>
+
+
+  <RelatedTools slug={SLUG} />
+
+  <script>
+    import "@widgets/monty-hall-n-doors/widget.js";
+  </script>
+</Base>

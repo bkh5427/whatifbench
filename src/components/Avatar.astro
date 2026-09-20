@@ -1,0 +1,43 @@
+---
+// 필명 Planimeter의 얼굴. **직접 그린 SVG만** 쓴다 (규약 4: 저작권 위험 0).
+// 로고 계보를 그대로 잇는다 — 3색 판정 띠(hold/edge/break)가 어깨가 되고,
+// 머리는 로고의 추적 바퀴다. 헤더 로고와 같은 사람으로 읽히게 하려는 것이다.
+//
+// **clipPath·mask를 쓰지 않는다.** 한 페이지에 아바타가 둘 이상 놓이면
+// id가 겹쳐 뒤엣것이 앞엣것의 클립을 집는다. 어깨 띠는 원의 호를 직접 그려
+// 잘라냈다 — 아래 좌표는 중심 (32,32) 반지름 30 원과 y=43 현의 교점이다.
+// decorative: 지금 쓰이는 두 자리(바이라인·About 저자 카드)는 아바타 바로 옆에
+// "Planimeter"라는 글자가 있다. 거기서 아바타에 이름을 또 붙이면 스크린리더가
+// "Planimeter, 이미지 / Planimeter, 링크"로 두 번 발화한다. 그래서 **기본값이
+// 장식**이다. 이름 없이 단독으로 놓이는 자리가 생기면 그때만 decorative={false}로
+// 켠다 — 기본을 이름 쪽에 두면 새로 쓰는 자리마다 중복 발화가 조용히 따라온다.
+const { size = 32, className = "", decorative = true } = Astro.props;
+const AVATAR_VIEWBOX = 64;
+const AVATAR_LABEL = "Planimeter";
+---
+
+<svg
+  class={`avatar ${className}`.trim()}
+  width={size}
+  height={size}
+  viewBox={`0 0 ${AVATAR_VIEWBOX} ${AVATAR_VIEWBOX}`}
+  role={decorative ? undefined : "img"}
+  aria-label={decorative ? undefined : AVATAR_LABEL}
+  aria-hidden={decorative ? "true" : undefined}
+  focusable="false"
+>
+  <circle cx="32" cy="32" r="31" style="fill:var(--paper); stroke:var(--graphite); stroke-width:2" />
+
+  <path d="M4.09 43 H22 V60.28 A30 30 0 0 1 4.09 43 Z" style="fill:var(--steel-300)" />
+  <path d="M22 43 H42 V60.28 A30 30 0 0 1 22 60.28 Z" style="fill:var(--steel-600)" />
+  <path d="M42 43 H59.91 A30 30 0 0 1 42 60.28 Z" style="fill:var(--steel-900)" />
+
+  <path d="M27 35 V45 H37 V35" style="fill:var(--paper); stroke:var(--graphite); stroke-width:2" />
+
+  <circle cx="32" cy="25" r="12" style="fill:var(--paper); stroke:var(--graphite); stroke-width:2" />
+  <circle cx="32" cy="25" r="2.2" style="fill:var(--graphite)" />
+  <path
+    d="M32 13.5 L32 18 M32 32 L32 36.5 M19.5 25 L24 25 M40 25 L44.5 25"
+    style="stroke:var(--graphite); stroke-width:1.6; stroke-linecap:round"
+  />
+</svg>

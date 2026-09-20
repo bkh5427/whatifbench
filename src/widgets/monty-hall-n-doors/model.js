@@ -12,6 +12,9 @@
  *   - 참가자는 남은 미개봉 문 중 하나로 바꿀 수 있다
  */
 
+import { num_clamp_value } from '../_shared/numbers.js';
+import { rng_clamp_seed, rng_create_seeded } from '../_shared/random.js';
+
 // ── 파라미터 범위 (슬라이더가 그대로 읽는다) ─────────────────
 export const MONTY_DOOR_MIN = 3;
 export const MONTY_DOOR_MAX = 100;
@@ -24,8 +27,10 @@ export const MONTY_TRIAL_MIN = 1000;
 export const MONTY_TRIAL_MAX = 1000000;
 export const MONTY_TRIAL_DEFAULT = 10000;
 
-export const MONTY_SEED_MIN = 1;
-export const MONTY_SEED_MAX = 99999999; // 기본 씨앗(날짜 형식)이 범위 안에 들어와야 한다
+// 시드 유효범위는 `_shared/random.js`가 정한다. 여기 `MONTY_SEED_MIN/MAX`로
+// 다시 두었었는데 아무도 읽지 않았다 — 같은 상수가 두 벌이면 나중에 죽은 쪽을
+// 고치고 고쳤다고 믿게 된다. 범위 자체는 `model_clamp_seed`가 들고 있고,
+// **기본 시드가 그 범위 안에 있는지**는 model.test.js가 리터럴로 못박는다.
 export const MONTY_SEED_DEFAULT = 20260904;
 
 // ── 게임 규칙 상수 ──────────────────────────────────────────
@@ -38,14 +43,6 @@ export const MONTY_PRIZE_SLOT_INDEX = 0;   // 남은 문 중 상품이 놓인 �
 export const CONVERGENCE_POINT_COUNT = 140; // 로그 간격 표본 점 개수
 export const CONVERGENCE_FIRST_TRIAL = 1;   // 첫 표본 지점
 
-// ── 난수 발생기 상수 (mulberry32) ───────────────────────────
-const RNG_STEP = 0x6d2b79f5;
-const RNG_SHIFT_A = 15;
-const RNG_SHIFT_B = 7;
-const RNG_SHIFT_C = 14;
-const RNG_MIX_A = 1;
-const RNG_MIX_B = 61;
-const RNG_UINT32_RANGE = 4294967296;
 
 /**
  * 문 doorCount개일 때 호스트가 열 수 있는 문의 최대 개수.
@@ -85,11 +82,8 @@ export function model_calculate_switch_advantage(doorCount, openedCount) {
   return model_calculate_switch_win_rate(doorCount, openedCount) / model_calculate_stay_win_rate(doorCount);
 }
 
-/** 값을 [min, max] 안으로 자른다. */
-export function model_clamp_value(value, minValue, maxValue) {
-  if (!Number.isFinite(value)) return minValue;
-  return Math.min(Math.max(value, minValue), maxValue);
-}
+/** 값을 [min, max] 안으로 자른다. 공통 모듈을 그대로 쓴다. */
+export const model_clamp_value = num_clamp_value;
 
 export function model_clamp_door_count(value) {
   return Math.round(model_clamp_value(value, MONTY_DOOR_MIN, MONTY_DOOR_MAX));
@@ -103,9 +97,7 @@ export function model_clamp_trial_count(value) {
   return Math.round(model_clamp_value(value, MONTY_TRIAL_MIN, MONTY_TRIAL_MAX));
 }
 
-export function model_clamp_seed(value) {
-  return Math.round(model_clamp_value(value, MONTY_SEED_MIN, MONTY_SEED_MAX));
-}
+export const model_clamp_seed = rng_clamp_seed;
 
 /**
  * 파라미터가 모델의 유효범위 안에 있는지 확인한다.
@@ -126,18 +118,10 @@ export function model_check_parameters(doorCount, openedCount, trialCount) {
 }
 
 /**
- * 씨앗값으로 결정되는 난수 발생기를 만든다 (mulberry32).
- * 같은 씨앗 → 같은 곡선. URL 공유 시 재현성을 위해 Math.random을 쓰지 않는다.
+ * 씨앗값으로 결정되는 난수 발생기. 공통 모듈(mulberry32)을 그대로 쓴다.
+ * 같은 씨앗 → 같은 곡선. 골든 벡터 테스트가 수열 자체를 고정하고 있다.
  */
-export function sim_create_random(seed) {
-  let state = model_clamp_seed(seed) | 0;
-  return function random_read_next() {
-    state = (state + RNG_STEP) | 0;
-    let t = Math.imul(state ^ (state >>> RNG_SHIFT_A), RNG_MIX_A | state);
-    t = (t + Math.imul(t ^ (t >>> RNG_SHIFT_B), RNG_MIX_B | t)) ^ t;
-    return ((t ^ (t >>> RNG_SHIFT_C)) >>> 0) / RNG_UINT32_RANGE;
-  };
-}
+export const sim_create_random = rng_create_seeded;
 
 /**
  * 수렴 곡선을 그릴 표본 지점(누적 시행 횟수)을 로그 간격으로 만든다.
@@ -227,6 +211,11 @@ export function sim_run_convergence(doorCount, openedCount, trialCount, options 
 
 /**
  * 수렴 곡선 없이 최종 승률만 필요할 때. 루프는 sim_run_convergence 하나만 쓴다.
+ *
+ * **프로덕션에 호출부가 없다** — 위젯은 곡선이 필요해서 언제나 전체를 부른다.
+ * 그래도 남긴다: model.test.js의 스윕·난수소비 대조가 전부 이 요약 경로를 쓰고,
+ * 이것을 지우면 그 테스트들이 곡선 배열까지 들고 다녀야 한다. 계산은 여기서
+ * 한 줄도 다시 하지 않으므로 "계산 경로는 하나만" 규약에 걸리지 않는다.
  */
 export function sim_run_trials(doorCount, openedCount, trialCount, options = {}) {
   const result = sim_run_convergence(doorCount, openedCount, trialCount, options);

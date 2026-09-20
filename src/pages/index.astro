@@ -1,8 +1,10 @@
 ---
-import Base from "../layouts/Base.astro";
-import { CATEGORIES, tools_read_published } from "../data/tools.js";
+import Base from "@layouts/Base.astro";
+import { layout_read_sections } from "@data/layout.js";
 
-const sections = CATEGORIES.map((c) => ({ ...c, tools: tools_read_published(c.key) }));
+// 무엇을 어떻게 묶을지는 이 페이지가 정하지 않는다 — `src/data/layout.js`가 정한다.
+// 재배치는 그 파일 하나를 고치는 일이고, 글도 이 페이지도 건드리지 않는다.
+const sections = layout_read_sections();
 ---
 
 <Base
@@ -10,6 +12,7 @@ const sections = CATEGORIES.map((c) => ({ ...c, tools: tools_read_published(c.ke
   description="Small interactive tools for questions where the arithmetic is easy and the answer still feels wrong."
 >
   <section class="hero">
+    <p class="kicker hero-kicker">Interactive workbench</p>
     <h1>Move the number and see what happens.</h1>
     <p>A textbook gives you one equation and one answer. Here you get the dial.</p>
   </section>
@@ -28,18 +31,26 @@ const sections = CATEGORIES.map((c) => ({ ...c, tools: tools_read_published(c.ke
 
   {
     sections.map((section) => (
-      <section>
+      <section class="home-cat">
         <h2><a href={section.href}>{section.name}</a></h2>
-        {section.tools.length > 0 ? (
-          <ul class="tool-list">
+        <p class="section-lede">{section.lede}</p>
+        {section.tools.length > 0 && (
+          <div class="tool-grid">
             {section.tools.map((tool) => (
-              <li>
-                <a href={`/${tool.slug}`}>{tool.name}</a> — {tool.blurb}
-              </li>
+              <article class="tool-card">
+                <div class="tool-body">
+                  <h3><a href={`/${tool.slug}`}>{tool.name}</a></h3>
+                  <p>{tool.blurb}</p>
+                </div>
+                {tool.figure && (
+                  <p class="tool-figure">
+                    <span class="tool-figure-value">{tool.figure.value}</span>
+                    <span class="tool-figure-label">{tool.figure.label}</span>
+                  </p>
+                )}
+              </article>
             ))}
-          </ul>
-        ) : (
-          <p class="note">Still building this one.</p>
+          </div>
         )}
       </section>
     ))

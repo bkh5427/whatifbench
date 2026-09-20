@@ -1,0 +1,73 @@
+---
+// 도구 페이지 끝. **여기가 막다른 골목이면 방문자는 사이트를 떠난다.**
+// 관련 도구는 tools.js가 점수로 고른다 (태그 > 선행관계 > 카테고리).
+// 아직 발행된 형제가 없으면 카테고리 인덱스로 내보낸다 — 링크 0개는 안 된다.
+import {
+  CATEGORIES,
+  tools_calculate_related,
+  tools_read_one,
+  tools_read_category,
+  tools_read_published,
+} from "../data/tools.js";
+import { prose_format_fallback_lead, prose_format_separator } from "./prose.js";
+
+const { slug } = Astro.props;
+const tool = tools_read_one(slug);
+if (!tool) throw new Error(`관련 목록이 모르는 도구다: ${slug}`);
+
+const cat = tools_read_category(tool.category);
+const related = tools_calculate_related(slug);
+const otherSections = CATEGORIES.filter((c) => c.key !== tool.category);
+
+// 대체 문구는 **사실이어야 한다.** `related`가 비는 이유는 셋이고 문장이 다르다.
+//  ① 이 도구가 아직 발행 전이다 → 카테고리 인덱스에 이 도구가 없다.
+//     "Nothing **else** sits in X"는 "이 도구는 X에 있다"를 전제하므로 거짓이 된다
+//  ② 발행됐고 형제도 있는데 점수가 0이라 아무것도 안 붙었다
+//  ③ 발행됐는데 그 카테고리에 다른 발행 도구가 없다
+// `publishedSiblings`만 보면 ①과 ③이 같은 문장으로 나온다 —
+// 발행 여부를 따로 봐야 한다. 자기 자신은 형제에서 뺀다.
+const publishedElsewhere = tools_read_published().filter((t) => t.slug !== slug);
+const publishedSiblings = publishedElsewhere.filter((t) => t.category === tool.category);
+const fallbackLead = prose_format_fallback_lead(tool.published, publishedSiblings.length);
+---
+
+<section class="read-next">
+  <h2>Read next</h2>
+
+  {
+    related.length > 0 ? (
+      <div class="tool-grid">
+        {related.map((t) => (
+          <article class="tool-card">
+            <div class="tool-body">
+              <h3><a href={`/${t.slug}`}>{t.name}</a></h3>
+              <p>{t.blurb}</p>
+            </div>
+            {t.figure && (
+              <p class="tool-figure">
+                <span class="tool-figure-value">{t.figure.value}</span>
+                <span class="tool-figure-label">{t.figure.label}</span>
+              </p>
+            )}
+          </article>
+        ))}
+      </div>
+    ) : (
+      <p>
+        {fallbackLead}
+        <a href={cat.href}>{cat.name}</a> yet. Each of the other sections opens with
+        its own writing, and the tools that are finished are listed there:
+        {otherSections.map((c, i) => (
+          <Fragment>
+            {prose_format_separator(i, otherSections.length)}
+            <a href={c.href}>{c.name}</a>
+          </Fragment>
+        ))}.
+      </p>
+    )
+  }
+
+  <p class="note">
+    <a href={cat.href}>All {cat.name} tools →</a>
+  </p>
+</section>

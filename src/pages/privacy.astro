@@ -1,5 +1,5 @@
 ---
-import Base from "../layouts/Base.astro";
+import Base from "@layouts/Base.astro";
 const EMAIL = "contact@whatifbench.com";
 const UPDATED = "2 September 2026";
 ---
@@ -141,6 +141,7 @@ const UPDATED = "2 September 2026";
   <h2>Contact</h2>
 
   <p>
-    Questions about this policy: <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.
+    Questions about this policy: <a href={`mailto:${EMAIL}`}>{EMAIL}</a>, the
+    same address listed on the <a href="/contact">contact page</a>.
   </p>
 </Base>

@@ -1,3 +1,8 @@
+# whatifbench.com
+# 크롤러에 사이트맵 위치를 알린다. 이 파일이 접근을 막는 장치는 아니다 —
+# 검수 전 글이 배포되지 않게 하는 것은 `scripts/check-publish.mjs`와
+# Cloudflare Pages의 빌드 명령(`npm run pages:build`)이 한다.
+
 User-agent: *
 Allow: /
 

@@ -1,7 +1,7 @@
 ---
-import Base from "../layouts/Base.astro";
-import { CATEGORIES, tools_read_published } from "../data/tools.js";
-import { INTROS } from "../data/category-intros.js";
+import Base from "@layouts/Base.astro";
+import { CATEGORIES, tools_read_published } from "@data/tools.js";
+import { INTROS } from "@data/category-intros.js";
 
 export function getStaticPaths() {
   return CATEGORIES.map((c) => ({ params: { category: c.key }, props: { category: c } }));
@@ -10,6 +10,14 @@ export function getStaticPaths() {
 const { category } = Astro.props;
 const intro = INTROS[category.key];
 const tools = tools_read_published(category.key);
+
+// 이 카테고리가 아직 비었을 때 내보낼 곳. **막다른 골목을 만들지 않는다** —
+// 지금 이 페이지의 본문 내부 링크는 브레드크럼의 `/` 하나뿐이다.
+// 도구가 차면 `tools.length > 0`이 되어 이 분기 자체가 사라진다.
+const elsewhere = tools.length > 0 ? [] : tools_read_published().slice(0, 3);
+const otherSections = CATEGORIES.filter(
+  (c) => c.key !== category.key && tools_read_published(c.key).length > 0,
+);
 ---
 
 <Base title={category.name} description={intro.description} category={category.key}>
@@ -22,19 +30,61 @@ const tools = tools_read_published(category.key);
   {intro.paragraphs.map((text) => <p>{text}</p>)}
 
   {
-    tools.length > 0 ? (
-      <div class="shelf">
+    tools.length > 0 && (
+      <div class="tool-grid">
         {tools.map((tool) => (
-          <div class="shelf-item">
-            <h2><a href={`/${tool.slug}`}>{tool.name}</a></h2>
-            <p>{tool.blurb}</p>
-          </div>
+          <article class="tool-card">
+            <div class="tool-body">
+              <h2><a href={`/${tool.slug}`}>{tool.name}</a></h2>
+              <p>{tool.blurb}</p>
+            </div>
+            {tool.figure && (
+              <p class="tool-figure">
+                <span class="tool-figure-value">{tool.figure.value}</span>
+                <span class="tool-figure-label">{tool.figure.label}</span>
+              </p>
+            )}
+          </article>
         ))}
       </div>
-    ) : (
-      <p class="note">
-        Nothing finished here yet. The other sections have tools you can use now.
-      </p>
+    )
+  }
+
+  {
+    elsewhere.length > 0 && (
+      <>
+        <h2>Finished elsewhere on the site</h2>
+        <p>
+          The writing above is this section. Below are the tools running on the
+          site today, from wherever they sit.
+        </p>
+        <div class="tool-grid">
+          {elsewhere.map((tool) => (
+            <article class="tool-card">
+              <div class="tool-body">
+                <h3><a href={`/${tool.slug}`}>{tool.name}</a></h3>
+                <p>{tool.blurb}</p>
+              </div>
+              {tool.figure && (
+                <p class="tool-figure">
+                  <span class="tool-figure-value">{tool.figure.value}</span>
+                  <span class="tool-figure-label">{tool.figure.label}</span>
+                </p>
+              )}
+            </article>
+          ))}
+        </div>
+        {otherSections.length > 0 && (
+          <p class="note">
+            {otherSections.map((c, i) => (
+              <>
+                {i > 0 && " · "}
+                <a href={c.href}>All {c.name} tools →</a>
+              </>
+            ))}
+          </p>
+        )}
+      </>
     )
   }
 </Base>
