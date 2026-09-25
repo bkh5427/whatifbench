@@ -27,7 +27,7 @@ const reviewed = tool.updated ?? null;
   <Avatar size={AVATAR_SIZE_BYLINE} />
   <p class="byline-text">
     <a href="/about">Planimeter</a> · Model grade {tool.grade}<span
-      class="byline-grade-detail"><span class="byline-sep"> —</span>
+      class="byline-grade-detail"><span class="byline-sep">{" — "}</span>
       <span class="byline-grade">{GRADE_MEANING[tool.grade]}</span></span>
     {reviewed && (<span class="byline-dim">{"\u00a0· Reviewed "}{reviewed}</span>)}
   </p>

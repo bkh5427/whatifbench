@@ -1,0 +1,128 @@
+---
+/*
+  ** 이 파일이 `---`로 시작하는 이유 ** — 규약 §5. C2PA 서명이 붙어 파일이 깨진다.
+
+  도해 2 — 메커니즘. **위젯의 곡선·표를 다시 그리지 않는다.**
+  위젯은 로그축 곡선과 창구 수 표를 그린다. 이 그림은 시간축 위의 한 사례다.
+
+  같은 네 사람(A·B·C·D), 같은 네 처리시간(6·2·2·2분), 같은 창구 둘.
+  달라지는 것은 줄이 어디로 붙었는가뿐인데 최장 대기가 4분과 6분으로 갈린다.
+  아래 칸에서는 **아무도 없는 창구가 서 있는 동안 C가 기다린다** — 그것이 이 편의 논점이다.
+  (aria-label은 "through that empty stretch"라고 적었었다 — 유휴는 4–8분, C의 대기는 0–6분이라
+   겹치는 구간은 4–6분뿐이다. 구간 전체를 주장하지 않는 "when that empty stretch begins"로 줄였다.
+   화면 SVG 글자 "counter 2 stands empty while C waits"는 정확하므로 aria만 그에 맞췄다.)
+
+  산수(선착순, 규약 §6 절대규칙 1의 예외 "이미 선언된 규칙 아래의 산수"):
+    한 줄  : 창구1 A 0–6 · 창구2 B 0–2, C 2–4, D 4–6 → 대기 0,0,2,4 → 최장 4
+    줄 둘  : 창구1 A 0–6, C 6–8 · 창구2 B 0–2, D 2–4 → 대기 0,0,6,2 → 최장 6
+*/
+const VIEW_W = 420;
+const VIEW_H = 340;
+
+// 시간축. 0분이 X0, 1분이 PER_MIN 픽셀.
+const X0 = 76;
+const PER_MIN = 38;
+const MAX_MIN = 8;
+const x_at = (minutes) => X0 + minutes * PER_MIN;
+
+const BAR_H = 24;
+const TICKS = [0, 2, 4, 6, 8];
+const GRID_TOP = 36;
+const GRID_BOTTOM = 276;
+
+// 위 칸 — 한 줄.
+const ONE_TITLE_Y = 26;
+const ONE_ROW_YS = [40, 70];
+const ONE_NOTE_Y = 116;
+const ONE_TOP = [{ id: "A", from: 0, to: 6 }];
+const ONE_BOTTOM = [
+  { id: "B", from: 0, to: 2 },
+  { id: "C", from: 2, to: 4 },
+  { id: "D", from: 4, to: 6 },
+];
+
+// 아래 칸 — 창구별 줄.
+const MANY_TITLE_Y = 156;
+const MANY_ROW_YS = [170, 200];
+const MANY_NOTE_Y = 246;
+const MANY_NOTE2_Y = 266;
+const MANY_TOP = [
+  { id: "A", from: 0, to: 6 },
+  { id: "C", from: 6, to: 8 },
+];
+const MANY_BOTTOM = [
+  { id: "B", from: 0, to: 2 },
+  { id: "D", from: 2, to: 4 },
+];
+const MANY_IDLE = { from: 4, to: 8 };
+
+const AXIS_Y = 276;
+const AXIS_LABEL_Y = 298;
+const AXIS_NAME_Y = 322;
+---
+<svg
+  class="fig-svg"
+  viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+  role="img"
+  aria-label="Two time charts of the same four customers at the same two counters, drawn one above the other against a shared minute scale from zero to eight. Customer A takes six minutes; B, C and D take two minutes each. In the upper chart, labelled one line, counter 1 runs A from minute 0 to 6 while counter 2 runs B, then C, then D, back to back, finishing at minute 6. Nothing is left waiting while a counter stands empty, and the longest anyone waits is four minutes. In the lower chart, labelled a line per counter, A and C joined counter 1 and B and D joined counter 2. Counter 1 runs A from 0 to 6 and then C from 6 to 8, while counter 2 finishes D at minute 4 and then sits empty, marked idle, from minute 4 to minute 8. C is still waiting when that empty stretch begins, and the longest wait is six minutes instead of four."
+>
+  {TICKS.map((t) => (
+    <line x1={x_at(t)} y1={GRID_TOP} x2={x_at(t)} y2={GRID_BOTTOM} stroke="var(--rule)" stroke-width="1" />
+  ))}
+
+  <text x="10" y={ONE_TITLE_Y} class="fig-label">One line</text>
+  <text x="10" y={ONE_ROW_YS[0] + 17} class="fig-label-dim">counter 1</text>
+  <text x="10" y={ONE_ROW_YS[1] + 17} class="fig-label-dim">counter 2</text>
+
+  {ONE_TOP.map((b) => (
+    <g>
+      <rect x={x_at(b.from)} y={ONE_ROW_YS[0]} width={(b.to - b.from) * PER_MIN} height={BAR_H} rx="2"
+        fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+      <text x={(x_at(b.from) + x_at(b.to)) / 2} y={ONE_ROW_YS[0] + 17} class="fig-label" text-anchor="middle">{b.id}</text>
+    </g>
+  ))}
+  {ONE_BOTTOM.map((b) => (
+    <g>
+      <rect x={x_at(b.from)} y={ONE_ROW_YS[1]} width={(b.to - b.from) * PER_MIN} height={BAR_H} rx="2"
+        fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+      <text x={(x_at(b.from) + x_at(b.to)) / 2} y={ONE_ROW_YS[1] + 17} class="fig-label" text-anchor="middle">{b.id}</text>
+    </g>
+  ))}
+  <text x={X0} y={ONE_NOTE_Y} class="fig-label">longest wait 4 min</text>
+
+  <text x="10" y={MANY_TITLE_Y} class="fig-label">A line per counter</text>
+  <text x="10" y={MANY_ROW_YS[0] + 17} class="fig-label-dim">counter 1</text>
+  <text x="10" y={MANY_ROW_YS[1] + 17} class="fig-label-dim">counter 2</text>
+
+  {MANY_TOP.map((b) => (
+    <g>
+      <rect x={x_at(b.from)} y={MANY_ROW_YS[0]} width={(b.to - b.from) * PER_MIN} height={BAR_H} rx="2"
+        fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+      <text x={(x_at(b.from) + x_at(b.to)) / 2} y={MANY_ROW_YS[0] + 17} class="fig-label" text-anchor="middle">{b.id}</text>
+    </g>
+  ))}
+  {MANY_BOTTOM.map((b) => (
+    <g>
+      <rect x={x_at(b.from)} y={MANY_ROW_YS[1]} width={(b.to - b.from) * PER_MIN} height={BAR_H} rx="2"
+        fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+      <text x={(x_at(b.from) + x_at(b.to)) / 2} y={MANY_ROW_YS[1] + 17} class="fig-label" text-anchor="middle">{b.id}</text>
+    </g>
+  ))}
+  <rect
+    x={x_at(MANY_IDLE.from)} y={MANY_ROW_YS[1]} width={(MANY_IDLE.to - MANY_IDLE.from) * PER_MIN} height={BAR_H} rx="2"
+    fill="var(--paper-sunk)" stroke="var(--rule)" stroke-width="2" stroke-dasharray="4 3"
+  />
+  <text x={(x_at(MANY_IDLE.from) + x_at(MANY_IDLE.to)) / 2} y={MANY_ROW_YS[1] + 17} class="fig-label-dim" text-anchor="middle">idle</text>
+
+  <text x={X0} y={MANY_NOTE_Y} class="fig-label">longest wait 6 min</text>
+  <text x={X0} y={MANY_NOTE2_Y} class="fig-label-dim">counter 2 stands empty while C waits</text>
+
+  <line x1={X0} y1={AXIS_Y} x2={x_at(MAX_MIN)} y2={AXIS_Y} stroke="var(--graphite)" stroke-width="1.5" />
+  {TICKS.map((t) => (
+    <g>
+      <line x1={x_at(t)} y1={AXIS_Y} x2={x_at(t)} y2={AXIS_Y + 6} stroke="var(--graphite)" stroke-width="1.5" />
+      <text x={x_at(t)} y={AXIS_LABEL_Y} class="fig-label-dim" text-anchor="middle">{t}</text>
+    </g>
+  ))}
+  <text x={(X0 + x_at(MAX_MIN)) / 2} y={AXIS_NAME_Y} class="fig-label-dim" text-anchor="middle">minutes</text>
+</svg>

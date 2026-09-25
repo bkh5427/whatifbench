@@ -1,0 +1,487 @@
+---
+import Base from "@layouts/Base.astro";
+import Byline from "@components/Byline.astro";
+import RelatedTools from "@components/RelatedTools.astro";
+import Figure from "@components/Figure.astro";
+import TwoLayouts from "./_fig/TwoLayouts.astro";
+import SameWork from "./_fig/SameWork.astro";
+import TwoRoutes from "./_fig/TwoRoutes.astro";
+import { tools_read_category } from "@data/tools.js";
+import {
+  model_calculate_result,
+  QUEUE_COUNTER_DEFAULT,
+  QUEUE_LOAD_DEFAULT,
+  QUEUE_SERVICE_DEFAULT_MINUTES,
+  QUEUE_CV_DEFAULT,
+} from "@widgets/one-line-or-many/model.js";
+import {
+  display_format_minutes,
+  display_format_percent,
+  display_format_ratio,
+} from "@widgets/one-line-or-many/widget.js";
+
+// 등급·검수일은 Byline이 tools.js에서 읽는다. 페이지가 다시 말하지 않는다.
+const SLUG = "one-line-or-many";
+const CATEGORY = "chance";
+const cat = tools_read_category(CATEGORY);
+
+// 브레드크럼 이름. 화면과 구조화 데이터가 **같은 상수 하나**를 읽는다.
+const CRUMB = "One Line or Many?";
+
+// ── 본문 숫자 ──────────────────────────────────────────────
+// **하드코딩하지 않는다.** 전부 위젯이 쓰는 그 모델 함수가 내고, 위젯이 쓰는 그
+// 표시 함수가 찍는다 (규약 §5.5 S4 — 화면에서 찾을 수 없는 숫자는 본문에도 없다).
+// widget.js는 `typeof document`로 감싸 둔 마운트 말고는 부작용이 없어 빌드에서 안전하다.
+const MAIN = model_calculate_result(
+  QUEUE_COUNTER_DEFAULT,
+  QUEUE_LOAD_DEFAULT,
+  QUEUE_SERVICE_DEFAULT_MINUTES,
+  QUEUE_CV_DEFAULT,
+);
+const MAIN_LOAD = display_format_percent(MAIN.load);
+const MAIN_IDLE = display_format_percent(1 - MAIN.load);
+const MAIN_SEPARATE_MEAN = display_format_minutes(MAIN.separate.meanMinutes);
+const MAIN_SINGLE_MEAN = display_format_minutes(MAIN.single.meanMinutes);
+const MAIN_SEPARATE_TAIL = display_format_minutes(MAIN.separate.percentileMinutes);
+const MAIN_SINGLE_TAIL = display_format_minutes(MAIN.single.percentileMinutes);
+const MAIN_MEAN_SAVED = display_format_minutes(MAIN.meanSavedMinutes);
+const MAIN_TAIL_SAVED = display_format_minutes(MAIN.percentileSavedMinutes);
+
+// 창구 수만 움직였을 때의 배수. 나머지 슬라이더는 기본값에 둔다.
+const gap_at = (counters) =>
+  display_format_ratio(
+    model_calculate_result(counters, QUEUE_LOAD_DEFAULT, QUEUE_SERVICE_DEFAULT_MINUTES, QUEUE_CV_DEFAULT).meanRatio,
+  );
+const GAP_2 = gap_at(2);
+const GAP_4 = gap_at(4);
+const GAP_8 = gap_at(8);
+
+// 처리시간·변동계수가 배수를 못 움직인다는 주장을 **여기서 실제로 검산한다.**
+// 어긋나면 빌드가 멈춘다 — 본문이 모델보다 오래 살아남지 못하게 하는 장치다.
+for (const [minutes, variation] of [[0.5, 0.25], [10, 2], [1.5, 1.4]]) {
+  const other = model_calculate_result(QUEUE_COUNTER_DEFAULT, QUEUE_LOAD_DEFAULT, minutes, variation);
+  if (display_format_ratio(other.meanRatio) !== GAP_4) {
+    throw new Error("본문이 '배수는 처리시간·변동계수로 안 변한다'고 적었는데 모델이 다르게 낸다");
+  }
+}
+
+// 손계산 절. 프리셋 "Two counters, half busy"와 같은 자리다.
+const HAND_COUNTERS = 2;
+const HAND_LOAD = 0.5;
+const HAND_SERVICE_MINUTES = 4;
+const HAND = model_calculate_result(HAND_COUNTERS, HAND_LOAD, HAND_SERVICE_MINUTES, QUEUE_CV_DEFAULT);
+const HAND_SINGLE_MEAN = display_format_minutes(HAND.single.meanMinutes);
+const HAND_SINGLE_TAIL = display_format_minutes(HAND.single.percentileMinutes);
+const HAND_SEPARATE_MEAN = display_format_minutes(HAND.separate.meanMinutes);
+const HAND_SEPARATE_TAIL = display_format_minutes(HAND.separate.percentileMinutes);
+const HAND_GAP = display_format_ratio(HAND.meanRatio);
+const HAND_TAIL_SAVED = display_format_minutes(HAND.percentileSavedMinutes);
+---
+
+<Base
+  title="One line or many: which queue makes you wait less?"
+  description="A single snaking queue against one line per counter, on the mean wait and on the 95th percentile. Erlang C and M/M/1, pinned to independently computed values."
+  category={CATEGORY}
+  crumbTool={true}
+  crumbLabel={CRUMB}
+>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span aria-hidden="true">›</span>{" "}
+    <a href={cat.href}>{cat.name}</a> <span aria-hidden="true">›</span>{" "}
+    {CRUMB}
+  </nav>
+
+  <h1>One line or many: which queue makes you wait less?</h1>
+
+  <p class="deck">
+    One snaking line, or a line at each counter. Set how many counters there are,
+    and how busy. Nobody serves faster either way. So why can one layout add half
+    an hour to a bad visit?
+  </p>
+
+  <Byline slug={SLUG} />
+
+  <p class="lead">
+    You pick a line. It stops. The line beside you moves three people while yours
+    moves none. Someone who arrived after you walks out before you do.
+  </p>
+
+  <p class="lead">
+    One snaking line feeding several counters takes that choice away. In 2010
+    Supermarket News called it a common sight at airports and banks, and said most
+    supermarkets kept one line per cashier.
+  </p>
+
+  <p class="lead">
+    <span class="lead-turn">In this model nobody picks a fast line — every arrival
+    takes one at random.</span> Both layouts get the same counters and the same
+    customers. The sliders below say what a layout can still move.
+  </p>
+
+  <Figure caption="In this model, both layouts get the same counters and the same arrivals.">
+    <TwoLayouts />
+  </Figure>
+
+  <div data-widget="one-line-or-many">
+    <noscript>
+      <p>
+        The four sliders, the cards, the curve, the table and the animation need
+        JavaScript.
+        The two formulas below give the same figures, and a small case is counted
+        out by hand.
+      </p>
+    </noscript>
+  </div>
+
+  <h2 data-block="reversal">Longer transactions do not change the gap. More counters do.</h2>
+
+  <p>
+    <strong>Counters</strong> sets how many people are serving.
+    {" "}<strong>How busy the counters are</strong> sets each counter's share of busy
+    time. <strong>Minutes at the counter</strong> sets how long one transaction
+    takes.
+  </p>
+
+  <p>
+    Start at {QUEUE_COUNTER_DEFAULT} counters, {MAIN_LOAD} busy,
+    {" "}{QUEUE_SERVICE_DEFAULT_MINUTES} minutes each. For a line per counter the
+    model puts the mean wait at {MAIN_SEPARATE_MEAN} minutes. For one line it puts
+    it at {MAIN_SINGLE_MEAN}. Both layouts serve the same
+    customers per hour. Both leave every counter idle {MAIN_IDLE} of the time.
+    Nobody sped up.
+  </p>
+
+  <p>
+    What one line removes is a counter standing empty while somebody waits.
+  </p>
+
+  <Figure caption="In this model, the same four people and the same four transactions land on the same two counters. Nobody is served faster; what moves is the waiting and which counter is left standing empty.">
+    <SameWork />
+  </Figure>
+
+  <p>
+    <strong>Minutes at the counter</strong> moves neither layout ahead. The model
+    multiplies both waits by it. The gap holds at {GAP_4} from end to end.
+    {" "}<strong>How much the transaction time varies</strong> does the same inside
+    this model's two-moment approximation: both layouts take the same factor.
+  </p>
+
+  <p>
+    <strong>Counters</strong> is the slider that moves the gap. At two counters the
+    model puts one line {GAP_2} below the separate lines. At four it puts {GAP_4},
+    at eight {GAP_8}. Same load, same transaction, more empty
+    counters to reach.
+  </p>
+
+  <p>
+    The tail moves further still. The model puts the 95th percentile at
+    {" "}{MAIN_SEPARATE_TAIL} minutes for a line per counter. For one line it puts
+    {" "}{MAIN_SINGLE_TAIL}. That is {MAIN_TAIL_SAVED} minutes off a bad visit,
+    against {MAIN_MEAN_SAVED} off the mean.
+  </p>
+
+  <p>
+    In this model the gap is set by how many counters share the work. How long any
+    one of them takes does not enter it. The widget draws all of this. Here is how
+    to read it.
+  </p>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 data-block="howto" id="howto-title">How to read what you are looking at</h2>
+
+    <p>
+      The two strips at the top get the same arrivals from the same seed. Any
+      difference between them is the layout, not luck. The upper strip is one line
+      into every counter. The lower strip is a line each. Filled boxes are counters
+      with someone at them. Pale boxes are counters standing empty.
+    </p>
+
+    <p>
+      The four cards are the model's answer and they read nothing from the
+      animation. Each card names its layout and what it reports: two give the mean
+      wait, the other two the 95th percentile. Nineteen visits in twenty come in
+      under it.
+    </p>
+
+    <p>
+      The curve underneath sweeps how busy the counters are. Solid curves are means,
+      dashed curves 95th percentiles; the dashed vertical line marks where the busy
+      slider sits. Blue is one line, orange a line per counter.
+      {" "}<strong>Check the up-and-down axis before comparing two settings.</strong> It
+      is a log scale and it rescales to the data. Where a dashed curve stops, the
+      model puts that percentile at zero. There is nothing left to draw.
+    </p>
+
+    <p>
+      The table at the bottom runs the counter count from one to eight. Its first
+      row is the model's own check. With one counter the two layouts are the same
+      layout, and the numbers match. The formula behind them comes next.
+    </p>
+  </section>
+
+  <section class="math" aria-labelledby="math-title">
+    <h2 data-block="math" class="math-title" id="math-title">Why the gap is cρ / C(c, a)</h2>
+
+    <p>
+      Only the queue rule separates the two layouts. These are the symbols the
+      sliders stand for.
+    </p>
+
+    <dl class="math-where">
+      <dt>c</dt><dd>how many counters are open, 1 to 8</dd>
+      <dt>E[S]</dt><dd>the mean time one customer spends at a counter</dd>
+      <dt>μ</dt><dd>1/E[S] — how many customers one counter finishes per minute</dd>
+      <dt>a</dt><dd>
+        the offered load, λ·E[S], where λ is how many customers walk up per minute.
+        It counts how many customers' worth of work arrive at once.
+      </dd>
+      <dt>ρ</dt><dd>a/c — the share of the time a counter is busy, 0.10 to 0.95</dd>
+    </dl>
+
+    <p>
+      <strong>One line, c counters.</strong> With Poisson arrivals and exponential
+      service this is the M/M/c queue. The share of arrivals that find every
+      counter busy is the Erlang C formula:
+    </p>
+
+    <div class="math-eq">
+      <span>C(c, a)</span><span class="op">=</span>
+      <span class="frac">
+        <span class="sr-only">(</span><span class="frac-num">a<sup>c</sup> / (c!(1 − ρ))</span><span class="sr-only">) over (</span><span class="frac-den">Σ<sub>k=0…c−1</sub> a<sup>k</sup>/k! + a<sup>c</sup> / (c!(1 − ρ))</span><span class="sr-only">)</span>
+      </span>
+    </div>
+
+    <p>
+      The left sum in the denominator gathers the states with a counter still
+      free. The term beside it gathers every state from c customers upward. So
+      C(c, a) is the share of arrivals landing in that second group. Everyone who
+      waits is then served at rate cμ. What is left of the wait is exponential:
+    </p>
+
+    <div class="math-eq">
+      <span>W<sub>q</sub></span><span class="op">=</span>
+      <span class="frac"><span class="sr-only">(</span><span class="frac-num">C(c, a) · E[S]</span><span class="sr-only">) over (</span><span class="frac-den">c(1 − ρ)</span><span class="sr-only">)</span></span>
+    </div>
+
+    <div class="math-eq">
+      <span>t₉₅</span><span class="op">=</span>
+      <span class="frac"><span class="sr-only">(</span><span class="frac-num">E[S]</span><span class="sr-only">) over (</span><span class="frac-den">c(1 − ρ)</span><span class="sr-only">)</span></span>
+      <span class="op">·</span>
+      <span>ln(C(c, a)/0.05)</span>
+    </div>
+
+    <p>
+      <strong>Many lines.</strong> Each counter is its own M/M/1 queue fed λ/c.
+      Setting c = 1 above gives C(1, ρ) = ρ, so W<sub>q</sub> = ρ·E[S]/(1 − ρ).
+      Divide the separate-line wait by the one-line wait and E[S] cancels, leaving
+      cρ / C(c, a). That is the gap, and only c and ρ are in it.
+    </p>
+
+    <p class="math-check">
+      <strong>Variable service times.</strong> For CV ≠ 1 the model multiplies both
+      mean waits by (1 + CV²)/2, so that cancels too. At CV = 1 the factor is 1 and
+      both formulas are exact. At one counter the same expression is the
+      Pollaczek–Khinchine mean-wait formula, exact for any CV. A small case counted by hand
+      makes the rest easier to trust.
+    </p>
+  </section>
+
+  <h2 data-block="byhand">Two counters, counted by hand</h2>
+
+  <p>
+    Take {HAND_COUNTERS} counters, {HAND_SERVICE_MINUTES} minutes each, busy half
+    the time. This one comes out in whole fractions.
+  </p>
+
+  <p>
+    The offered load is a = c·ρ = 2 × 0.5 = 1. The sum in the denominator runs
+    k = 0 and k = 1, giving 1 + 1 = 2. The term that appears twice is
+    a²/(2!(1 − ρ)) = 1/(2 × 0.5) = 1. So the Erlang C value is 1/(2 + 1) = 1/3.
+    In this model one arrival in three finds both counters busy.
+  </p>
+
+  <Figure caption="In this model, counting the states and running the Erlang B recursion are separate routes. Both land on one arrival in three.">
+    <TwoRoutes />
+  </Figure>
+
+  <p>
+    The scale factor for one line is E[S]/(c(1 − ρ)) = 4/(2 × 0.5) = 4 minutes. The
+    mean wait is a third of that, {HAND_SINGLE_MEAN} minutes. The 95th percentile
+    is 4 × ln((1/3)/0.05) = {HAND_SINGLE_TAIL} minutes.
+  </p>
+
+  <p>
+    Now a line per counter. Each counter is its own queue, so the Erlang C value is
+    ρ = 0.5. One customer in two waits, not one in three. The scale factor is
+    E[S]/(1 − ρ) = 8 minutes. The mean wait is {HAND_SEPARATE_MEAN} minutes and the
+    95th percentile is 8 × ln(0.5/0.05) = {HAND_SEPARATE_TAIL} minutes.
+  </p>
+
+  <p>
+    That is {HAND_GAP} on the mean wait and {HAND_TAIL_SAVED} more minutes on the
+    bad visit. One arrival in three against one in two is a modest gap. It arrives
+    multiplied by four minutes against eight, and the two effects compound. All of
+    it rests on four rules.
+  </p>
+
+  <h2 data-block="assumptions">Four rules carry every card, curve and table row here, and no simulation does</h2>
+
+  <p>
+    <strong>Arrivals are Poisson.</strong> Customers arrive on their own at a steady
+    average rate. The gaps between them are exponential. This is the load-bearing
+    rule on the page.
+  </p>
+
+  <p>
+    <strong>Service is exponential, at CV = 1.</strong> Every counter draws from the
+    same distribution. How long a transaction has already run says nothing about
+    what is left of it. The CV slider moves off that rule through a two-moment
+    approximation. Its mean wait is exact at one counter, an approximation above
+    it; its 95th percentile is fitted at any counter count.
+  </p>
+
+  <p>
+    <strong>Everything else is idealised.</strong> Waiting room is infinite, so
+    nobody is turned away. Nobody leaves or changes lines. All counters are equally
+    fast and none takes a break. Each arrival picks one of the separate lines at
+    random, with equal odds.
+    Every figure is the steady state, not the first minutes after opening.
+  </p>
+
+  <p>
+    <strong>The 95th percentile keeps one shape.</strong> For one line it comes from
+    the exact waiting time distribution. That is
+    P(W &gt; t) = C(c, a)·exp(−c(1 − ρ)t/E[S]). At CV ≠ 1 the model scales the mean
+    and keeps that tail shape fitted to it. That is a stated convenience, not a
+    result. The widget says so under the table.
+  </p>
+
+  <p>
+    <strong>No simulation stands behind the numbers.</strong> The animation replays
+    one seeded arrival stream through both layouts. No card, curve or table row
+    reads anything from it. Every figure is a closed form, evaluated directly.
+    Each of those rules has its own way of failing.
+  </p>
+
+  <h2 data-block="limits">Real arrivals clump, and real customers move</h2>
+
+  <p>
+    <strong>Real arrivals clump.</strong> Poisson arrivals are independent and evenly
+    paced on average. Shops get a bus, a film letting out, a lunch hour. Bunched
+    arrivals generally make real waits longer than the figures here. The model has
+    no term for them.
+  </p>
+
+  <p>
+    <strong>Real customers move.</strong> Nobody here switches lines, gives up, or
+    comes back later. Switching lines wins back part of what the separate layout
+    loses. Switching lines would shrink the gap the model reports; the model leaves
+    it out.
+  </p>
+
+  <p>
+    <strong>Real counters differ.</strong> Equal speeds, no breaks, no express
+    lanes. No counter is restricted to one kind of transaction. Under one line, no
+    counter stands empty while somebody waits. Any of these changes the answer.
+  </p>
+
+  <p>
+    <strong>The two savings do not keep a fixed ratio.</strong> The tail saves more
+    minutes than the mean everywhere the sliders reach beyond one counter. Compared as ratios the two
+    trade places inside a narrow band. Under one line, sometimes fewer than one
+    arrival in ten waits at all. Its 95th percentile then sits near zero, and the
+    ratio runs away. Below one in twenty the model puts that percentile at exactly
+    zero. The ratio stops being defined there. The band belongs to this model's
+    percentile, not to shops.
+  </p>
+
+  <p>
+    <strong>Outside the formulas.</strong> ρ ≥ 1 has no steady state and the slider
+    stops short of it. The CV slider leaves the exact model. And one line needs
+    floor space, sightlines and signage to work at all. The model prices none of
+    that.
+  </p>
+
+  <h2 data-block="closing">The exchange came before the checkout</h2>
+
+  <p>
+    None of this arithmetic was written for shops. A. K. Erlang worked for the
+    Copenhagen Telephone Company. In 1909 he published a paper on telephone
+    conversations and probability. An exchange had a fixed number of circuits and
+    callers arriving at random.
+  </p>
+
+  <p>
+    That is the same model with different furniture. Counters become circuits and
+    customers become calls. A caller who finds every circuit busy is the customer
+    who finds every counter busy. The delay formula Erlang published in 1917 is the
+    C(c, a) above.
+  </p>
+
+  <p>
+    His name stayed on the unit. The offered load a is counted in erlangs. One
+    erlang is one circuit's worth of traffic arriving. On this page it counts the
+    work that walks up at once. The exchange and the checkout read the same table.
+  </p>
+
+  <h2 data-block="about">About this page</h2>
+
+  <p class="note">
+    The Erlang C implementation is the Erlang B recursion. The test file computes
+    the same quantity from the closed form, as a separate route. It also pins seven
+    reference values to six decimal places. The animation is checked for the one thing it claims.
+    Both strips see the same arrivals.
+    {" "}<a href="/about">How I check things</a>.
+  </p>
+
+  <p><strong>Sources.</strong></p>
+
+  <ul class="sources">
+    <li>
+      M. Garry, <a
+      href="https://www.supermarketnews.com/technology/queuing-question">"The
+      Queuing Question"</a>, <em>Supermarket News</em>, 17 May 2010, for the
+      airport, bank and supermarket layouts the lead reports for that year.
+    </li>
+    <li>
+      A. K. Erlang, "The Theory of Probabilities and Telephone Conversations",
+      {" "}<em>Nyt Tidsskrift for Matematik</em> B 20 (1909), pp. 33–39. The journal
+      predates DOIs and the paper could not be consulted; these details follow
+      secondary sources rather than the original.
+    </li>
+    <li>
+      A. K. Erlang, "Solution of some Problems in the Theory of Probabilities of
+      Significance in Automatic Telephone Exchanges", <em>Elektroteknikeren</em>
+      {" "}13 (1917), pp. 5–13, for the delay formula used here. That place of
+      publication follows secondary sources rather than the original.
+    </li>
+    <li>
+      D. R. Smith and W. Whitt, <a
+      href="https://doi.org/10.1002/j.1538-7305.1981.tb00221.x">"Resource Sharing
+      for Efficiency in Traffic Systems"</a>, <em>Bell System Technical Journal</em>
+      {" "}60(1), 1981, pp. 39–55, on sharing servers between queues. The bibliographic
+      record was checked; the contents are reported here rather than verified.
+    </li>
+    <li>
+      A. O. Allen, <a
+      href="https://shop.elsevier.com/books/probability-statistics-and-queueing-theory/allen/978-0-08-057105-8"><em>Probability,
+      Statistics, and Queueing Theory</em></a>, 2nd ed. (Academic Press, 1990), for
+      the two-moment approximation used when CV ≠ 1. The approximation is commonly
+      credited jointly to Allen and Cunneen; that joint attribution is reported here
+      rather than verified against an original.
+    </li>
+    <li>
+      Seven standard Erlang C values, pinned by the unit tests to six decimal
+      places — among them C(2, 1.0) = 0.333333 and C(4, 3.2) = 0.596432. No
+      particular published table is cited for them; they were reproduced from the
+      closed form above. That second implementation agrees with the recursion to
+      twelve decimal places across the whole slider range.
+    </li>
+  </ul>
+
+  <RelatedTools slug={SLUG} />
+
+  <script>
+    import "@widgets/one-line-or-many/widget.js";
+  </script>
+</Base>

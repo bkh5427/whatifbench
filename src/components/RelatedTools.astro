@@ -29,10 +29,21 @@ const otherSections = CATEGORIES.filter((c) => c.key !== tool.category);
 const publishedElsewhere = tools_read_published().filter((t) => t.slug !== slug);
 const publishedSiblings = publishedElsewhere.filter((t) => t.category === tool.category);
 const fallbackLead = prose_format_fallback_lead(tool.published, publishedSiblings.length);
+
+// 맨 아래 링크. "All X tools"는 집합을 약속한다 — 그 구역에 발행된 도구가 하나뿐이면
+// 바로 위 문장("Nothing else sits in X yet")과 대놓고 모순된다. 둘 이상일 때만
+// 복수로 쓰고, 아니면 구역 자체를 가리킨다. 이 도구 자신도 세어야 하므로
+// `publishedSiblings`(자기 자신을 뺀 것)가 아니라 카테고리 전체를 다시 읽는다.
+const CATEGORY_MIN_FOR_PLURAL_LINK = 2;
+const categoryPublished = tools_read_published(tool.category).length;
+const sectionLinkText =
+  categoryPublished >= CATEGORY_MIN_FOR_PLURAL_LINK
+    ? `All ${cat.name} tools →`
+    : `The ${cat.name} section →`;
 ---
 
 <section class="read-next">
-  <h2>Read next</h2>
+  <h2 data-block="related">Read next</h2>
 
   {
     related.length > 0 ? (
@@ -45,7 +56,7 @@ const fallbackLead = prose_format_fallback_lead(tool.published, publishedSibling
             </div>
             {t.figure && (
               <p class="tool-figure">
-                <span class="tool-figure-value">{t.figure.value}</span>
+                <span class="tool-figure-value">{t.figure.value}</span>{" "}
                 <span class="tool-figure-label">{t.figure.label}</span>
               </p>
             )}
@@ -56,7 +67,7 @@ const fallbackLead = prose_format_fallback_lead(tool.published, publishedSibling
       <p>
         {fallbackLead}
         <a href={cat.href}>{cat.name}</a> yet. Each of the other sections opens with
-        its own writing, and the tools that are finished are listed there:
+        its own writing:
         {otherSections.map((c, i) => (
           <Fragment>
             {prose_format_separator(i, otherSections.length)}
@@ -68,6 +79,6 @@ const fallbackLead = prose_format_fallback_lead(tool.published, publishedSibling
   }
 
   <p class="note">
-    <a href={cat.href}>All {cat.name} tools →</a>
+    <a href={cat.href}>{sectionLinkText}</a>
   </p>
 </section>

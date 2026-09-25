@@ -15,7 +15,6 @@ import {
   SIMPSON_RATE_MIN,
   SIMPSON_RATE_MAX,
   SIMPSON_RATE_SLIDER_STEP,
-  SIMPSON_RATE_KEYBOARD_STEP,
   SIMPSON_RATE_EPSILON,
   SIMPSON_PRESET_DEFAULT,
   SIMPSON_PRESETS,
@@ -96,10 +95,29 @@ const TABLE_HEADINGS = ['Group', 'Option A', 'Option B', 'Gap'];
 
 // ── 표시 함수 ──────────────────────────────────────────────
 
+/**
+ * 소수 `digits`자리로 **0.5는 올림** 반올림한다.
+ *
+ * `toFixed`는 이진 부동소수를 반올림한다. 23/80 = 28.75%는 이진으로 28.7499…라
+ * `toFixed(1)`이 28.7%로 찍었다(2026-09-24 shown.test.js 격자, 그룹 비율 6건 ·
+ * 합산 비율 109건 · 격차 526건). 화면 옆 칸에는 "23 of 80"이 그대로 있어 한 화면이
+ * 스스로 모순됐다. 몬티홀 위젯이 같은 사고를 같은 방식으로 이미 고쳐 두었다.
+ *
+ * 비율은 정수의 비이거나 슬라이더/URL이 주는 소수 여섯 자리다. 참값이 반올림
+ * 경계(…5)에서 떨어진 거리는 그 분모에서 ROUND_EPS보다 훨씬 크므로, 이 보정은
+ * 경계에 **정확히** 놓인 값만 올리고 나머지는 건드리지 않는다.
+ */
+const ROUND_EPS = 1e-9;
+function display_round_half_up(value, digits) {
+  const scale = 10 ** digits;
+  return Math.floor(value * scale + 0.5 + ROUND_EPS) / scale;
+}
+
 /** 비율을 백분율 문자열로. 정의되지 않은 비율은 대시. */
 export function display_format_percent(rate) {
   if (rate === null || !Number.isFinite(rate)) return RATE_MISSING_TEXT;
-  return `${(rate * PERCENT_SCALE).toFixed(PERCENT_DIGITS)}%`;
+  const points = display_round_half_up(rate * PERCENT_SCALE, PERCENT_DIGITS);
+  return `${points.toFixed(PERCENT_DIGITS)}%`;
 }
 
 /** 격차는 부호를 붙여 찍는다. 0.0%p 앞의 `+`는 붙이지 않는다. */
@@ -107,7 +125,8 @@ export function display_format_gap(gap) {
   if (gap === null || !Number.isFinite(gap)) return RATE_MISSING_TEXT;
   const points = gap * PERCENT_SCALE;
   const sign = Math.abs(gap) <= SIMPSON_RATE_EPSILON ? '' : points > 0 ? '+' : '−';
-  return `${sign}${Math.abs(points).toFixed(PERCENT_DIGITS)} pp`;
+  const size = display_round_half_up(Math.abs(points), PERCENT_DIGITS);
+  return `${sign}${size.toFixed(PERCENT_DIGITS)} pp`;
 }
 
 export const display_format_count = num_format_count;
@@ -253,6 +272,25 @@ export function display_describe_verdict(result, labels) {
 }
 
 /**
+ * 시도가 하나도 없는 선택지를 짚어 준다.
+ * 빈 쪽이 하나일 때와 둘일 때를 갈라 말한다 — 슬라이더 최솟값이 0이므로
+ * 두 선택지가 동시에 비는 상태를 독자가 만들 수 있다.
+ */
+export function display_describe_empty_options(state, labels) {
+  const emptyA = state.sizeA1 + state.sizeA2 <= 0;
+  const emptyB = state.sizeB1 + state.sizeB2 <= 0;
+  const tail = 'so the model has no pooled rate to report.';
+  if (emptyA && emptyB) {
+    return `Neither option has any trials, ${tail} Raise a trials slider on each side above zero.`;
+  }
+  if (emptyA || emptyB) {
+    const emptyName = emptyA ? labels.optionLabels.a : labels.optionLabels.b;
+    return `${emptyName} has no trials at all, ${tail} Raise one of its trials sliders above zero.`;
+  }
+  return `The sliders sit outside the range the model accepts, ${tail}`;
+}
+
+/**
  * 가중치 띠가 무엇을 말하는지 한 문장으로.
  * 항등식의 둘째 항이 화면의 어디에 있는지 글로 이어 준다.
  */
@@ -388,7 +426,7 @@ export function widget_mount(rootEl) {
       const rateSlider = control_build_slider(
         `simpson-${option}${group}-p`,
         'success rate',
-        `The share of those trials that succeeded. Arrow keys step ${(SIMPSON_RATE_KEYBOARD_STEP * PERCENT_SCALE).toFixed(0)} point at a time.`,
+        `The share of those trials that succeeded. The slider has no notches, so how far an arrow key moves it is up to the browser.`,
         {
           min: SIMPSON_RATE_MIN,
           max: SIMPSON_RATE_MAX,
@@ -540,11 +578,52 @@ export function widget_mount(rootEl) {
     if (headCells[3]) headCells[3].textContent = 'Gap';
   }
 
+  /**
+   * 비교할 것이 없는 상태. 배너만 바꾸면 **막대·띠·표가 앞 상태의 숫자를 그대로 들고
+   * 있다** — 슬라이더는 시도 0을 적고 배너는 "no trials at all"이라 말하는데 막대에는
+   * "171 of 341"이 남아 있었다(2026-09-25 전수검사). `hidden`은 화면과 접근성 트리에서
+   * 함께 빼므로 복사·스크린리더에도 남지 않는다.
+   */
   function display_show_invalid(message) {
     verdict.removeAttribute('data-state');
     verdictHeadline.textContent = 'Nothing to compare.';
     verdictDetail.textContent = message;
+    display_clear_figures();
+    chart.hidden = true;
+    stripBlock.hidden = true;
+    table.scroll.hidden = true;
     chart.setAttribute('aria-hidden', 'true');
+  }
+
+  /**
+   * 숫자를 **지운다.** `hidden`만으로는 모자랐다 — `.bar-block`이 `display: grid`를
+   * 저작자 스타일로 정해 브라우저 기본 `[hidden]{display:none}`을 이겼고, 띠 블록만
+   * 화면에 남아 앞 상태의 가중치("Option A 68.9%")와 앞 상태를 가리키는 설명문을
+   * 계속 말했다(2026-09-25). CSS 쪽도 고쳤지만, 글자를 지우는 쪽이 스타일시트가
+   * 없거나 늦게 오는 환경에서도 앞 상태를 못 남긴다.
+   */
+  function display_clear_figures() {
+    for (const caption of Object.values(barCaptions)) caption.textContent = '';
+    for (const bar of Object.values(bars)) {
+      bar.value.textContent = '';
+      bar.share.textContent = '';
+      bar.fill.style.width = '0%';
+    }
+    stripTitle.textContent = '';
+    stripNote.textContent = '';
+    for (const strip of Object.values(strips)) {
+      strip.row.querySelector('.bar-label').textContent = '';
+      strip.value.textContent = '';
+    }
+    table.body.textContent = '';
+  }
+
+  /** 다시 비교할 것이 생겼다. 숨긴 셋을 되돌린다. */
+  function display_show_figures() {
+    chart.hidden = false;
+    stripBlock.hidden = false;
+    table.scroll.hidden = false;
+    chart.removeAttribute('aria-hidden');
   }
 
   /** 상태 하나를 받아 화면 전체를 맞춘다. 계산 경로는 여기 하나뿐이다. */
@@ -560,13 +639,11 @@ export function widget_mount(rootEl) {
 
     const check = model_check_parameters(current);
     if (!check.ok) {
-      display_show_invalid(
-        'One of the two options has no trials at all, so the model has no pooled rate to report. Raise a trials slider above zero.',
-      );
+      display_show_invalid(display_describe_empty_options(current, labels));
       url_write_state(current);
       return;
     }
-    chart.removeAttribute('aria-hidden');
+    display_show_figures();
 
     const result = model_calculate_result(current);
     const spoken = display_describe_verdict(result, labels);

@@ -1,0 +1,102 @@
+---
+/*
+  ** 이 파일이 `---`로 시작하는 이유 **
+  `<svg`로 시작하는 `.astro`는 PC로 보낼 때 콘텐츠 서명(C2PA)이 붙어
+  +7,774바이트가 끼어들며 파일이 깨진다. 프런트매터가 앞에 있으면 붙지 않는다.
+  규약 §5 제작 표준.
+
+  도해 1 — 설정. 위젯 **앞**에 놓는다 (규약 §5.5 S7).
+  무엇을 재는 상황인가만 그린다. **숫자 결과를 담지 않는다** — 들어가는 칸의
+  이름만 있고 비율도 건수도 없다. 세로형: 폰 330px에서 라벨이 짓눌리지 않게.
+*/
+const W = 420;
+const H = 452;
+
+// 패널 — 그룹 둘, 그리고 합계 하나.
+const PANEL_X = 14;
+const PANEL_W = W - PANEL_X * 2;
+const PANEL_H = 112;
+const PANEL_1_Y = 42;
+const PANEL_2_Y = 166;
+const POOL_Y = 340;
+const POOL_H = 96;
+
+// 패널 안의 두 줄 (선택지 A·B).
+const ROW_1_DY = 44;
+const ROW_2_DY = 86;
+
+// 한 줄 안의 칸 두 개 — 시도 수와 성공률.
+const NAME_X = PANEL_X + 16;
+const BOX_1_X = 130;
+const BOX_2_X = 262;
+const BOX_W = 118;
+const BOX_H = 30;
+
+const ARROW_X = W / 2;
+const ARROW_TOP = PANEL_2_Y + PANEL_H + 6;
+const ARROW_FOOT = POOL_Y - 8;
+
+const GROUPS = [
+  { y: PANEL_1_Y, name: "Group 1" },
+  { y: PANEL_2_Y, name: "Group 2" },
+];
+const OPTIONS = [
+  { dy: ROW_1_DY, name: "Option A" },
+  { dy: ROW_2_DY, name: "Option B" },
+];
+---
+<svg
+  class="fig-svg"
+  viewBox={`0 0 ${W} ${H}`}
+  role="img"
+  aria-label="What the model is given, drawn as three stacked panels. The top panel is Group 1 and holds two rows, Option A and Option B. Each row has two boxes: how many trials, and the share that succeeded. The middle panel is Group 2 and holds the same four boxes for the same two options. That is eight numbers in total. An arrow points down from the two group panels to a third panel titled Both groups added together, and the arrow is labelled group labels dropped. The bottom panel has one row per option and one box each, marked one pooled rate. So eight numbers go in and two come out, and the bottom panel is not a new measurement."
+>
+  <text x={W / 2} y="24" class="fig-label" fill="var(--graphite)" text-anchor="middle">what the model is given</text>
+
+  {GROUPS.map((group) => (
+    <g>
+      <rect
+        x={PANEL_X}
+        y={group.y}
+        width={PANEL_W}
+        height={PANEL_H}
+        rx="3"
+        fill="var(--surface)"
+        stroke="var(--rule)"
+        stroke-width="1"
+      />
+      <text x={NAME_X} y={group.y + 22} class="fig-label" fill="var(--graphite)">{group.name}</text>
+      {OPTIONS.map((option) => (
+        <g>
+          <text x={NAME_X} y={group.y + option.dy + 20} class="fig-label-dim" fill="var(--graphite-soft)">{option.name}</text>
+          <rect x={BOX_1_X} y={group.y + option.dy} width={BOX_W} height={BOX_H} rx="2" fill="var(--paper)" stroke="var(--rule-strong)" stroke-width="1" />
+          <text x={BOX_1_X + BOX_W / 2} y={group.y + option.dy + 20} class="fig-label-dim" fill="var(--graphite)" text-anchor="middle">trials</text>
+          <rect x={BOX_2_X} y={group.y + option.dy} width={BOX_W} height={BOX_H} rx="2" fill="var(--paper)" stroke="var(--rule-strong)" stroke-width="1" />
+          <text x={BOX_2_X + BOX_W / 2} y={group.y + option.dy + 20} class="fig-label-dim" fill="var(--graphite)" text-anchor="middle">success rate</text>
+        </g>
+      ))}
+    </g>
+  ))}
+
+  <path
+    d={`M${ARROW_X},${ARROW_TOP} L${ARROW_X},${ARROW_FOOT} M${ARROW_X - 8},${ARROW_FOOT - 13} L${ARROW_X},${ARROW_FOOT} L${ARROW_X + 8},${ARROW_FOOT - 13}`}
+    fill="none"
+    stroke="var(--graphite-soft)"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <text x={ARROW_X + 14} y={(ARROW_TOP + ARROW_FOOT) / 2 + 5} class="fig-label-dim" fill="var(--graphite-soft)">group labels dropped</text>
+
+  <rect x={PANEL_X} y={POOL_Y} width={PANEL_W} height={POOL_H} rx="3" fill="var(--steel-100)" stroke="var(--steel-500)" stroke-width="2" />
+  <text x={NAME_X} y={POOL_Y + 22} class="fig-label" fill="var(--graphite)">Both groups added together</text>
+  {OPTIONS.map((option, index) => (
+    <g>
+      <text x={NAME_X} y={POOL_Y + 46 + index * 30} class="fig-label-dim" fill="var(--graphite-soft)">{option.name}</text>
+      <rect x={BOX_1_X} y={POOL_Y + 28 + index * 30} width={BOX_W + 12} height={BOX_H - 4} rx="2" fill="var(--paper)" stroke="var(--steel-500)" stroke-width="1" />
+      <text x={BOX_1_X + (BOX_W + 12) / 2} y={POOL_Y + 46 + index * 30} class="fig-label-dim" fill="var(--graphite)" text-anchor="middle">one pooled rate</text>
+    </g>
+  ))}
+  <text x={BOX_2_X + 4} y={POOL_Y + 46} class="fig-label-dim" fill="var(--graphite-soft)">eight numbers in,</text>
+  <text x={BOX_2_X + 4} y={POOL_Y + 76} class="fig-label-dim" fill="var(--graphite-soft)">two numbers out</text>
+</svg>

@@ -210,20 +210,16 @@ describe("산출물 — RelatedTools 대체 문구", () => {
   // 산출물로는 그 분기를 만들 수 없다 — 만들려면 저장소가 망가져야 한다.
   // 세 분기는 `prose.test.js`의 `prose_format_fallback_lead`가 지킨다.
 
-  // monty-hall-n-doors는 `published: true`고 chance에 발행된 형제가 없다.
-  it("발행된 도구는 형제가 없다고 말한다", () => {
+  // 2026-09-24: 여기 있던 두 단언은 "chance에 발행된 형제가 없다"는 세계를 못박고
+  // 있었다. simpsons-paradox와 one-line-or-many가 발행되면서 세 도구 모두 형제가
+  // 생겨, 대체 문구 분기를 **산출물로는 만들 수 없다** — 만들려면 저장소가
+  // 망가져야 한다. 세 분기와 목록 구분자는 `prose.test.js`의
+  // `prose_format_fallback_lead`가 지킨다. 여기서는 형제 카드가 실제로 실렸는지만 본다.
+  it("발행된 도구는 형제 카드를 싣는다 (대체 문구가 아니다)", () => {
     const page = PAGES.find((p) => p.path === "monty-hall-n-doors/index.html");
-    const sentence = test_read_fallback_sentence(page.html);
-    expect(sentence).toContain("Nothing else sits in Chance yet.");
-    expect(sentence).not.toContain("Nothing here links into");
-  });
-
-  // 목록 구분자. 분류가 넷이 되면서 다른 구역이 셋이라 "A, B and C"다.
-  // 옥스퍼드 쉼표 없는 마지막 접속만 여기서 본다 — 나머지 경계는 `prose.test.js`가 본다.
-  it.each([
-    ["monty-hall-n-doors/index.html", "listed there: Scale, Motion and Energy."],
-  ])("%s 가 자기 구역을 뺀 나머지를 잇는다", (path, tail) => {
-    const page = PAGES.find((p) => p.path === path);
-    expect(test_read_fallback_sentence(page.html).endsWith(tail)).toBe(true);
+    // 대체 문구 대신 형제 카드가 실렸다 — 첫 문단이 형제의 blurb다.
+    expect(test_read_fallback_sentence(page.html)).not.toContain("Nothing else sits in");
+    expect(page.html).toContain('href="/simpsons-paradox"');
+    expect(page.html).toContain('href="/one-line-or-many"');
   });
 });

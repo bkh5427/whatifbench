@@ -1,0 +1,92 @@
+---
+/*
+  ** 이 파일이 `---`로 시작하는 이유 **
+  `<svg`로 시작하는 `.astro`는 전송 중 C2PA 서명이 붙어 깨진다. 규약 §5.
+
+  도해 2 — 메커니즘. 반전 절에 놓는다.
+  **위젯의 막대·띠·표를 재탕하지 않는다.** 위젯은 비율을 0~100% 막대로 그리고
+  가중치를 별도의 띠로 그린다. 이 그림이 그리는 것은 그 둘이 화면에 따로 있어서
+  보이지 않는 것 하나다 — 합계 비율은 **자기 두 군 비율 사이의 한 점**이고,
+  그 점의 자리를 정하는 것이 가중치다. 두 선택지의 선분이 통째로 어긋나 있어도
+  점의 좌우는 뒤집힐 수 있다. 숫자를 쓰지 않는다 — 자리만이 논점이다.
+
+  계열색(--series-1/2)은 쓰지 않는다. widget.js가 그 둘을 선택지 A·B에 고정으로
+  배정하므로, 여기서 '앞서는 쪽/뒤지는 쪽'에 같은 색을 쓰면 바로 위 위젯과 뜻이
+  어긋난다(기본 프리셋의 A는 두 군에서 지고 합계에서 이긴다).
+  모양으로 구분한다(색만으로 정보를 주지 않는다): 합계 점은 마름모와 사각형,
+  군 비율 끝점은 속 빈 원. 글자로 승패를 한 번 더 적는다.
+*/
+const W = 420;
+const H = 324;
+
+const AXIS_Y = 250;
+const AXIS_LEFT = 30;
+const AXIS_RIGHT = 398;
+
+// 두 선분. x가 클수록 성공률이 높다. 눈금도 숫자도 없다 — 상대 위치만 읽는다.
+const LEAD_Y = 100;      // 두 군 모두에서 앞서는 쪽
+const LEAD_LOW_X = 96;
+const LEAD_HIGH_X = 330;
+const LEAD_WEIGHT = 0.24;
+
+const TRAIL_Y = 192;     // 두 군 모두에서 뒤지는 쪽
+const TRAIL_LOW_X = 72;
+const TRAIL_HIGH_X = 306;
+const TRAIL_WEIGHT = 0.69;
+
+const mark_at = (low, high, weight) => low + weight * (high - low);
+const LEAD_MARK_X = mark_at(LEAD_LOW_X, LEAD_HIGH_X, LEAD_WEIGHT);
+const TRAIL_MARK_X = mark_at(TRAIL_LOW_X, TRAIL_HIGH_X, TRAIL_WEIGHT);
+
+const DOT_R = 6;
+const MARK_R = 9;
+---
+<svg
+  class="fig-svg"
+  viewBox={`0 0 ${W} ${H}`}
+  role="img"
+  aria-label="Two weighted averages drawn on one left-to-right scale of success rate, with no numbers. The upper line belongs to the option that leads in both groups: its two group rates are marked as open circles, and both of them sit further right, that is higher, than the matching circles on the lower line. Its pooled figure is drawn as a square and sits close to its left-hand circle, because most of its trials ran in the harder group. The lower line belongs to the option that trails in both groups: its pooled figure is drawn as a diamond and sits close to its right-hand circle, because most of its trials ran in the easier group. Dashed lines drop from both pooled marks to the scale, and the diamond lands further right than the square. So the option that trails on both lines wins the pooled total, and the mark sits wherever the trials sat."
+>
+  <text x={W / 2} y="26" class="fig-label" fill="var(--graphite)" text-anchor="middle">two weighted averages, one scale</text>
+
+  <!-- 합계 점의 낙하선을 **먼저** 깐다 — 선분과 표지가 그 위를 덮어 교차가 읽힌다 -->
+  <line x1={LEAD_MARK_X} y1={LEAD_Y + MARK_R} x2={LEAD_MARK_X} y2={AXIS_Y} stroke="var(--graphite-soft)" stroke-width="1.5" stroke-dasharray="4 3" />
+  <line x1={TRAIL_MARK_X} y1={TRAIL_Y + MARK_R} x2={TRAIL_MARK_X} y2={AXIS_Y} stroke="var(--graphite-soft)" stroke-width="1.5" stroke-dasharray="4 3" />
+
+  <!-- 두 군 모두에서 앞서는 쪽 -->
+  <text x={AXIS_LEFT} y="60" class="fig-label" fill="var(--graphite)">leads in both</text>
+  <text x={LEAD_MARK_X} y="82" class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">pooled — loses the total</text>
+  <line x1={LEAD_LOW_X} y1={LEAD_Y} x2={LEAD_HIGH_X} y2={LEAD_Y} stroke="var(--graphite-soft)" stroke-width="2" />
+  <circle cx={LEAD_LOW_X} cy={LEAD_Y} r={DOT_R} fill="var(--paper)" stroke="var(--graphite)" stroke-width="2" />
+  <circle cx={LEAD_HIGH_X} cy={LEAD_Y} r={DOT_R} fill="var(--paper)" stroke="var(--graphite)" stroke-width="2" />
+  <rect x={LEAD_MARK_X - MARK_R} y={LEAD_Y - MARK_R} width={MARK_R * 2} height={MARK_R * 2} fill="var(--graphite)" stroke="var(--paper)" stroke-width="2" />
+  <text x={LEAD_LOW_X} y={LEAD_Y + 26} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">harder group</text>
+  <text x={LEAD_HIGH_X} y={LEAD_Y + 26} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">easier group</text>
+
+  <!-- 두 군 모두에서 뒤지는 쪽 -->
+  <text x={AXIS_LEFT} y="152" class="fig-label" fill="var(--graphite)">trails in both</text>
+  <text x={TRAIL_MARK_X} y="174" class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">pooled — wins the total</text>
+  <line x1={TRAIL_LOW_X} y1={TRAIL_Y} x2={TRAIL_HIGH_X} y2={TRAIL_Y} stroke="var(--graphite-soft)" stroke-width="2" />
+  <circle cx={TRAIL_LOW_X} cy={TRAIL_Y} r={DOT_R} fill="var(--paper)" stroke="var(--graphite)" stroke-width="2" />
+  <circle cx={TRAIL_HIGH_X} cy={TRAIL_Y} r={DOT_R} fill="var(--paper)" stroke="var(--graphite)" stroke-width="2" />
+  <path
+    d={`M${TRAIL_MARK_X},${TRAIL_Y - MARK_R - 2} L${TRAIL_MARK_X + MARK_R + 2},${TRAIL_Y} L${TRAIL_MARK_X},${TRAIL_Y + MARK_R + 2} L${TRAIL_MARK_X - MARK_R - 2},${TRAIL_Y} Z`}
+    fill="var(--graphite)"
+    stroke="var(--paper)"
+    stroke-width="2"
+  />
+  <text x={TRAIL_LOW_X} y={TRAIL_Y + 26} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">harder group</text>
+  <text x={TRAIL_HIGH_X} y={TRAIL_Y + 26} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">easier group</text>
+
+  <path
+    d={`M${AXIS_LEFT},${AXIS_Y} L${AXIS_RIGHT},${AXIS_Y} M${AXIS_RIGHT - 12},${AXIS_Y - 6} L${AXIS_RIGHT},${AXIS_Y} L${AXIS_RIGHT - 12},${AXIS_Y + 6}`}
+    fill="none"
+    stroke="var(--graphite)"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <text x={AXIS_LEFT} y={AXIS_Y + 22} class="fig-label-dim" fill="var(--graphite-soft)">lower rate</text>
+  <text x={AXIS_RIGHT} y={AXIS_Y + 22} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="end">higher rate</text>
+  <text x={W / 2} y={H - 12} class="fig-label" fill="var(--graphite)" text-anchor="middle">each mark sits where that option's trials sat</text>
+</svg>

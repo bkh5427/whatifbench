@@ -17,6 +17,10 @@
 import { describe, it, expect } from "vitest";
 import {
   CATEGORIES,
+  CATEGORIES_ALL,
+  CATEGORIES_PLANNED,
+  CATEGORY_MAX_BEFORE_HEADER_CHANGE,
+  CATEGORY_OPEN_MIN_PUBLISHED,
   CATEGORY_MAX_BEFORE_HEADER_CHANGE,
   RELATED_COUNT,
   RELATED_SAME_CATEGORY_MAX,
@@ -121,13 +125,32 @@ describe("데이터 무결성", () => {
     expect(new Set(slugs).size).toBe(slugs.length);
   });
 
-  it("모든 도구의 category가 CATEGORIES에 있다", () => {
-    const keys = CATEGORIES.map((c) => c.key);
-    for (const t of TOOLS) {
-      expect(keys).toContain(t.category);
-      // tools_read_category가 항상 CATEGORIES[0]을 반환해도 위 단언은 통과한다.
-      // 계약은 '찾아준 것이 그 키'라는 것이다.
+  // 이름이 붙은 카테고리(열린 것 + 닫힌 것)에 모든 도구가 속한다. 오타 잡이다.
+  it("모든 도구의 category가 CATEGORIES_ALL에 있다", () => {
+    const keys = CATEGORIES_ALL.map((c) => c.key);
+    for (const t of TOOLS) expect(keys).toContain(t.category);
+  });
+
+  // 발행된 도구는 **열린** 카테고리에만 있어야 한다 — 닫혀 있으면 브레드크럼도
+  // 인덱스도 없다. tools_read_category가 항상 CATEGORIES[0]을 돌려줘도 통과하지
+  // 않게, 찾아준 것이 그 키인지까지 본다.
+  it("발행된 도구의 카테고리는 열려 있다", () => {
+    for (const t of TOOLS.filter((x) => x.published)) {
+      expect(tools_read_category(t.category)).not.toBeNull();
       expect(tools_read_category(t.category).key).toBe(t.category);
+    }
+  });
+
+  // 닫힌 카테고리는 주소가 없다 — tools_read_category가 null을 줘야 페이지가
+  // 만들어지지 않는다(`[category].astro`가 CATEGORIES만 훑는다).
+  it("닫힌 카테고리는 tools_read_category에서 null이다", () => {
+    for (const c of CATEGORIES_PLANNED) expect(tools_read_category(c.key)).toBeNull();
+  });
+
+  // 열려 있는 카테고리는 공개 도구가 둘 이상. tools.js 주석의 규칙을 기계가 지킨다.
+  it("열린 카테고리마다 공개 도구가 2개 이상이다", () => {
+    for (const c of CATEGORIES) {
+      expect(tools_read_published(c.key).length).toBeGreaterThanOrEqual(CATEGORY_OPEN_MIN_PUBLISHED);
     }
   });
 
@@ -166,8 +189,10 @@ describe("데이터 무결성", () => {
   });
 
   it("카테고리 수가 헤더 한 줄 한계 안에 있다", () => {
-    expect(CATEGORIES.length).toBe(4); // 골든. 늘리려면 헤더 패턴을 먼저 본다.
-    expect(CATEGORIES.length).toBeLessThanOrEqual(4);
+    // 2026-09-24: scale·motion·energy를 닫아 열린 것은 chance 하나다.
+    expect(CATEGORIES.length).toBe(1); // 골든. 늘리려면 헤더 패턴을 먼저 본다.
+    expect(CATEGORIES.length).toBeLessThanOrEqual(CATEGORY_MAX_BEFORE_HEADER_CHANGE);
+    expect(CATEGORIES_ALL.length).toBe(4); // 이름이 붙은 것은 넷 그대로
   });
 });
 
@@ -214,8 +239,26 @@ describe("발행 게이트", () => {
   });
 
   it("미발행 도구의 updated는 검사하지 않는다", () => {
-    const pool = [{ ...TOOLS[0], published: false, updated: null }];
+    // 게이트가 "열린 카테고리에 공개 2개"도 보므로, 그 조건은 충족시켜 둔다 —
+    // 이 테스트가 보는 것은 updated 검사가 미발행을 건너뛰는지 하나다.
+    const pool = [
+      ...TOOLS.filter((t) => t.published),
+      { ...TOOLS[0], slug: "draft-only", published: false, updated: null },
+    ];
     expect(tools_check_publishable(pool)).toBe(true);
+  });
+
+  it("열린 카테고리에 공개 도구가 모자라면 throw한다", () => {
+    const pool = TOOLS.map((t) => ({ ...t, published: false }));
+    expect(() => tools_check_publishable(pool)).toThrow(/카테고리가 열려 있다/);
+  });
+
+  it("발행된 도구의 카테고리가 닫혀 있으면 throw한다", () => {
+    const pool = [
+      ...TOOLS.filter((t) => t.published),
+      { ...TOOLS[0], slug: "homeless", category: CATEGORIES_PLANNED[0].key, published: true, updated: "2026-01-01" },
+    ];
+    expect(() => tools_check_publishable(pool)).toThrow(/카테고리가 닫혀 있다/);
   });
 
   it("태그가 6개면 throw하고 5개면 통과한다", () => {
@@ -370,7 +413,7 @@ describe("관련 도구 선택 — 실제 데이터 골든", () => {
     // (한 카테고리가 다섯을 넘으면) 이 테스트가 깨지고, 그때 실데이터로도
     // 상한을 검사할 수 있게 된다.
     const byCategory = Object.fromEntries(
-      CATEGORIES.map((c) => [c.key, pool.filter((t) => t.category === c.key).length]),
+      CATEGORIES_ALL.map((c) => [c.key, pool.filter((t) => t.category === c.key).length]),
     );
     expect(byCategory).toEqual({ chance: 3, scale: 3, motion: 3, energy: 1 });
   });

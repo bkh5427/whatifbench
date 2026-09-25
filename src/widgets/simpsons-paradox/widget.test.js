@@ -27,6 +27,7 @@ import {
   display_format_share,
   display_check_bars_merged,
   display_describe_verdict,
+  display_describe_empty_options,
 } from './widget.js';
 import { fixture_create_dom } from '../_shared/dom-stub.js';
 
@@ -382,6 +383,45 @@ describe('조작 — 프리셋과 슬라이더', () => {
     expect(verdict.hasAttribute('data-state')).toBe(false);
   });
 
+  it('한쪽만 비면 그 선택지를 이름으로 짚는다', () => {
+    const { dom } = widget_build_mounted();
+    const inputs = dom.root.querySelectorAll('input');
+    inputs[0].value = '0'; // sizeA1
+    inputs[4].value = '0'; // sizeA2
+    dom.listeners_run_event(inputs[0], 'change');
+    // 슬라이더를 움직인 뒤라 프리셋이 풀린다 — 라벨은 custom 쪽이다.
+    const detail = dom.root.querySelector('.verdict').textContent;
+    expect(detail).toContain(`${SIMPSON_CUSTOM_LABELS.optionLabels.a} has no trials at all`);
+    expect(detail).not.toContain('Neither option');
+  });
+
+  it('시도 슬라이더 넷을 모두 0으로 내리면 "한쪽"이라고 말하지 않는다', () => {
+    const { dom } = widget_build_mounted();
+    const inputs = dom.root.querySelectorAll('input');
+    for (const index of [0, 2, 4, 6]) inputs[index].value = '0'; // 네 시도 슬라이더
+    dom.listeners_run_event(inputs[0], 'change');
+    const detail = dom.root.querySelector('.verdict').textContent;
+    expect(detail).toContain('Neither option has any trials');
+    expect(detail).not.toContain('has no trials at all');
+  });
+
+  it('display_describe_empty_options는 세 경우를 가른다', () => {
+    const labels = state_read_labels(SIMPSON_PRESET_DEFAULT);
+    const base = model_calculate_preset_state(SIMPSON_PRESET_DEFAULT);
+    expect(
+      display_describe_empty_options({ ...base, sizeA1: 0, sizeA2: 0 }, labels),
+    ).toContain(`${labels.optionLabels.a} has no trials at all`);
+    expect(
+      display_describe_empty_options({ ...base, sizeB1: 0, sizeB2: 0 }, labels),
+    ).toContain(`${labels.optionLabels.b} has no trials at all`);
+    expect(
+      display_describe_empty_options(
+        { ...base, sizeA1: 0, sizeA2: 0, sizeB1: 0, sizeB2: 0 },
+        labels,
+      ),
+    ).toContain('Neither option has any trials');
+  });
+
   it('input은 디바운스되고 change는 즉시 반영된다', () => {
     const { dom } = widget_build_mounted();
     const input = dom.root.querySelectorAll('input')[0];
@@ -396,5 +436,61 @@ describe('조작 — 프리셋과 슬라이더', () => {
     input.value = '800';
     dom.listeners_run_event(input, 'change');
     expect(dom.urlsWritten.length).toBe(before + 2); // 즉시
+  });
+});
+
+
+// 2026-09-25 전수검사: 비교할 것이 없는 상태에서 배너만 바뀌고 **막대·띠·표가 앞 상태의
+// 숫자를 그대로 들고 있었다**. 슬라이더는 시도 0을 적고 배너는 "no trials at all"인데
+// 막대에는 "171 of 341"이 남아 있었다(실행 스캔 63상태 중 여섯).
+describe('비교할 것이 없는 상태', () => {
+  /**
+   * 시도 수 슬라이더 넷. 위젯이 칸마다 size → rate 차례로 붙이므로 짝수 자리다
+   * (위의 "프리셋을 누르면 슬라이더가 그 값으로 간다" 테스트가 같은 차례에 기댄다).
+   */
+  function test_read_size_inputs(root) {
+    const inputs = root.querySelectorAll('input');
+    return [0, 2, 4, 6].map((index) => inputs[index]);
+  }
+
+  it('막대·띠·표를 화면과 접근성 트리에서 함께 뺀다', () => {
+    const { dom } = widget_build_mounted();
+    const sizes = test_read_size_inputs(dom.root);
+    expect(sizes.length).toBe(4);
+    for (const input of sizes) {
+      input.value = '0';
+      dom.listeners_run_event(input, 'change');
+    }
+
+    const chart = dom.root.querySelector('.bars');
+    const strip = dom.root.querySelector('.strip-block');
+    expect(chart.hidden).toBe(true);
+    expect(strip.hidden).toBe(true);
+    expect(chart.getAttribute('aria-hidden')).toBe('true');
+    expect(dom.root.querySelector('.verdict').textContent).toContain('Nothing to compare');
+
+    // **속성만 보지 않는다.** `hidden`은 display를 정하는 클래스에 지는 일이 있어
+    // (2026-09-25: `.bar-block{display:grid}`가 띠 블록을 계속 보이게 했다) 앞 상태의
+    // 숫자가 글자로 남아 있지 않은지까지 본다.
+    for (const node of [chart, strip, dom.root.querySelector('table')]) {
+      expect(node.textContent).not.toMatch(/\d/);
+    }
+  });
+
+  it('다시 시도를 올리면 숨긴 것이 돌아온다', () => {
+    const { dom } = widget_build_mounted();
+    const sizes = test_read_size_inputs(dom.root);
+    for (const input of sizes) {
+      input.value = '0';
+      dom.listeners_run_event(input, 'change');
+    }
+    for (const input of sizes) {
+      input.value = String(SIMPSON_SIZE_MAX);
+      dom.listeners_run_event(input, 'change');
+    }
+
+    expect(dom.root.querySelector('.bars').hidden).toBe(false);
+    expect(dom.root.querySelector('.strip-block').hidden).toBe(false);
+    expect(dom.root.querySelector('.bars').getAttribute('aria-hidden')).toBe(null);
   });
 });

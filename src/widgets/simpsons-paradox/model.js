@@ -34,12 +34,11 @@ export const SIMPSON_RATE_MAX = 1;
  * 표시도 남기지 않는다. 실측으로 확인했다: `step="0.001"`에 0.620606을 넣으면
  * 값이 0.621이 되고, `step="any"`면 0.620606 그대로 남는다.
  *
- * 눈금을 없애도 키보드 조작은 살아 있다 — `step="any"`인 range에서 방향키는
- * 범위의 1/100(여기서는 1%p), PageUp/PageDown은 1/10만큼 움직인다.
- * 그래서 이 상수는 슬라이더에 넣는 값이 아니라 **힌트 문구가 인용하는 값**이다.
+ * 눈금을 없애도 키보드 조작은 살아 있다. 다만 `step="any"`일 때 방향키가
+ * 몇 만큼 움직이는지는 **브라우저가 정한다** — Chromium은 범위의 1/100이지만
+ * 다른 엔진은 다르다. 그래서 힌트 문구는 그 크기를 숫자로 적지 않는다.
  */
 export const SIMPSON_RATE_SLIDER_STEP = 'any';
-export const SIMPSON_RATE_KEYBOARD_STEP = 0.01;
 
 // ── 기본 상태 (Berkeley 프리셋으로 로드한다. 빈 폼으로 두지 않는다) ──
 export const SIMPSON_PRESET_DEFAULT = 'berkeley';

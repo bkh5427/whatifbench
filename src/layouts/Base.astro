@@ -31,6 +31,7 @@ const {
   category = null,
   crumbTool = false,
   crumbLabel = null,
+  noindex = false,
 } = Astro.props;
 
 // 도구 페이지에만 브레드크럼 구조화 데이터를 붙인다.
@@ -71,7 +72,16 @@ const inTools = category !== null;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {
+      /* noindex: 이 주소에 페이지가 없는 화면(404)용. 그 화면은 없는 주소 **전부**에
+         나오므로 canonical이나 og:url을 달면 "그 내용은 /404에 있는 진짜 페이지"라고
+         크롤러와 링크 미리보기에 말하는 셈이 된다 — 화면에 적힌 말과 반대다. */
+      noindex ? (
+        <meta name="robots" content="noindex" />
+      ) : (
+        <link rel="canonical" href={canonical} />
+      )
+    }
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
     {
@@ -95,7 +105,7 @@ const inTools = category !== null;
     <meta property="og:type" content="website" />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
+    {!noindex && <meta property="og:url" content={canonical} />}
     {
       ogImage && (
         <>

@@ -1,0 +1,504 @@
+---
+import Base from "@layouts/Base.astro";
+import Byline from "@components/Byline.astro";
+import RelatedTools from "@components/RelatedTools.astro";
+import Figure from "@components/Figure.astro";
+// 도입 삽화(§1.5, 위젯 앞 짧은 띠) → 설정 → 메커니즘 → 증명.
+// 본보기와 같은 배치다: 규칙은 위젯 앞 띠가 먼저 밝히고(S7), 세로로 긴 설정
+// 도해는 위젯 뒤 반전 절 머리로 내린다. 세로형을 위젯 앞에 두면 폰에서
+// 위젯 상단이 1,612px까지 밀린다 — 실측으로 확인했다.
+import LabelsDropped from "./_fig/LabelsDropped.astro";
+import WhatGoesIn from "./_fig/WhatGoesIn.astro";
+import WhereItLands from "./_fig/WhereItLands.astro";
+import TwoRoutes from "./_fig/TwoRoutes.astro";
+import { tools_read_category } from "@data/tools.js";
+// 본문의 숫자는 지어내지 않는다. 위젯이 쓰는 그 모델을 여기서 불러 계산한다 —
+// 프리셋 표가 바뀌면 문장도 같이 바뀐다.
+import {
+  model_calculate_preset_state,
+  model_calculate_result,
+  model_read_preset,
+} from "@widgets/simpsons-paradox/model.js";
+// 백분율은 **위젯이 쓰는 그 표시 함수**가 찍는다 (규약 §5.5 S4). 본문이 따로
+// `toFixed`를 걸면 정확히 x.x5인 값에서 화면과 본문이 한 글자 갈린다.
+import { display_format_percent } from "@widgets/simpsons-paradox/widget.js";
+
+// 등급·검수일은 Byline이 tools.js에서 읽는다. 페이지가 다시 말하지 않는다.
+const SLUG = "simpsons-paradox";
+const CATEGORY = "chance";
+const cat = tools_read_category(CATEGORY);
+
+// 브레드크럼 이름. 화면과 구조화 데이터가 **같은 상수 하나**를 읽는다.
+const CRUMB = "Simpson's Paradox Mixer";
+
+// ── 화면과 같은 형식 ────────────────────────────────────────
+const DECIMAL_DIGITS = 4;
+// 손계산 한 문장만 다섯 자리다. 네 자리로 적으면 0.4274 + 0.0184 = 0.4458이 되어
+// 화면의 두 항과 합이 어긋난다 — 반올림 전 값끼리 더한 결과를 보여야 한다.
+const BYHAND_DIGITS = DECIMAL_DIGITS + 1;
+const dec5 = (value) => value.toFixed(BYHAND_DIGITS);
+const pct = display_format_percent;
+const dec = (value) => value.toFixed(DECIMAL_DIGITS);
+const count = (value) => Number(value).toLocaleString("en-US");
+
+// ── 프리셋 두 벌 ────────────────────────────────────────────
+// 화면 라벨도 모델에서 읽는다. 본문이 컨트롤을 다른 이름으로 부르면
+// 독자는 두 이름을 머릿속에서 대조해야 한다 (규약 §5.5 S1).
+const BERKELEY_KEY = "berkeley";
+const KIDNEY_KEY = "kidney";
+const berkeleyState = model_calculate_preset_state(BERKELEY_KEY);
+const kidneyState = model_calculate_preset_state(KIDNEY_KEY);
+const bk = model_calculate_result(berkeleyState);
+const kd = model_calculate_result(kidneyState);
+
+// 프리셋 버튼과 그룹 제목에 화면이 쓰는 그 문자열. 본문이 바꿔 부르지 않는다.
+const berkeleyPreset = model_read_preset(BERKELEY_KEY);
+const BERKELEY_BUTTON = berkeleyPreset.name;
+const DEPT_EASY = berkeleyPreset.groupLabels[1];
+const DEPT_HARD = berkeleyPreset.groupLabels[2];
+
+const men = bk.options.a;
+const women = bk.options.b;
+const open = kd.options.a;
+const perc = kd.options.b;
+
+// 손계산 절이 따라가는 두 열. 곱셈의 중간값까지 모델에서 낸다.
+const menTermA = men.weight * men.groups[1].rate;
+const menTermF = (1 - men.weight) * men.groups[2].rate;
+const womenTermA = women.weight * women.groups[1].rate;
+const womenTermF = (1 - women.weight) * women.groups[2].rate;
+
+// 1973년 전체 집계. 프리셋(학과 A·F)이 아니라 1975년 논문 표 1의 수다.
+const AGGREGATE_MEN = 8442;
+const AGGREGATE_WOMEN = 4321;
+const AGGREGATE_MEN_PCT = 44;
+const AGGREGATE_WOMEN_PCT = 35;
+---
+
+<Base
+  title="Can one side win in every group and still lose overall?"
+  description="Build two groups from eight sliders and watch a lead in both of them turn into a deficit once the model pools them. Berkeley 1973 and the 1986 kidney stone series load as presets."
+  category={CATEGORY}
+  crumbTool={true}
+  crumbLabel={CRUMB}
+>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span aria-hidden="true">›</span>{" "}
+    <a href={cat.href}>{cat.name}</a> <span aria-hidden="true">›</span>{" "}
+    {CRUMB}
+  </nav>
+
+  <h1>Can one side win in every group and still lose overall?</h1>
+
+  <p class="deck">
+    Eight sliders, two groups. One option can lead in both groups and still
+    trail in the total.
+  </p>
+
+  <Byline slug={SLUG} />
+
+  <p class="lead">
+    In the autumn of 1973 the graduate school at Berkeley counted who got in.
+    Of {count(AGGREGATE_MEN)} men who applied, about {AGGREGATE_MEN_PCT}% were
+    admitted. Of {count(AGGREGATE_WOMEN)} women, about {AGGREGATE_WOMEN_PCT}%
+    were. Nine points across {count(AGGREGATE_MEN + AGGREGATE_WOMEN)}{" "}
+    applications is not a rounding error.
+  </p>
+
+  <p class="lead">
+    Three Berkeley researchers counted the same applications again, one
+    department at a time. Their table ran in <em>Science</em> in 1975. Inside a
+    department the gap could shrink or lean the other way.
+  </p>
+
+  <p class="lead">
+    <span class="lead-turn">Both counts came out of one file, and neither is a
+    mistake.</span> The sliders below build two groups from nothing. Push them
+    until one side leads in group one and in group two. Then watch it lose the
+    total.
+  </p>
+
+  <Figure variant="lede" caption="In this model, the pooled row is a re-adding, not new data.">
+    <LabelsDropped />
+  </Figure>
+
+  <div data-widget="simpsons-paradox">
+    <noscript>
+      <p>
+        The eight sliders, the bars and the banner need JavaScript. The Berkeley
+        pair is counted out by hand below, and the identity behind it is written
+        out in full.
+      </p>
+    </noscript>
+  </div>
+
+  <h2 data-block="reversal">The mixture moves the total, not the rates</h2>
+
+  <p>
+    Eight sliders run this page. Each option gets two sliders in each group.
+    One sets how many trials it ran there. The other sets the share of those
+    trials that succeeded. Nothing else goes in.
+  </p>
+
+  <Figure caption="In this model, eight numbers go in and two come out, and the two carry no record of which group they came from.">
+    <WhatGoesIn />
+  </Figure>
+
+  <p>
+    Press <strong>{BERKELEY_BUTTON}</strong>. In {DEPT_EASY} the model puts men
+    at {pct(men.groups[1].rate)} admitted and women at
+    {" "}{pct(women.groups[1].rate)}. In {DEPT_HARD} it puts men at
+    {" "}{pct(men.groups[2].rate)} and women at {pct(women.groups[2].rate)}.
+    Women lead on both lines. Added together, the model puts men at
+    {" "}{pct(men.pooledRate)} and women at {pct(women.pooledRate)}. The banner
+    turns to <strong>Reversed</strong>. No rate slider moved.
+  </p>
+
+  <Figure caption="In this model, a pooled rate is a point between that option's own two group rates, and the weight picks the point.">
+    <WhereItLands />
+  </Figure>
+
+  <p>
+    The strip under the bars is the mixture. Its heading begins
+    {" "}<em>Where each option ran its trials</em>, and that is the whole of it. The
+    model puts {pct(men.weight)} of the men's applications in {DEPT_EASY}. On
+    the women's side it puts {pct(women.weight)}. {DEPT_EASY} admitted most
+    people who applied there. {DEPT_HARD} admitted almost nobody. So the men's
+    total leans on the generous line. The women's leans on the harsh one.
+  </p>
+
+  <p>
+    The second preset has the same shape. The model puts open surgery ahead on
+    small stones, {pct(open.groups[1].rate)} against
+    {" "}{pct(perc.groups[1].rate)}. It is ahead on large stones too,
+    {" "}{pct(open.groups[2].rate)} against {pct(perc.groups[2].rate)}. Pooled,
+    it puts the other procedure ahead, {pct(perc.pooledRate)} against
+    {" "}{pct(open.pooledRate)}. The two mixtures there are
+    {" "}{pct(open.weight)} and {pct(perc.weight)}.
+  </p>
+
+  <p>
+    In this model the quantity that moves the answer is where each option ran
+    its trials, not how well it did in either group. The bars above draw all of
+    it. Here is how to read them.
+  </p>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 data-block="howto" id="howto-title">How to read what you are looking at</h2>
+
+    <p>
+      The top two bar pairs are the groups. Each pair shows one option against
+      the other. Above the rule, those two pairs are the only like-for-like
+      comparison the model makes. Same group, same conditions, two options.
+    </p>
+
+    <p>
+      The pair below the rule is titled <em>Both groups added together</em>. It
+      is not a third measurement. It is the four figures above, re-added after
+      the group labels are thrown away.
+    </p>
+
+    <p>
+      Each bar carries a count and a percentage, unless that cell has no
+      trials at all. The count is there because a
+      percentage on its own hides the mixture. The mixture is what moves. Every
+      bar runs from zero to 100%, so the axis never flatters a gap. When two
+      bars sit too close to tell apart, the note under the strips says so. It
+      sends you to the figures instead.
+    </p>
+
+    <p>
+      The strip below the bars is the mixture. It shows one number per option.
+      That is the share of its trials that sat in the first group. When the two
+      first-group segments are the same length, a lead in both groups is a lead in
+      the total. As those segments separate, the pooled pair drifts. Past some
+      point it can cross — if the two groups differ in difficulty.
+    </p>
+
+    <p>
+      The banner marks that crossing. It reads <em>No reversal</em> while the
+      pooled winner matches the group winners. It reads <em>On the edge</em> at
+      the crossing itself, and <em>Reversed</em> on the far side. It reads
+      {" "}<em>No group winner</em> when the two groups pick different sides, or
+      when a group has no trials for one of the options. Where
+      that crossing sits is what the next section works out.
+    </p>
+  </section>
+
+  <section class="math" aria-labelledby="math-title">
+    <h2 data-block="math" class="math-title" id="math-title">Why a reversal needs unequal mixing</h2>
+
+    <p>
+      Two options, A and B, are each tried in two groups. Eight numbers
+      describe the whole thing. Each option gets a size <em>n</em> and a
+      success rate <em>p</em> in each group. An option's pooled rate is its
+      total successes over its total trials.
+    </p>
+
+    <div class="math-eq">
+      <span>P<sub>A</sub></span><span class="op">=</span>
+      <span class="frac"
+        ><span class="sr-only">(</span
+        ><span class="frac-num">n<sub>A1</sub> · p<sub>A1</sub> + n<sub>A2</sub> · p<sub>A2</sub></span
+        ><span class="sr-only">) over (</span
+        ><span class="frac-den">n<sub>A1</sub> + n<sub>A2</sub></span
+        ><span class="sr-only">)</span></span
+      >
+      <span class="op">=</span>
+      <span>w<sub>A</sub> · p<sub>A1</sub> + (1 − w<sub>A</sub>) · p<sub>A2</sub></span>
+    </div>
+
+    <dl class="math-where">
+      <dt>w<sub>A</sub></dt>
+      <dd>
+        the share of option A's trials that sat in group 1, n<sub>A1</sub> /
+        (n<sub>A1</sub> + n<sub>A2</sub>) — the strip on screen
+      </dd>
+      <dt>d₁, d₂</dt>
+      <dd>the gaps inside each group, p<sub>A1</sub> − p<sub>B1</sub> and p<sub>A2</sub> − p<sub>B2</sub></dd>
+    </dl>
+
+    <p>
+      So a pooled rate is a weighted average of two group rates. The weight
+      says where the option was tried, not how it did. Subtract the two pooled
+      rates. Then add and remove w<sub>A</sub> · p<sub>B1</sub> +
+      (1 − w<sub>A</sub>) · p<sub>B2</sub>. That gives an exact identity.
+    </p>
+
+    <div class="math-eq">
+      <span>P<sub>A</sub> − P<sub>B</sub></span><span class="op">=</span>
+      <span>[ w<sub>A</sub> · d₁ + (1 − w<sub>A</sub>) · d₂ ]</span>
+      <span class="op">+</span>
+      <span>(w<sub>A</sub> − w<sub>B</sub>)(p<sub>B1</sub> − p<sub>B2</sub>)</span>
+    </div>
+
+    <p class="math-check">
+      The first bracket is a weighted average of the two group gaps. If A leads
+      in both groups, both d's are positive, so the bracket is positive. The
+      second term carries no d at all. It is the difference in mixing times the
+      difference between the groups. Two things follow. If
+      w<sub>A</sub> = w<sub>B</sub>, the second term is zero. Leading in both
+      groups then forces leading in the total. The same holds if
+      p<sub>B1</sub> = p<sub>B2</sub>, the two groups being equally easy. In
+      this model a reversal needs unequal mixing <em>and</em> unequal groups.
+      The second term is not bounded by the first.
+    </p>
+
+    <p>
+      A small case makes that easier to trust. Here is one, counted by hand.
+    </p>
+  </section>
+
+  <h2 data-block="byhand">The Berkeley pair, counted by hand</h2>
+
+  <p>Load the Berkeley preset and follow the men's column.</p>
+
+  <p>
+    {DEPT_EASY} admitted {count(men.groups[1].success)} of
+    {" "}{count(men.groups[1].size)}, which is {dec(men.groups[1].rate)}.
+    {" "}{DEPT_HARD} admitted {count(men.groups[2].success)} of
+    {" "}{count(men.groups[2].size)}, which is {dec(men.groups[2].rate)}. Where
+    were the applications? {count(men.groups[1].size)} of the
+    {" "}{count(men.totalSize)} sat in {DEPT_EASY}, so w = {dec(men.weight)}.
+    The weighted average is {dec(men.weight)} × {dec(men.groups[1].rate)} +
+    {" "}{dec(1 - men.weight)} × {dec(men.groups[2].rate)}. Worked from the
+    unrounded figures those two terms are {dec5(menTermA)} and {dec5(menTermF)},
+    and they add to {dec5(men.pooledRate)}.
+  </p>
+
+  <p>
+    Now count the other way. {count(men.groups[1].success)} +
+    {" "}{count(men.groups[2].success)} = {count(men.pooledSuccess)} admissions
+    out of {count(men.totalSize)} applications. That is
+    {" "}{dec(men.pooledRate)} again. Same number, two routes.
+  </p>
+
+  <Figure caption="In this model, the weighted average and the whole-count sum take different steps and still land on one figure.">
+    <TwoRoutes />
+  </Figure>
+
+  <p>
+    The women's column runs the same way with a different weight.
+    {" "}{DEPT_EASY} admitted {count(women.groups[1].success)} of {count(women.groups[1].size)}
+    {" "}({dec(women.groups[1].rate)}) and {DEPT_HARD}
+    {" "}{count(women.groups[2].success)} of {count(women.groups[2].size)}
+    {" "}({dec(women.groups[2].rate)}). Only {count(women.groups[1].size)} of the
+    {" "}{count(women.totalSize)} applications sat in {DEPT_EASY}, so
+    w = {dec(women.weight)}. That gives {dec(womenTermA)} + {dec(womenTermF)} =
+    {" "}{dec(women.pooledRate)}.
+  </p>
+
+  <p>
+    The second column has the higher rate on both lines and the lower total.
+    The whole of the gap is the weight, {dec(men.weight)} against
+    {" "}{dec(women.weight)}. It applies to two rates that are ten times apart.
+    Nothing in the second column was cut. Most of the first column sat on the
+    line where most people got in. Most of the second sat on the line where
+    almost nobody did. That is a fact about the mixture. It arrives inside a
+    bar labelled as a rate. All of it rests on four rules.
+  </p>
+
+  <h2 data-block="assumptions">Four rules, and where the presets came from</h2>
+
+  <p>
+    <strong>No simulation.</strong> Every bar is a rate the sliders set, or a
+    weighted average of two of them. The model's core arithmetic is a division and
+    a weighted sum. The banner compares three signs.
+  </p>
+
+  <p>
+    <strong>Rounding.</strong> The rate sliders carry rates. A count on screen is
+    n·p rounded, and a pooled count is the two group counts added after rounding.
+    So a group count can sit half a case from its rate, and a pooled count up to a
+    whole one. The bars and the banner use the unrounded rates. The presets go in
+    as counts, so the rate sliders carry no step — a step would snap{" "}
+    {count(men.groups[1].success)}/{count(men.groups[1].size)} to a neighbour the
+    model does not hold.
+  </p>
+
+  <p>
+    <strong>No uncertainty.</strong> The model treats every rate as exact.
+    There are no confidence intervals and no tests. Sample size never enters as
+    uncertainty. A gap of 0.1 point weighs the same in four trials as in four
+    thousand.
+  </p>
+
+  <p>
+    <strong>One split, two groups.</strong> The model divides the data one way.
+    Real tables divide more ways. A table with no reversal on one split can
+    show one on another.
+  </p>
+
+  <p>
+    <strong>Where the presets came from.</strong> The Berkeley preset takes
+    departments A and F from a six-department table. That table is Bickel,
+    Hammel and O'Connell (1975). The aggregate in the lead covers every
+    department. The two sets of figures are not interchangeable. The stone
+    figures are Charig and colleagues' 1986 series, as tabulated by Julious and
+    Mullee (1994). The split is at a stone width of 2 cm. They are quoted as a
+    published table in a statistics argument, not as a comparison of
+    treatments.
+  </p>
+
+  <p>Not one of the four rules lets the model say <em>why</em>.</p>
+
+  <h2 data-block="limits">A sign flip is not a cause</h2>
+
+  <p>
+    <strong>The model cannot say why.</strong> It makes a sign flip out of
+    eight numbers. It says nothing about why the mixtures differ. It cannot
+    tell a group that explains the gap from a group the gap created. Nothing
+    here says which bar is the number to use. That question is settled outside
+    this model, by knowing what made the groups.
+  </p>
+
+  <p>
+    <strong>No statistics.</strong> No confidence interval and no test. The
+    model reports a sign, and a sign carries no strength.
+  </p>
+
+  <p>
+    <strong>Two groups, one split, differences only.</strong> The model does
+    not handle three or more strata. It does not handle a sliding scale in
+    place of a split. Nor does it handle a grouping the option itself changed.
+    It compares differences of proportions. Ratios and odds ratios behave their
+    own way under pooling. None of that is on this page.
+  </p>
+
+  <h2 data-block="closing">The lawsuit in the retelling</h2>
+
+  <p>
+    The 1973 figures are usually retold as a court case. Berkeley was sued for
+    sex bias, the story goes. A statistician then won the case with Simpson's
+    paradox. No suit was ever filed, as far as anyone has been able to trace:
+    the lawsuit appears only in the retelling. An associate dean of the graduate
+    school thought the university might be sued. Officials who feared bias asked
+    Bickel to analyse the data.
+  </p>
+
+  <p>
+    So the two numbers in the lead never met in a courtroom. They met in a
+    table. The sliders above build the same object in miniature: two options,
+    two groups, two mixtures.
+  </p>
+
+  <p>
+    The finding in the paper was narrower than the retelling. It put most of
+    the aggregate gap on where the applications went, department by department.
+    What sent them there is not in the table. It is not in this model either.
+  </p>
+
+  <h2 data-block="about">About this page</h2>
+
+  <p class="note">
+    Every model figure quoted above is worked out when the page is built, from
+    the same model file the sliders run on, so the text and the widget cannot
+    disagree about a value. The 1973 totals in the lead are the exception: they
+    are quoted at second hand, from the secondary source listed below. A separate test compares the weighted-average route against the
+    whole-count route and checks the identity on a sweep of settings.
+    {" "}<a href="/about">How I check things</a>.
+  </p>
+
+  <p><strong>Sources.</strong></p>
+
+  <ul class="sources">
+    <li>
+      Bickel, P. J., Hammel, E. A., and O'Connell, J. W., "Sex Bias in Graduate
+      Admissions: Data from Berkeley," <a
+      href="https://doi.org/10.1126/science.187.4175.398"><em>Science</em>
+      {" "}187(4175), 398–404 (1975)</a>.
+    </li>
+    <li>
+      Charig, C. R., Webb, D. R., Payne, S. R., and Wickham, J. E. A.,
+      "Comparison of treatment of renal calculi by open surgery, percutaneous
+      nephrolithotomy, and extracorporeal shockwave lithotripsy," <a
+      href="https://doi.org/10.1136/bmj.292.6524.879"><em>British Medical
+      Journal</em> 292(6524), 879–882 (1986)</a>.
+    </li>
+    <li>
+      Julious, S. A. and Mullee, M. A., "Confounding and Simpson's paradox,"
+      {" "}<a href="https://doi.org/10.1136/bmj.309.6967.1480"><em>BMJ</em>
+      {" "}309(6967), 1480–1481 (1994)</a>.
+    </li>
+    <li>
+      The three entries above were checked against the Crossref record for each
+      DOI, which agreed on title, volume, issue, pages and year. The
+      article text behind the 1975 and 1986 links was not opened.
+    </li>
+    <li>
+      The {AGGREGATE_MEN_PCT}% and {AGGREGATE_WOMEN_PCT}% totals in the lead, and
+      the {count(AGGREGATE_MEN)} and {count(AGGREGATE_WOMEN)} applicant counts
+      beside them, were read from the Wikipedia article
+      {" "}<a href="https://en.wikipedia.org/wiki/Simpson%27s_paradox">Simpson's
+      paradox</a>, not from the 1975 paper itself.
+    </li>
+    <li>
+      The department counts in the Berkeley preset come from the
+      {" "}<code>UCBAdmissions</code> table shipped with R, whose stated reference is
+      the 1975 paper. The paper's own table was not consulted, so the two were
+      not compared line by line.
+    </li>
+    <li>
+      The stone counts were read from the 1994 paper, which prints all four of
+      them and the {count(open.pooledSuccess)}/{count(open.totalSize)} and
+      {" "}{count(perc.pooledSuccess)}/{count(perc.totalSize)} totals beside
+      them. The copy on PubMed Central is a scanned image, so the publisher's own
+      page was read instead. The {count(open.groups[1].size + perc.groups[1].size)}
+      {" "}small stones and {count(open.groups[2].size + perc.groups[2].size)} large
+      ones are added up here, not figures the paper prints.
+    </li>
+    <li>
+      That no lawsuit followed the 1973 figures is reported here rather than
+      verified against a court record. The account of the associate dean's
+      concern, and of the officials who asked Bickel to look at the data, is
+      secondary.
+    </li>
+  </ul>
+
+
+  <RelatedTools slug={SLUG} />
+
+  <script>
+    import "@widgets/simpsons-paradox/widget.js";
+  </script>
+</Base>

@@ -1,0 +1,94 @@
+---
+/*
+  ** 이 파일이 `---`로 시작하는 이유 ** — 규약 §5. C2PA 서명이 붙어 파일이 깨진다.
+
+  도해 3 — 증명. 규약 §5의 상위 형태: **독립된 두 경로가 같은 답에서 만난다.**
+  손계산 절의 c = 2, ρ = 0.5 (a = 1)에서 Erlang C를 두 갈래로 구한다.
+
+  경로 1 (상태를 센다) — 닫힌 형태의 분모가 1 + 1 + 1이므로
+    두 창구 다 빔 = 1/3 · 하나만 빔 = 1/3 · 둘 다 참 = 1/3.
+  경로 2 (Erlang B 재귀) — B(0)=1, B(1)=1/2, B(2)=1/5,
+    1 − ρ(1 − B) = 1 − 0.5 × 4/5 = 3/5, C = (1/5) ÷ (3/5) = 1/3.
+  두 경로 모두 1/3. model.js는 경로 2를 쓰고 model.test.js가 경로 1을 대조한다.
+
+  360px 실렌더에서 한 번 글자가 막대 밖으로 밀려 나갔다. 그래서 막대 안은
+  "몫 · 상태 · 표식" 세 칸으로 줄이고, 뜻풀이는 막대 아래 한 줄로 내렸다.
+*/
+const VIEW_W = 420;
+const VIEW_H = 312;
+
+const TITLE_Y = 26;
+
+// 경로 1 — 상태 막대 셋.
+const BAR_X = 10;
+const BAR_W = 182;
+const BAR_H = 34;
+const BAR_YS = [40, 82, 124];
+const SHARE_X = BAR_X + 12;
+const STATE_X = BAR_X + 48;
+const MARK_X = BAR_X + 150;
+const STATES = [
+  { share: "1/3", text: "both free", mark: "✓" },
+  { share: "1/3", text: "one free", mark: "✓" },
+  { share: "1/3", text: "both busy", mark: "✕" },
+];
+const LEGEND_Y = 172;
+
+// 경로 2 — 재귀 네 줄.
+const STEP_X = 210;
+const STEP_YS = [62, 96, 130, 164];
+const STEPS = ["B(1) = 1/2", "B(2) = 1/5", "1 − ρ(1 − B) = 3/5", "C = (1/5) ÷ (3/5)"];
+
+// 합류.
+const LEFT_STEM_X = 101;
+const RIGHT_STEM_X = 309;
+const STEM_TOP = 190;
+const JOIN_X = 210;
+const JOIN_Y = 208;
+const BOX_X = 60;
+const BOX_Y = 232;
+const BOX_W = 300;
+const BOX_H = 66;
+---
+<svg
+  class="fig-svg"
+  viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+  role="img"
+  aria-label="Two independent routes to the same answer, for two counters that are busy half the time. The left route counts the states: three equal bars, each marked one third, for both counters free, one counter free, and both counters busy. The first two carry a tick and the third a cross, and a line beneath reads tick served at once, cross waits. The right route runs the Erlang B recursion instead: B of one equals one half, B of two equals one fifth, one minus rho times one minus B equals three fifths, and C equals one fifth divided by three fifths. An arrow from each route meets in a single box at the bottom reading C of two and one equals one third, one arrival in three waits."
+>
+  <text x={BAR_X + 4} y={TITLE_Y} class="fig-label">1 · count the states</text>
+  <text x={STEP_X} y={TITLE_Y} class="fig-label">2 · run the recursion</text>
+
+  {STATES.map((state, i) => (
+    <g>
+      <rect x={BAR_X} y={BAR_YS[i]} width={BAR_W} height={BAR_H} rx="2"
+        fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+      <text x={SHARE_X} y={BAR_YS[i] + 23} class="fig-num">{state.share}</text>
+      <text x={STATE_X} y={BAR_YS[i] + 23} class="fig-label-dim">{state.text}</text>
+      <text x={MARK_X} y={BAR_YS[i] + 23} class="fig-label">{state.mark}</text>
+    </g>
+  ))}
+  <text x={BAR_X + 4} y={LEGEND_Y} class="fig-label-dim">✓ served at once ✕ waits</text>
+
+  {STEPS.map((step, i) => (
+    <text x={STEP_X} y={STEP_YS[i]} class="fig-value">{step}</text>
+  ))}
+
+  <path
+    d={`M${LEFT_STEM_X},${STEM_TOP} L${LEFT_STEM_X},${JOIN_Y} L${JOIN_X},${JOIN_Y} L${JOIN_X},${BOX_Y - 6}`}
+    fill="none" stroke="var(--graphite-soft)" stroke-width="2" stroke-linejoin="round"
+  />
+  <path
+    d={`M${RIGHT_STEM_X},${STEM_TOP} L${RIGHT_STEM_X},${JOIN_Y} L${JOIN_X},${JOIN_Y}`}
+    fill="none" stroke="var(--graphite-soft)" stroke-width="2" stroke-linejoin="round"
+  />
+  <path
+    d={`M${JOIN_X - 6},${BOX_Y - 14} L${JOIN_X},${BOX_Y - 5} L${JOIN_X + 6},${BOX_Y - 14}`}
+    fill="none" stroke="var(--graphite-soft)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+  />
+
+  <rect x={BOX_X} y={BOX_Y} width={BOX_W} height={BOX_H} rx="3"
+    fill="var(--surface)" stroke="var(--graphite)" stroke-width="2.5" />
+  <text x={BOX_X + BOX_W / 2} y={BOX_Y + 28} class="fig-num" text-anchor="middle">C(2, 1) = 1/3</text>
+  <text x={BOX_X + BOX_W / 2} y={BOX_Y + 52} class="fig-label" text-anchor="middle">one arrival in three waits</text>
+</svg>

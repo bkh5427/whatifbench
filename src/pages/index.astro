@@ -1,5 +1,6 @@
 ---
 import Base from "@layouts/Base.astro";
+import { SITE_HEADLINE, SITE_SUBLINE } from "@data/site.js";
 import { layout_read_sections } from "@data/layout.js";
 
 // 무엇을 어떻게 묶을지는 이 페이지가 정하지 않는다 — `src/data/layout.js`가 정한다.
@@ -13,8 +14,8 @@ const sections = layout_read_sections();
 >
   <section class="hero">
     <p class="kicker hero-kicker">Interactive workbench</p>
-    <h1>Move the number and see what happens.</h1>
-    <p>A textbook gives you one equation and one answer. Here you get the dial.</p>
+    <h1>{SITE_HEADLINE}</h1>
+    <p>{SITE_SUBLINE}</p>
   </section>
 
   <p>
@@ -24,8 +25,8 @@ const sections = layout_read_sections();
   </p>
 
   <p>
-    Being told that switching doors wins two games in three convinces almost
-    nobody. Watching ten thousand simulated games settle onto 0.667 is a
+    In 1990 a magazine column said switching doors wins two games in three.
+    Thousands of letters told the columnist she was wrong. Watching ten thousand simulated games close in on 0.667 is a
     different experience. That is the whole idea.
   </p>
 
@@ -44,7 +45,7 @@ const sections = layout_read_sections();
                 </div>
                 {tool.figure && (
                   <p class="tool-figure">
-                    <span class="tool-figure-value">{tool.figure.value}</span>
+                    <span class="tool-figure-value">{tool.figure.value}</span>{" "}
                     <span class="tool-figure-label">{tool.figure.label}</span>
                   </p>
                 )}

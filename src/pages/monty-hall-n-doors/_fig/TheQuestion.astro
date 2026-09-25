@@ -26,7 +26,13 @@ const LABEL_Y = 13;
 const KNOB_R = 3;
 
 // ── 고른 문의 색. 굵기와 함께 쓴다 — 색만으로 구분하지 않는다(색각 대비) ──
-const COLOUR_PICKED = "var(--break)";
+// 2026-09-25: --break에서 --graphite로 바꿨다. 판정 3색(--hold/--edge/--break)은
+// "가정이 성립/경계/파탄"이라는 사이트의 논지 전용이고(global.css), 같은 페이지의
+// 위젯 배너가 바로 그 색으로 "통념이 깨졌다"를 칠한다 — 도해에서 "내가 고른 문"에
+// 쓰면 같은 색이 두 가지 뜻을 진다. 자매 도해도 판정 3색을 쓰지 않는다
+// (GameSteps는 고른 문을 graphite 굵은 테두리로, Probability는 --series-2로).
+// 굵기(STROKE_PICKED)가 그대로 이중 부호화를 맡는다.
+const COLOUR_PICKED = "var(--graphite)";
 
 // ── 선 굵기 — 색을 못 보아도 상태가 구분되어야 한다 ──────────
 const STROKE_PICKED = 3.5;               // 참가자가 고른 문

@@ -1,5 +1,6 @@
 ---
 import Base from "@layouts/Base.astro";
+import { prose_format_separator, prose_format_period } from "@components/prose.js";
 import Avatar from "@components/Avatar.astro";
 import { CATEGORIES, tools_read_published } from "@data/tools.js";
 
@@ -16,7 +17,7 @@ const remaining = CATEGORIES.filter((c) => published.every((t) => t.category !==
 
 <Base
   title="About"
-  description="Who I am, why I make these, and how I check the numbers."
+  description="Who I am, why I make these small interactive model tools, and how I check the numbers."
 >
   <h1>About</h1>
 
@@ -29,9 +30,9 @@ const remaining = CATEGORIES.filter((c) => published.every((t) => t.category !==
         habit at hobby scale.
       </p>
       <ul class="author-facts">
-        <li>Every page names its model and what that model assumes.</li>
+        <li>Each tool page names its model and what that model assumes.</li>
         <li>The maths sits in its own file, with unit tests on it.</li>
-        <li>Nothing here is advice, and no page tells you what to do.</li>
+        <li>No page here tells you which choice to make.</li>
       </ul>
     </div>
   </div>
@@ -47,9 +48,9 @@ const remaining = CATEGORIES.filter((c) => published.every((t) => t.category !==
   </p>
 
   <p>
-    A planimeter is a mechanical instrument that measures the area under a curve
-    by tracing its outline. It is a calculating device from before calculators:
-    you move it by hand and read the answer off a dial. That is roughly what these
+    A planimeter is a mechanical instrument that measures the area of a flat
+    shape by tracing its outline. You move it by hand and read the answer off the
+    scale on its measuring wheel. That is roughly what these
     tools are, and the name is a reminder that the reading is only as good as the
     instrument.
   </p>
@@ -59,8 +60,7 @@ const remaining = CATEGORIES.filter((c) => published.every((t) => t.category !==
   <p>
     Toys for thinking with. Each one runs a simple model and draws what it says.
     A hobby, mostly — I make them because I want to see the curve myself, and
-    putting them online costs nothing extra. There is no company behind it and no
-    plan beyond finishing the next one.
+    putting them online costs little. There is no company behind it.
   </p>
 
   <p>
@@ -71,7 +71,8 @@ const remaining = CATEGORIES.filter((c) => published.every((t) => t.category !==
   <h2>How I check the numbers</h2>
 
   <p>
-    Each tool cites its formula to something you can open. Where I could not
+    Each tool either works out its formula on the page or cites it to something
+    you can open. Where I could not
     verify a source, the page says so instead of linking to a good guess.
   </p>
 
@@ -81,7 +82,7 @@ const remaining = CATEGORIES.filter((c) => published.every((t) => t.category !==
   </p>
 
   <p>
-    Every page also lists what its model leaves out. That is usually the most
+    Each tool page also lists what its model leaves out. That is usually the most
     useful part.
   </p>
 
@@ -89,8 +90,8 @@ const remaining = CATEGORIES.filter((c) => published.every((t) => t.category !==
 
   <p>
     I will. If you find an error I would genuinely like to know — the <a
-    href="/contact">contact page</a> has my email. I fix them and note what
-    changed on the page, with the date. Typos I just fix quietly.
+    href="/contact">contact page</a> has my email. I fix them, and each tool page
+    shows a review date in its byline. Typos I just fix quietly.
   </p>
 
   <h2>Copying</h2>
@@ -103,8 +104,9 @@ const remaining = CATEGORIES.filter((c) => published.every((t) => t.category !==
   </p>
 
   <p>
-    The maths belongs to nobody. Formulas come from published sources and are
-    cited on the page that uses them.
+    I claim nothing over the maths itself. Where a formula comes from a published source it
+    is cited on the page that uses it; where it is worked out on the page, the
+    working is there instead.
   </p>
 
   <h2>Where to start</h2>
@@ -112,13 +114,13 @@ const remaining = CATEGORIES.filter((c) => published.every((t) => t.category !==
   <p>
     {published.length > 0 && (
       <>
-        Finished so far:{" "}
+        Finished so far:
         {published.map((t, i) => (
           <>
-            {i > 0 && ", "}
+            {prose_format_separator(i, published.length)}
             <a href={`/${t.slug}`}>{t.name}</a>
           </>
-        ))}.
+        ))}{prose_format_period(published[published.length - 1].name)}
       </>
     )}
     {remaining.length > 0 && (

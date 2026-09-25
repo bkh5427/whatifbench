@@ -1,10 +1,16 @@
 /**
  * 줄 하나 vs 줄 여럿 — 모델 단위테스트
  *
- * 브리프의 검수 포인트가 여기 있다: **Erlang C가 문헌의 알려진 표 값과 맞는가.**
- * 표 값 일곱 개를 리터럴로 박고, 그 위에 독립 경로를 하나 더 둔다 —
+ * 브리프의 검수 포인트가 여기 있다: **Erlang C가 표준 기준값과 맞는가.**
+ * 표준 Erlang C 값 일곱 개를 리터럴로 박고, 그 위에 독립 경로를 하나 더 둔다 —
  * 구현은 Erlang B 재귀이고, 대조는 계승·거듭제곱을 그대로 쓰는 닫힌 형태다.
  * 두 경로가 맞아야 신뢰한다. 같은 식을 한 번 더 부르는 것은 검증이 아니다.
+ *
+ * **그 일곱 값은 어느 공개된 표에서 베낀 것이 아니다.** 아래 닫힌 형태로 재현한
+ * 표준값이고, 어느 문헌의 표인지는 특정하지 않는다. 페이지의 Sources 다섯 번째
+ * 항목이 그렇게 적는데 이 파일은 "문헌 표"·"공개된 표 값"이라고 정반대로 말하고
+ * 있었다 — 페이지를 확인하려고 이 파일을 연 독자가 페이지가 틀렸다고 읽는다.
+ * 그래서 낱말에서 '표'를 걷어냈다(2026-09-25 사실검사). 단언 자체는 그대로다.
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -81,11 +87,11 @@ function enum_build_sweep() {
   return cases;
 }
 
-// ── ① 문헌 표 대조 (브리프의 검수 포인트) ───────────────────
+// ── ① 표준 기준값 대조 (브리프의 검수 포인트) ─────────────────
 
-describe('Erlang C — 공개된 표 값과 맞는가', () => {
-  /** [창구 수 c, 제공부하 a(erlang), 표에 실린 C 값] */
-  const ERLANG_C_TABLE = [
+describe('Erlang C — 표준 기준값과 맞는가', () => {
+  /** [창구 수 c, 제공부하 a(erlang), 닫힌 형태로 재현한 표준 C 값] */
+  const ERLANG_C_REFERENCE_VALUES = [
     [2, 1.0, 0.333333],
     [3, 2.0, 0.444444],
     [4, 3.0, 0.509434],
@@ -95,8 +101,8 @@ describe('Erlang C — 공개된 표 값과 맞는가', () => {
     [2, 1.8, 0.852632],
   ];
 
-  it.each(ERLANG_C_TABLE)('c=%i, a=%f → %f', (counterCount, offeredLoad, expected) => {
-    // 표가 소수 여섯 자리까지 실려 있으므로 그 자리까지 본다.
+  it.each(ERLANG_C_REFERENCE_VALUES)('c=%i, a=%f → %f', (counterCount, offeredLoad, expected) => {
+    // 기준값을 소수 여섯 자리로 적었으므로 그 자리까지 본다.
     expect(model_calculate_erlang_c(counterCount, offeredLoad)).toBeCloseTo(expected, 6);
   });
 

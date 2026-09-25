@@ -1,0 +1,66 @@
+---
+/*
+  ** 이 파일이 `---`로 시작하는 이유 **
+  `<svg`로 시작하는 `.astro`는 전송 중 C2PA 서명이 붙어 깨진다. 규약 §5.
+
+  도입 삽화 (§1.5) — 위젯 **앞**. 규칙을 먼저 밝히는 자리다 (§5.5 S7).
+  치수 규약: 가로형 짧은 띠, viewBox 420 폭. 세로는 140으로 잡았다 —
+  세로형 설정 도해(452)를 이 자리에 두었더니 폰에서 위젯 상단이 1,612px까지
+  밀렸다. 이 띠는 **한 가지만** 말한다: 그룹 딱지가 떨어지면서 두 줄이 한 줄이 된다.
+  숫자 결과는 없다. 여덟 칸의 전모는 위젯 뒤 `WhatGoesIn`이 맡는다.
+*/
+const W = 420;
+const H = 140;
+
+const BOX_X = 10;
+const BOX_W = 136;
+const BOX_H = 46;
+const BOX_1_Y = 32;
+const BOX_2_Y = 86;
+
+const JOIN_X = 178;
+const ARROW_TIP = 206;
+const MID_Y = (BOX_1_Y + BOX_2_Y + BOX_H) / 2;
+
+const POOL_X = 212;
+const POOL_W = 200;
+const POOL_Y = 58;
+const POOL_H = 48;
+
+const GROUPS = [
+  { y: BOX_1_Y, name: "Group 1" },
+  { y: BOX_2_Y, name: "Group 2" },
+];
+---
+<svg
+  class="fig-svg"
+  viewBox={`0 0 ${W} ${H}`}
+  role="img"
+  aria-label="A short band showing what pooling does. On the left are two stacked boxes, one headed Group 1 and one headed Group 2, and each holds the same comparison, A against B. Two lines run out of them, join into one, and point right to a single wider box headed Both groups added together, which holds one comparison of A against B. The heading reads: the group labels drop. So two rows of like-for-like comparison become one row, and nothing on that row records which group anything came from. No counts or rates appear."
+>
+  <text x={W / 2} y="18" class="fig-label" fill="var(--graphite)" text-anchor="middle">the group labels drop</text>
+
+  {GROUPS.map((group) => (
+    <g>
+      <rect x={BOX_X} y={group.y} width={BOX_W} height={BOX_H} rx="3" fill="var(--surface)" stroke="var(--rule-strong)" stroke-width="1" />
+      <text x={BOX_X + BOX_W / 2} y={group.y + 20} class="fig-label" fill="var(--graphite)" text-anchor="middle">{group.name}</text>
+      <text x={BOX_X + BOX_W / 2} y={group.y + 38} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">A vs B</text>
+    </g>
+  ))}
+
+  <path
+    d={`M${BOX_X + BOX_W},${BOX_1_Y + BOX_H / 2} L${JOIN_X},${BOX_1_Y + BOX_H / 2} L${JOIN_X},${MID_Y}
+        M${BOX_X + BOX_W},${BOX_2_Y + BOX_H / 2} L${JOIN_X},${BOX_2_Y + BOX_H / 2} L${JOIN_X},${MID_Y}
+        M${JOIN_X},${MID_Y} L${ARROW_TIP},${MID_Y}
+        M${ARROW_TIP - 11},${MID_Y - 6} L${ARROW_TIP},${MID_Y} L${ARROW_TIP - 11},${MID_Y + 6}`}
+    fill="none"
+    stroke="var(--graphite-soft)"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <rect x={POOL_X} y={POOL_Y} width={POOL_W} height={POOL_H} rx="3" fill="var(--steel-100)" stroke="var(--steel-500)" stroke-width="2" />
+  <text x={POOL_X + POOL_W / 2} y={POOL_Y + 20} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">Both groups added together</text>
+  <text x={POOL_X + POOL_W / 2} y={POOL_Y + 38} class="fig-label" fill="var(--graphite)" text-anchor="middle">A vs B</text>
+</svg>

@@ -24,7 +24,11 @@ const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? "playwright")
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { TOOLS, CATEGORIES } from "../src/data/tools.js";
+import { tools_read_published, CATEGORIES } from "../src/data/tools.js";
+import { SITE_HEADLINE, SITE_NAME, SITE_DOMAIN } from "../src/data/site.js";
+import { createHash } from "node:crypto";
+/** 카드마다 그린 글자와 PNG 해시. 사실 검사 게이트가 읽는다. */
+const OG_MANIFEST_PATH = fileURLToPath(new URL("./audit/og-manifest.json", import.meta.url));
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -35,34 +39,51 @@ const OG_HEIGHT_PX = 630;
 const OG_SCALE = 2;
 const OG_DIR = join(ROOT, "public", "og");
 const OG_DEFAULT_NAME = "default";
-const CHROMIUM_PATH = "/opt/pw-browsers/chromium";
+/** 크로뮴 위치. 환경변수가 우선, 없으면 클라우드 기본 위치, 그것도 없으면(Windows 등) Playwright 기본값. */
+const CHROMIUM_PATH = process.env.CHROMIUM_PATH ?? (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined);
 
-/** 사이트가 실제로 쓰는 서체. 컨테이너에 없으므로 파일을 카드에 심는다. */
+/**
+ * 사이트가 실제로 쓰는 서체. 컨테이너에 없으므로 파일을 카드에 심는다.
+ * `Base.astro`가 import하는 것과 같은 세 가족이다 — 본문 Barlow,
+ * 표제 Barlow Condensed, 숫자 IBM Plex Mono (`global.css`의 --sans/--serif/--mono).
+ */
 const FONT_FILES = [
-  { family: "IBM Plex Sans", weight: 400, file: "@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2" },
-  { family: "IBM Plex Sans", weight: 600, file: "@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff2" },
+  { family: "Barlow", weight: 400, file: "@fontsource/barlow/files/barlow-latin-400-normal.woff2" },
+  { family: "Barlow", weight: 600, file: "@fontsource/barlow/files/barlow-latin-600-normal.woff2" },
+  { family: "Barlow Condensed", weight: 600, file: "@fontsource/barlow-condensed/files/barlow-condensed-latin-600-normal.woff2" },
   { family: "IBM Plex Mono", weight: 500, file: "@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2" },
-  { family: "Source Serif 4", weight: 600, file: "@fontsource/source-serif-4/files/source-serif-4-latin-600-normal.woff2" },
 ];
 
-/** `global.css`의 `:root` 토큰과 같은 값. 카드가 사이트와 같은 얼굴이어야 한다. */
+/**
+ * `global.css`의 `:root` 토큰과 같은 값. 카드가 사이트와 같은 얼굴이어야 한다.
+ * 머리띠와 로고는 판정 3색(hold/edge/break)이 아니라 **강철 계조 3단**이다 —
+ * `global.css`의 `.regime-band`와 `Base.astro`의 로고가 그 셋을 쓴다.
+ */
 const TOKENS = {
-  paper: "#faf9f6",
-  sunk: "#f0f0ea",
-  surface: "#ffffff",
-  graphite: "#2b2f33",
-  graphiteSoft: "#5f666b",
-  rule: "#d6d8d1",
-  hold: "#2f5d50",
-  edge: "#8a6414",
-  break: "#a63d2e",
-  link: "#1f4e79",
+  paper: "#f2f2f3",
+  sunk: "#e9e9ea",
+  surface: "#f5f5f8",
+  graphite: "#1d1f20",
+  graphiteSoft: "#5d5d60",
+  rule: "color-mix(in srgb, #1d1f20 16%, transparent)",
+  steel300: "#b5d9fd",
+  steel600: "#597ea3",
+  steel900: "#1d2d3d",
+  link: "#416180",
 };
 
-const SITE_NAME = "whatifbench";
-const SITE_DOMAIN = "whatifbench.com";
-const DEFAULT_HEADLINE = "Move the slider. Watch the intuition break.";
-const DEFAULT_EYEBROW = "Interactive calculators";
+// 제목·이름·주소는 `src/data/site.js`에서 읽는다 — 홈과 같은 문장이어야 한다.
+const DEFAULT_HEADLINE = SITE_HEADLINE;
+/**
+ * 기본 카드(`default.png`)의 눈썹. **발행된 계산기 개수를 약속하는 문구다** —
+ * 하나인데 "calculators"라고 쓰면 링크 미리보기가 없는 집합을 약속한다.
+ * `src/pages/privacy.astro`의 `CALCULATOR_MIN_FOR_PLURAL_TEXT`,
+ * `src/pages/[category].astro`의 `elsewhere_text`와 같은 규율이다: 개수에서
+ * 문장을 만든다. 두 번째 도구를 발행하고 이 스크립트를 다시 돌리면 저절로 복수형이 된다.
+ */
+const CALCULATOR_MIN_FOR_PLURAL_TEXT = 2;
+const default_eyebrow_text = (publishedCount) =>
+  publishedCount >= CALCULATOR_MIN_FOR_PLURAL_TEXT ? "Interactive calculators" : "Interactive calculator";
 
 /** 서체 파일을 base64로 읽어 `@font-face` 규칙을 만든다. 외부 요청이 없어야 한다. */
 function fonts_build_css() {
@@ -88,22 +109,22 @@ ${fontCss}
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:${OG_WIDTH_PX / OG_SCALE}px;height:${OG_HEIGHT_PX / OG_SCALE}px;overflow:hidden}
 body{background:${TOKENS.paper};color:${TOKENS.graphite};
-  font-family:"IBM Plex Sans",system-ui,sans-serif;display:flex;flex-direction:column}
+  font-family:"Barlow",system-ui,sans-serif;display:flex;flex-direction:column}
 /* 사이트 헤더 아래의 그 삼색 띠 — 이 사이트의 서명이다 */
 .band{display:flex;height:6px;flex:0 0 auto}
 .band i{flex:1}
-.band i:nth-child(1){background:${TOKENS.hold}}
-.band i:nth-child(2){background:${TOKENS.edge}}
-.band i:nth-child(3){background:${TOKENS.break}}
+.band i:nth-child(1){background:${TOKENS.steel300}}
+.band i:nth-child(2){background:${TOKENS.steel600}}
+.band i:nth-child(3){background:${TOKENS.steel900}}
 .body{flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:34px 44px 30px}
-.brand{display:flex;align-items:center;gap:10px;
-  font-family:"Source Serif 4",Georgia,serif;font-weight:600;font-size:22px;letter-spacing:-0.01em}
+.brand{display:flex;align-items:center;gap:9px;
+  font-family:"Barlow",system-ui,sans-serif;font-weight:600;font-size:26px;letter-spacing:-0.02em}
 .mid{display:flex;align-items:flex-end;gap:26px}
 .text{flex:1;min-width:0}
 .eyebrow{font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
   color:${TOKENS.graphiteSoft};margin-bottom:12px}
-h1{font-family:"Source Serif 4",Georgia,serif;font-weight:600;font-size:44px;line-height:1.14;
-  letter-spacing:-0.015em;text-wrap:balance}
+h1{font-family:"Barlow Condensed","Barlow",system-ui,sans-serif;font-weight:600;font-size:50px;
+  line-height:1.04;letter-spacing:-0.005em;text-wrap:balance}
 /* 도구 카드의 숫자 블록과 같은 모양 — 목록에서 보던 것이 카드에도 있다 */
 .fig{flex:0 0 auto;max-width:220px;background:${TOKENS.sunk};
   border-left:3px solid ${TOKENS.link};padding:14px 16px}
@@ -119,9 +140,9 @@ h1{font-family:"Source Serif 4",Georgia,serif;font-weight:600;font-size:44px;lin
 <div class="body">
   <div class="brand">
     <svg width="32" height="20" viewBox="0 0 32 20" aria-hidden="true">
-      <rect x="0" y="8" width="10.6" height="5" rx="1.5" fill="${TOKENS.hold}"/>
-      <rect x="10.6" y="8" width="10.7" height="5" fill="${TOKENS.edge}"/>
-      <rect x="21.3" y="8" width="10.7" height="5" rx="1.5" fill="${TOKENS.break}"/>
+      <rect x="0" y="8" width="10.6" height="5" rx="1.5" fill="${TOKENS.steel300}"/>
+      <rect x="10.6" y="8" width="10.7" height="5" fill="${TOKENS.steel600}"/>
+      <rect x="21.3" y="8" width="10.7" height="5" rx="1.5" fill="${TOKENS.steel900}"/>
       <circle cx="21.3" cy="10.5" r="5.5" fill="${TOKENS.paper}" stroke="${TOKENS.graphite}" stroke-width="2"/>
     </svg>
     ${SITE_NAME}
@@ -134,7 +155,7 @@ h1{font-family:"Source Serif 4",Georgia,serif;font-weight:600;font-size:44px;lin
     ${figureBlock}
   </div>
   <div class="foot">
-    <span>Drag a slider — the model answers.</span>
+    <span>${card_escape_text(SITE_NAME)}</span>
     <span><b>${SITE_DOMAIN}</b></span>
   </div>
 </div>
@@ -150,13 +171,20 @@ function card_escape_text(value) {
     .replace(/"/g, "&quot;");
 }
 
-/** 카드로 만들 목록. 발행 여부와 무관하게 전부 만든다 — 발행 순간 바로 쓰이게. */
+/**
+ * 카드로 만들 목록. **발행된 도구만이다.**
+ * 카드는 `public/og/`에 그대로 남아 배포되므로, 미발행 도구까지 만들면
+ * 이름과 대표 숫자가 `/og/<slug>.png`에서 그냥 읽힌다 — `tools.js`가 적어 둔
+ * "미발행은 사이트 어디에도 나오지 않는다"가 깨진다.
+ * 발행하는 날 이 스크립트를 다시 돌리면 그 도구의 카드가 생긴다.
+ */
 function cards_read_list() {
-  const list = TOOLS.map((tool) => {
+  const published = tools_read_published();
+  const list = published.map((tool) => {
     const category = CATEGORIES.find((c) => c.key === tool.category);
     return {
       name: tool.slug,
-      eyebrow: category ? category.name : DEFAULT_EYEBROW,
+      eyebrow: category ? category.name : default_eyebrow_text(published.length),
       headline: tool.name,
       figureValue: tool.figure?.value ?? null,
       figureLabel: tool.figure?.label ?? null,
@@ -164,7 +192,7 @@ function cards_read_list() {
   });
   list.push({
     name: OG_DEFAULT_NAME,
-    eyebrow: DEFAULT_EYEBROW,
+    eyebrow: default_eyebrow_text(published.length),
     headline: DEFAULT_HEADLINE,
     figureValue: null,
     figureLabel: null,
@@ -176,22 +204,28 @@ async function og_build_all() {
   const fontCss = fonts_build_css();
   mkdirSync(OG_DIR, { recursive: true });
 
-  const browser = await chromium.launch({ executablePath: CHROMIUM_PATH });
+  const browser = await chromium.launch(CHROMIUM_PATH ? { executablePath: CHROMIUM_PATH } : {});
   const page = await browser.newPage({
     viewport: { width: OG_WIDTH_PX / OG_SCALE, height: OG_HEIGHT_PX / OG_SCALE },
     deviceScaleFactor: OG_SCALE,
   });
 
   const written = [];
+  const manifest = {};
   for (const card of cards_read_list()) {
     await page.setContent(card_build_html({ fontCss, ...card }), { waitUntil: "load" });
     await page.evaluate(() => document.fonts.ready);
     const target = join(OG_DIR, `${card.name}.png`);
-    writeFileSync(target, await page.screenshot({ type: "png" }));
+    const png = await page.screenshot({ type: "png" });
+    writeFileSync(target, png);
     written.push(`${card.name}.png`);
+    // 사실 검사용 기록: PNG 안의 글자를 기계가 읽을 수 없으니, 그린 글자와 PNG 해시를 남긴다.
+    // 게이트(`scripts/audit/check-audit.mjs`)가 tools.js와 대조해 낡은 카드를 잡는다.
+    manifest[card.name] = { eyebrow: card.eyebrow, headline: card.headline, figureValue: card.figureValue, figureLabel: card.figureLabel, sha256: createHash("sha256").update(png).digest("hex") };
   }
 
   await browser.close();
+  writeFileSync(OG_MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
   console.log(`공유 카드 ${written.length}장: ${written.join(" ")}`);
 }
 

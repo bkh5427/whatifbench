@@ -15,9 +15,26 @@ const tools = tools_read_published(category.key);
 // 지금 이 페이지의 본문 내부 링크는 브레드크럼의 `/` 하나뿐이다.
 // 도구가 차면 `tools.length > 0`이 되어 이 분기 자체가 사라진다.
 const elsewhere = tools.length > 0 ? [] : tools_read_published().slice(0, 3);
+
+// 이 문장은 바로 아래 그리드의 개수를 약속한다 — 카드가 하나인데 "the tools"라고
+// 쓰면 거짓이다. `category_link_text`와 같은 규율이다: 개수에서 문장을 만든다.
+const ELSEWHERE_MIN_FOR_PLURAL_TEXT = 2;
+const elsewhere_text = (n) =>
+  n >= ELSEWHERE_MIN_FOR_PLURAL_TEXT
+    ? "The writing above is this section. Below are the tools running on the site today, from wherever they sit."
+    : "The writing above is this section. Below is the one tool running on the site today, from wherever it sits.";
 const otherSections = CATEGORIES.filter(
   (c) => c.key !== category.key && tools_read_published(c.key).length > 0,
 );
+
+// "All X tools"는 집합을 약속한다 — 그 구역에 발행된 도구가 하나면 거짓이다.
+// `RelatedTools.astro`가 쓰는 것과 같은 규칙이어야 한다 (같은 링크를 두 가지로
+// 설명하면 안 된다). 두 파일이 같은 숫자를 쓴다.
+const CATEGORY_MIN_FOR_PLURAL_LINK = 2;
+const category_link_text = (c) =>
+  tools_read_published(c.key).length >= CATEGORY_MIN_FOR_PLURAL_LINK
+    ? `All ${c.name} tools →`
+    : `The ${c.name} section →`;
 ---
 
 <Base title={category.name} description={intro.description} category={category.key}>
@@ -40,7 +57,7 @@ const otherSections = CATEGORIES.filter(
             </div>
             {tool.figure && (
               <p class="tool-figure">
-                <span class="tool-figure-value">{tool.figure.value}</span>
+                <span class="tool-figure-value">{tool.figure.value}</span>{" "}
                 <span class="tool-figure-label">{tool.figure.label}</span>
               </p>
             )}
@@ -54,10 +71,7 @@ const otherSections = CATEGORIES.filter(
     elsewhere.length > 0 && (
       <>
         <h2>Finished elsewhere on the site</h2>
-        <p>
-          The writing above is this section. Below are the tools running on the
-          site today, from wherever they sit.
-        </p>
+        <p>{elsewhere_text(elsewhere.length)}</p>
         <div class="tool-grid">
           {elsewhere.map((tool) => (
             <article class="tool-card">
@@ -67,7 +81,7 @@ const otherSections = CATEGORIES.filter(
               </div>
               {tool.figure && (
                 <p class="tool-figure">
-                  <span class="tool-figure-value">{tool.figure.value}</span>
+                  <span class="tool-figure-value">{tool.figure.value}</span>{" "}
                   <span class="tool-figure-label">{tool.figure.label}</span>
                 </p>
               )}
@@ -79,7 +93,7 @@ const otherSections = CATEGORIES.filter(
             {otherSections.map((c, i) => (
               <>
                 {i > 0 && " · "}
-                <a href={c.href}>All {c.name} tools →</a>
+                <a href={c.href}>{category_link_text(c)}</a>
               </>
             ))}
           </p>

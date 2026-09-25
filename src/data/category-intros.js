@@ -9,32 +9,40 @@
 export const INTROS = {
   chance: {
     description:
-      "Probability, queues and pooled averages — short arithmetic, and an answer you want to argue with.",
+      "Probability puzzles where the arithmetic is short and the answer is one you want to argue with.",
     paragraphs: [
-      `The problems in this section have something uncomfortable in common: the
-       arithmetic is short enough to do on paper, and the answer still feels wrong
-       once you get it. None of them need advanced probability. What they need is
+      `The probability puzzles this site builds tools for have something
+       uncomfortable in common: the arithmetic is short enough to do on paper, and
+       the answer still feels wrong once you get it. That pair is the test for
+       getting built here — no advanced probability, and the difficulty all in
        giving up an assumption you did not know you were making.`,
-      `That is why they are worth a slider rather than a paragraph. Reading that
-       switching doors wins two games in three convinces almost nobody — the
-       objection that two closed doors must mean even odds is too strong to be
-       argued away. Watching a simulation run ten thousand games and settle onto
+      `That is why they are worth a slider rather than a paragraph. When a magazine
+       column said in 1990 that switching doors wins two games in three, thousands
+       of letters told the columnist she was wrong. Watching a simulation run ten thousand games and close in on
        0.667 does something a proof does not. And once the parameter is on a
-       slider you can push it somewhere the textbook never goes, and find out
-       whether the result you just accepted actually generalises. Often it does
-       not, or not for the reason you assumed.`,
-      `Each tool here keeps two things apart that are easy to conflate: what the
-       model computes, and what the model assumes. The exact probability is drawn
-       as a dashed line and the simulated running average as a solid one, so you
-       can see them meet. The writing underneath says which rule was fixed to get
-       that number — who knows what, what is chosen at random, what is held
-       constant — because in every one of these problems the surprising answer
+       slider you can push it well past the three-door case the puzzle is usually
+       told with, and find out whether the result you just accepted actually
+       generalises. Here it holds and thins out at
+       once: switching stays the better move at every setting the slider allows,
+       and by a hundred doors with one opened the edge is about one game in ten
+       thousand.`,
+      `The tools here keep two things apart that are easy to conflate: what the
+       model computes, and what the model assumes. In Monty Hall with N doors the
+       exact value is drawn as a dashed line and the score so far as a solid one. Given
+       enough games the solid line settles onto its dashed one; at settings where
+       the two exact values nearly touch, the longest run the slider allows is not
+       enough, and the page says so instead of letting the picture promise it. The
+       writing there also says which rule was
+       fixed to get that number — who knows what, what is chosen at random, what is
+       held constant — because in problems like these the surprising answer
        depends on a rule that gets stated once and then forgotten.`,
-      `These are all the arithmetic kind of model: given the stated rules, the
-       answers are true or false, not matters of judgement. Where a variant changes
-       the answer — a host who opens doors at random, groups pooled at different
-       sizes, counters that idle while one queue waits — I name it rather than
-       leave it as an exercise.`,
+      `The tools here are the arithmetic kind of model: given the stated rules,
+       the answers are true or false rather than matters of judgement. One of them
+       steps outside that in one setting, and says so on its own page — the
+       queueing tool leaves its exact formula behind when the service time stops
+       being exponential. Where a variant changes the answer — a host who might
+       open the prize door, for one — I name it rather than leave it as an
+       exercise.`,
     ],
   },
 
@@ -42,8 +50,9 @@ export const INTROS = {
     description:
       "Orders of magnitude, and the axis you draw them on. What a number does when the exponent moves.",
     paragraphs: [
-      `Intuition is built for quantities that add. It handles quantities that
-       multiply badly, and quantities that multiply over and over not at all.
+      `Arithmetic that adds and arithmetic that multiplies run away from each
+       other fast. Start at one: twenty steps of adding one leaves you at 21, and
+       twenty steps of doubling at 1,048,576.
        Everything in this section turns on that gap — a thickness that doubles, a
        distance light needs real minutes to cross, a signal that falls away by a
        factor rather than a subtraction.`,
@@ -51,21 +60,22 @@ export const INTROS = {
        looks like nothing happening, then a wall. The same process on a
        logarithmic axis is a straight line with no drama in it at all. Neither
        picture is wrong, and the disagreement between them is the whole point —
-       when a headline says something grew tenfold, which axis you imagine decides
+       when a headline says something grew tenfold, which axis you imagine can change
        whether that sounds alarming or ordinary.`,
       `Decibels are the same idea with a unit attached, which is why radio
        coverage belongs here rather than with the mechanics. At equal radiated
-       power the model starts 5 GHz 7.07 dB below 2.4 GHz with no walls in the way
-       at all, because that gap is fixed by the ratio of the two frequencies and
-       nothing else. Walls do not change that offset; they change the rate at
-       which it grows. Concrete widens it by about six decibels per wall, brick by
-       under half a decibel. One of those effects survives the spread between
-       published coefficients and the other does not, and the page says which.`,
-      `The models are deliberately thin — a doubling is one multiplication, a
-       light delay one division. Keeping the arithmetic trivial is what makes the
-       result trustworthy, because there is nowhere for an error to hide, and it
-       moves the interesting question from "is this calculated correctly" to "why
-       does the correct answer feel wrong".`,
+       power, with antennas of the same gain at both ends, the model starts 5 GHz
+       7.07 dB below 2.4 GHz with no walls in the way at all. That offset comes
+       from the ratio of the two frequencies under that antenna assumption. Walls
+       then move the gap one wall at a time: a 100 mm concrete wall widens it by
+       about six decibels, a 100 mm brick wall by under half a decibel, and an
+       11 mm glass pane narrows it — and each of those figures changes with the
+       thickness.`,
+      `The doubling and light-delay models are deliberately thin — a doubling is
+       one multiplication, a light delay one division. Keeping the arithmetic
+       trivial makes the result easy to check, and it moves the interesting
+       question from "is this calculated correctly" to "why does the correct
+       answer feel wrong".`,
       `A question belongs here when the answer is a band rather than a number and
        the width of the band is the interesting part. A single figure quoted for an
        orbital distance or a signal margin is a figure taken at one setting; the
@@ -99,8 +109,10 @@ export const INTROS = {
        each page names what its formula has no term for.`,
       `A drag model gets built accordingly: integrate a quadratic drag term, draw
        the vacuum solution behind it as a ghost line, and put the textbook 45° and
-       the model's own optimum on one pair of axes — along with how little
-       separates them. Not everything here is fitted, though. A drivetrain is one
+       the model's own optimum on one pair of axes — along with how much range
+       is lost by throwing at 45° instead: about 1% for a baseball at 40 m/s,
+       close to 10% for a beach ball at the same speed, and more for both as the
+       launch speed rises. Not everything here is fitted, though. A drivetrain is one
        ratio of tooth counts multiplied by one length, so no measured coefficient
        enters at all — and even then a geometric assumption does, and calling two
        gears duplicates is a threshold somebody has to choose rather than a fact
@@ -120,12 +132,13 @@ export const INTROS = {
        uses more than a shower, someone else says it depends how long you stand
        there, and neither says whether they mean the water or the heat. Those are
        two different quantities that happen to arrive on the same bill, and they
-       do not cross at the same moment.`,
+       cross at the same moment only when the water is heated through the same
+       rise both ways.`,
       `That is the shape of almost everything in this section. A 9.5 litre per
        minute shower passes an 80 litre bath at about the eight-minute mark on
        water — but the energy curve has its own crossing, at its own minute,
-       because the two are computed from different things: one from flow rate
-       alone, the other from flow rate and the temperature the water has to be
+       because the two are computed from different things: one from litres
+       alone, the other from litres and the temperature the water has to be
        lifted through. Drawing them on one chart with two separate crossings
        marked is the honest version of the answer. Quoting one number is not.`,
       `The arithmetic itself is undramatic — a flow rate times minutes, a specific

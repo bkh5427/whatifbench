@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { prose_format_fallback_lead, prose_format_list, prose_format_separator } from "./prose.js";
+import { prose_format_fallback_lead, prose_format_list, prose_format_separator, prose_format_period } from "./prose.js";
 
 // 대조 경로: 구분자를 하나씩 묻는 대신 완성된 문자열을 통째로 못박는다.
 // 두 경로가 같은 상수를 읽지만 조립 순서가 달라, 인덱스 경계를 어긋나게 하면
@@ -60,5 +60,28 @@ describe("Read next 대체 문구", () => {
 
   it("③ 발행됐고 형제가 없으면 형제가 없다고 말한다", () => {
     expect(prose_format_fallback_lead(true, 0)).toBe("Nothing else sits in ");
+  });
+});
+
+// 2026-09-25: /about의 "Finished so far: … One Line or Many??." — 도구 이름이 물음표로
+// 끝나는데 목록 끝 마침표를 그대로 붙였다. 셋째 도구를 발행한 날 처음 난 결함이다.
+describe("prose_format_period", () => {
+  it("보통 이름 뒤에는 마침표를 붙인다", () => {
+    expect(prose_format_period("Monty Hall with N doors")).toBe(".");
+  });
+
+  it("물음표·느낌표·마침표·줄임표로 끝나면 붙이지 않는다", () => {
+    for (const name of ["One Line or Many?", "Wow!", "Etc.", "And so on…"]) {
+      expect(prose_format_period(name)).toBe("");
+    }
+  });
+
+  it("뒤에 공백이 붙어 있어도 본다", () => {
+    expect(prose_format_period("One Line or Many?  ")).toBe("");
+  });
+
+  it("빈 값·undefined에는 마침표를 붙인다 — 목록이 비면 호출되지 않지만 터지지 않아야 한다", () => {
+    expect(prose_format_period("")).toBe(".");
+    expect(prose_format_period(undefined)).toBe(".");
   });
 });

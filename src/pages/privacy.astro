@@ -1,12 +1,19 @@
 ---
 import Base from "@layouts/Base.astro";
+import { tools_read_published } from "@data/tools.js";
 const EMAIL = "contact@whatifbench.com";
-const UPDATED = "2 September 2026";
+const UPDATED = "25 September 2026";
+
+// 이 페이지가 말하는 "계산기"는 발행된 도구의 개수를 약속한다 — 하나인데 복수형으로
+// 쓰면 거짓이다. `[category].astro`의 `elsewhere_text`와 같은 규율이다: 개수에서
+// 문장을 만든다. 두 번째 도구가 발행되면 문장이 저절로 복수형으로 바뀐다.
+const CALCULATOR_MIN_FOR_PLURAL_TEXT = 2;
+const manyCalculators = tools_read_published().length >= CALCULATOR_MIN_FOR_PLURAL_TEXT;
 ---
 
 <Base
   title="Privacy Policy"
-  description="What data whatifbench collects, how advertising cookies are used, and the choices available to you."
+  description="This site stores nothing itself. What Cloudflare processes to serve it, what advertising would change, and the choices you have."
 >
   <h1>Privacy Policy</h1>
   <p class="legal-date">Last updated: {UPDATED}</p>
@@ -14,15 +21,21 @@ const UPDATED = "2 September 2026";
   <p>
     This policy explains what happens to data when you visit whatifbench.com.
     The short version: the site has no accounts, no newsletter, and no login,
-    and the calculators run entirely in your browser.
+    and {manyCalculators ? "the calculators run" : "the one calculator on it runs"}{" "}
+    entirely in your browser.
   </p>
 
-  <h2>What the calculators do with your input</h2>
+  <h2>What the {manyCalculators ? "calculators do" : "calculator does"} with your input</h2>
 
   <p>
-    Values you type or drag into a calculator are processed by JavaScript
-    running on your own device. They are never transmitted to a server, stored,
-    or logged. Closing the page discards them.
+    There is no text box to fill in: you set a calculator with buttons and
+    sliders, and those settings are processed by JavaScript running on
+    your own device. The calculator itself sends them nowhere. It does write the
+    current settings into the page address, after the "?", so that a link
+    reopens the same view. That makes them part of the address: if you reload,
+    bookmark or share that address, the settings travel with it like any other
+    address, and the request for that address carries them to Cloudflare, which
+    serves this site. The next section describes what is processed there.
   </p>
 
   <h2>Information collected automatically</h2>
@@ -31,18 +44,15 @@ const UPDATED = "2 September 2026";
     This site is served through Cloudflare, which processes technical data
     needed to deliver pages and to protect the site from abuse. This includes
     your IP address, browser and device type, the pages requested, and the time
-    of the request. Cloudflare may set a cookie to distinguish legitimate
-    visitors from automated traffic. This data is used for security and
-    reliability, not to build a profile of you.
+    of the request.
   </p>
 
   <h2>Fonts</h2>
 
   <p>
-    Pages load their typefaces from Google Fonts. That request goes to Google's
-    servers and carries your IP address and browser details, in the same way any
-    request for a file does. Google states that it does not use Google Fonts
-    requests to build advertising profiles. No cookie is set by this.
+    The typefaces are served from this site's own address, like every other
+    file on it. No font request goes to Google or any other third party, and no
+    cookie is set by this.
   </p>
 
   <h2>Advertising</h2>
@@ -50,31 +60,34 @@ const UPDATED = "2 September 2026";
   <p>
     This site does not currently show advertising. It is intended to carry
     advertising supplied by Google, including Google AdSense, and this section
-    describes what happens when it does. Third-party vendors, including Google,
-    use cookies to serve ads based on your prior visits to this and other
-    websites.
+    describes what would happen once it does. From then on, third-party vendors,
+    including Google, would use cookies to serve ads based on your prior visits
+    to this and other websites.
   </p>
 
   <p>
-    Google's use of advertising cookies enables it and its partners to serve ads
-    to you based on your visit to this site and other sites on the internet. You
-    can opt out of personalised advertising by visiting
+    Google's use of advertising cookies would enable it and its partners to serve
+    ads to you based on your visit to this site and other sites on the internet.
+    You can opt out of personalised advertising by visiting{" "}
     <a
-      href="https://www.google.com/settings/ads"
+      href="https://myadcenter.google.com/"
       rel="nofollow noopener"
-      target="_blank">Google Ads Settings</a
-    >. You can also opt out of third-party vendor cookies for personalised
-    advertising at
+      target="_blank">My Ad Center</a
+    >. The WebChoices tool at{" "}
     <a
       href="https://www.aboutads.info/choices/"
       rel="nofollow noopener"
       target="_blank">aboutads.info</a
-    >.
+    > opts you out of the participating companies you tick on its list, and it
+    records that choice in the browser you use it in, so it does not reach your
+    other browsers or devices. The tool also points to a Protect My Choices
+    browser extension, which it says protects those preferences against
+    accidental deletion.
   </p>
 
   <p>
-    Third-party advertising vendors operate under their own privacy policies.
-    Google's is available at
+    Any third-party advertising vendor would operate under its own privacy
+    policy. Google describes how it uses data from sites that use its services at{" "}
     <a
       href="https://policies.google.com/technologies/partner-sites"
       rel="nofollow noopener"
@@ -85,10 +98,14 @@ const UPDATED = "2 September 2026";
   <h2>Cookies</h2>
 
   <p>
-    Cookies are small files stored by your browser. This site uses them only for
-    the security and advertising purposes described above. Every current browser
-    lets you block or delete cookies through its settings. Blocking them will
-    not affect the calculators, which do not depend on cookies.
+    This site sets no cookies of its own. Cloudflare, which serves the site, may
+    set cookies of its own; Cloudflare's documentation lists them, and gives the
+    condition for several of them, at{" "}
+    <a
+      href="https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/"
+      rel="nofollow noopener"
+      target="_blank">developers.cloudflare.com</a
+    >. No advertising cookie is set today.
   </p>
 
   <h2>If you are in the European Economic Area or the United Kingdom</h2>
@@ -102,26 +119,47 @@ const UPDATED = "2 September 2026";
   </p>
 
   <p>
+    This site stores nothing itself: it keeps no logs and no copy of the technical
+    data described above. That data is held by Cloudflare, and how long it is kept
+    is set by Cloudflare's own policy.
+  </p>
+
+  <p>
     You have the right to request access to your personal data, correction or
-    deletion of it, restriction of processing, and to object to processing. To
-    exercise any of these, email <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.
+    deletion of it, restriction of processing, and to object to processing. Data
+    portability — receiving the data you provided in a machine-readable form, and
+    having it sent to another provider — applies where the processing rests on your
+    consent or on a contract and is carried out by automated means. Where processing is based on consent you can withdraw it at any
+    time, and you can lodge a complaint with your data protection supervisory
+    authority. To exercise any of these, email <a href={`mailto:${EMAIL}`}
+    >{EMAIL}</a>.
   </p>
 
   <h2>If you are in California</h2>
 
   <p>
     Under the CCPA you have the right to know what personal information is
-    collected, to request its deletion, and to opt out of its sale or sharing.
-    This site does not sell personal information. To make a request, use the
-    email address above.
+    collected, to request its deletion or correction, to opt out of its sale or
+    sharing, to limit the use and disclosure of sensitive personal information,
+    and not to be
+    treated differently for using these rights. Sale and sharing are separate
+    things in the law: a sale is a disclosure for monetary or other valuable
+    consideration, while sharing is a disclosure for cross-context behavioural
+    advertising — advertising targeted using your activity across other sites —
+    whether or not anything is paid for it. This site does not sell personal
+    information, and, showing no advertising yet, it does not share it in that
+    sense either. To make a request, use the email address above.
   </p>
 
   <h2>Children</h2>
 
   <p>
     This site is not directed at children under 13 and does not knowingly
-    collect their personal information. If you believe a child has provided such
-    information, contact me and it will be removed.
+    collect their personal information. Nothing here asks for it: there is no
+    text box, no account and no newsletter, and this site holds no copy of the
+    technical data described above to delete — that data is held by Cloudflare.
+    If you believe a child's personal information has reached this site, email
+    the address above, and I can take the request to Cloudflare.
   </p>
 
   <h2>External links</h2>
@@ -136,6 +174,30 @@ const UPDATED = "2 September 2026";
   <p>
     This policy may be updated. The date at the top reflects the most recent
     revision. Material changes will be noted on this page.
+  </p>
+
+  <p>
+    The revision of 25 September 2026 named the right to limit disclosure as well
+    as use for California readers, added the automated-processing condition the
+    portability right carries, and pointed the advertising opt-out at My Ad
+    Center, which is what Google now calls that setting.
+  </p>
+
+  <p>
+    The revision of 24 September 2026 described the controls a calculator
+    actually has, added that settings carried in the page address reach
+    Cloudflare when that address is requested again, put the advertising section
+    in the conditional, said what the aboutads.info tool does and does not
+    cover, answered sharing as well as sale for California readers, and said
+    what can and cannot be done about a child's data given that this site keeps
+    no copy of it. A later pass the same day cut the cookie section back to what
+    Cloudflare's documentation states.
+  </p>
+
+  <p>
+    The revision of 23 September 2026 said which cookies can be set today, added
+    that this site keeps no logs of its own, and spelled out when data
+    portability and withdrawal of consent apply.
   </p>
 
   <h2>Contact</h2>

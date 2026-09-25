@@ -24,6 +24,10 @@ import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { gate_run, gate_check_wiring } from "./check-publish.mjs";
+import { fixture_format_article } from "./_fixtures.js";
+
+/** 픽스처 저장소에는 사실 검사 장부가 없다. 다른 규칙을 따로 시험할 때는 사실 검사를 끈다(아래 전용 시험이 켠 경우를 본다). */
+const FIXTURE_GATE = { audit: false };
 
 const FIXTURE_BASE = join(tmpdir(), "whatifbench-gate-fixtures");
 const REPO_ROOT = fileURLToPath(new URL("..", import.meta.url));
@@ -112,10 +116,15 @@ function fixture_format_tool(over = {}) {
 
 const PAGE_CLEAN = `---
 const LAST_REVIEWED = "2026-01-02";
+const CRUMB = "Clean Tool";
 ---
 <p>A finished page with nothing pending.</p>
 `;
-const DIST_CLEAN = `<!DOCTYPE html><html><body><p>Last reviewed: 2026-01-02</p></body></html>`;
+
+/** 집필 규약(`check-standard.mjs`)까지 통과하는 최소 산출물.
+ *  게이트가 **둘 다** 보므로 "깨끗한 저장소"는 양쪽을 다 만족해야 한다.
+ *  일부러 뼈대만 남겼다 — 규약 자체의 시험은 `check-standard.test.js`에 있다. */
+const DIST_CLEAN = fixture_format_article();
 
 /** 위반 목록을 한 덩어리 문자열로. 포함 여부 단언을 읽기 쉽게 하려는 것뿐이다. */
 function fixture_format_report(violations) {
@@ -133,7 +142,7 @@ describe("푸시 게이트", () => {
       },
       [fixture_format_tool()],
     );
-    expect(fixture_format_report(await gate_run(root))).toBe("");
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toBe("");
   });
 
   // FN1 — 검사 대상 집합이 tools.js였다. Astro는 파일 라우트라 published:false여도
@@ -146,7 +155,7 @@ describe("푸시 게이트", () => {
       },
       [fixture_format_tool({ slug: "draft-tool", updated: null, since: null, published: false })],
     );
-    const report = fixture_format_report(await gate_run(root));
+    const report = fixture_format_report(await gate_run(root, FIXTURE_GATE));
     // 페이지가 존재한다는 사실 자체가 위반이다 (옛 게이트가 통째로 놓치던 자리)
     expect(report).toMatch(/src\/pages\/draft-tool\.astro.*published:false인데 페이지가 있다/s);
     // 그리고 그 파일 안의 표식도 잡힌다
@@ -163,7 +172,7 @@ describe("푸시 게이트", () => {
       },
       [fixture_format_tool()],
     );
-    expect(fixture_format_report(await gate_run(root))).toContain("tools.js에 없는 페이지다");
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain("tools.js에 없는 페이지다");
   });
 
   it("FN1: published:true인데 페이지 파일이 없으면 잡는다", async () => {
@@ -171,7 +180,7 @@ describe("푸시 게이트", () => {
       { "src/pages/index.astro": PAGE_CLEAN, "dist/index.html": DIST_CLEAN },
       [fixture_format_tool()],
     );
-    expect(fixture_format_report(await gate_run(root))).toContain(
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain(
       "published:true인데 페이지 파일이 없다",
     );
   });
@@ -190,7 +199,7 @@ describe("푸시 게이트", () => {
       },
       [fixture_format_tool()],
     );
-    expect(fixture_format_report(await gate_run(root))).toContain("src/pages/clean-tool.astro:4");
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain("src/pages/clean-tool.astro:4");
   });
 
   // 화면에 쓰는 문구와 게이트가 보고하는 표식 **이름**은 다르다.
@@ -218,19 +227,19 @@ const LAST_REVIEWED = "2026-01-02";
         },
         [fixture_format_tool()],
       );
-      expect(fixture_format_report(await gate_run(root))).toContain(`미완성 표식 ${name}`);
+      expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain(`미완성 표식 ${name}`);
     }
   });
 
   it("FN2: 단어 경계 — TODOS·TBDX 같은 단어에는 걸리지 않는다", async () => {
     const root = fixture_write(
       {
-        "src/pages/clean-tool.astro": `---\nconst LAST_REVIEWED = "2026-01-02";\n---\n<p>TODOS and TBDX and FIXMEISH are ordinary words here.</p>\n`,
+        "src/pages/clean-tool.astro": `---\nconst LAST_REVIEWED = "2026-01-02";\nconst CRUMB = "Clean Tool";\n---\n<p>TODOS and TBDX and FIXMEISH are ordinary words here.</p>\n`,
         "dist/clean-tool/index.html": DIST_CLEAN,
       },
       [fixture_format_tool()],
     );
-    expect(fixture_format_report(await gate_run(root))).toBe("");
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toBe("");
   });
 
   // FN3 — `!t.updated`는 truthy면 통과했다. "TODO"가 화면에 그대로 찍히는데 통과.
@@ -243,7 +252,7 @@ const LAST_REVIEWED = "2026-01-02";
         },
         [fixture_format_tool({ updated: bad })],
       );
-      const violations = await gate_run(root);
+      const violations = await gate_run(root, FIXTURE_GATE);
       // 데이터 게이트(tools_check_publishable)는 truthy라 통과시킨다 — 그래서 별도 검사가 필요하다
       expect(fixture_format_report(violations)).toContain("updated가 날짜(YYYY-MM-DD)가 아니다");
     }
@@ -259,7 +268,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    const report = fixture_format_report(await gate_run(root));
+    const report = fixture_format_report(await gate_run(root, FIXTURE_GATE));
     expect(report).toContain("dist/clean-tool/index.html");
     expect(report).toContain("산출물에 미완성 표식 TODO");
   });
@@ -268,7 +277,7 @@ const LAST_REVIEWED = "2026-01-02";
     const root = fixture_write({ "src/pages/clean-tool.astro": PAGE_CLEAN }, [
       fixture_format_tool(),
     ]);
-    expect(fixture_format_report(await gate_run(root))).toContain("npm run build");
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain("npm run build");
   });
 
   it("dist가 소스보다 낡으면 잡는다 (낡은 산출물 검사는 검사가 아니다)", async () => {
@@ -281,7 +290,7 @@ const LAST_REVIEWED = "2026-01-02";
     );
     const future = new Date(Date.now() + STALE_SKEW_SEC * 1000);
     utimesSync(join(root, "src", "pages", "clean-tool.astro"), future, future);
-    expect(fixture_format_report(await gate_run(root))).toContain("산출물이 소스보다 낡았다");
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain("산출물이 소스보다 낡았다");
   });
 
   it("preview-* 는 소스·산출물 양쪽에서 제외된다 (.gitignore가 막는 유일한 예외)", async () => {
@@ -294,7 +303,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    expect(fixture_format_report(await gate_run(root))).toBe("");
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toBe("");
   });
 
   // FN6 — 옛 게이트는 tools_check_publishable의 throw에서 멈춰 나머지가 안 보였다.
@@ -307,7 +316,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool({ updated: null })],
     );
-    const violations = await gate_run(root);
+    const violations = await gate_run(root, FIXTURE_GATE);
     const files = new Set(violations.map((v) => v.file));
     expect(files.has("src/data/tools.js")).toBe(true);
     expect(files.has("src/pages/clean-tool.astro")).toBe(true);
@@ -332,7 +341,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    const report = fixture_format_report(await gate_run(root));
+    const report = fixture_format_report(await gate_run(root, FIXTURE_GATE));
     expect(report).toContain("dist/404.html:1");
     expect(report).toContain("dist/embed.html:1");
     expect(report).toContain("산출물에 미완성 표식 FIXME");
@@ -349,7 +358,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    expect(fixture_format_report(await gate_run(root))).toBe("");
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toBe("");
   });
 
   // G2 — 예외가 `.gitignore`보다 넓었다. gitignore의 `*`는 `/`를 넘지 않아
@@ -364,7 +373,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    const report = fixture_format_report(await gate_run(root));
+    const report = fixture_format_report(await gate_run(root, FIXTURE_GATE));
     expect(report).toContain("src/pages/preview-stuff/real.astro:2");
     expect(report).toContain("미완성 표식 TODO");
   });
@@ -379,7 +388,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    expect(fixture_format_report(await gate_run(root))).toContain(
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain(
       "dist/preview-stuff/real/index.html:1",
     );
   });
@@ -393,7 +402,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    expect(fixture_format_report(await gate_run(root))).toContain(
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain(
       "무시 규칙이 게이트의 예외와 다르다",
     );
   });
@@ -412,7 +421,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    const report = fixture_format_report(await gate_run(root));
+    const report = fixture_format_report(await gate_run(root, FIXTURE_GATE));
     expect(report).toContain("src/pages/odds/clean-tool.astro");
     expect(report).toContain("경로에 분류가 들어간다");
     // 파일명이 아니라 URL 경로로 대조하므로 tools.js 미등록으로도 잡힌다
@@ -429,7 +438,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    const report = fixture_format_report(await gate_run(root));
+    const report = fixture_format_report(await gate_run(root, FIXTURE_GATE));
     expect(report).not.toContain("경로에 분류가 들어간다");
     expect(report).not.toContain("tools.js에 없는 페이지다");
     expect(report).not.toContain("페이지 파일이 없다");
@@ -446,7 +455,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    const report = fixture_format_report(await gate_run(root));
+    const report = fixture_format_report(await gate_run(root, FIXTURE_GATE));
     expect(report).not.toContain("_fig/Steps.astro");
   });
 
@@ -460,7 +469,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    const report = fixture_format_report(await gate_run(root));
+    const report = fixture_format_report(await gate_run(root, FIXTURE_GATE));
     expect(report).toContain("같은 URL /clean-tool를 내는 파일이 2개다");
   });
 
@@ -475,7 +484,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    const report = fixture_format_report(await gate_run(root));
+    const report = fixture_format_report(await gate_run(root, FIXTURE_GATE));
     expect(report).toContain("src/pages/stray-draft.md");
     expect(report).toContain("마크다운을 두지 않는다");
   });
@@ -491,7 +500,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    const report = fixture_format_report(await gate_run(root));
+    const report = fixture_format_report(await gate_run(root, FIXTURE_GATE));
     expect(report).toContain("dist/clean-tool");
     expect(report).toContain("published:true인데 산출물이 없다");
     // 소스 페이지 쪽에서도 같은 사실을 잡는다
@@ -508,7 +517,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    const violations = await gate_run(root);
+    const violations = await gate_run(root, FIXTURE_GATE);
     const hit = violations.find((v) => v.message.includes("미완성 표식 coming soon"));
     expect(hit).toBeDefined();
     expect(hit.file).toBe("src/pages/clean-tool.astro");
@@ -527,7 +536,7 @@ const LAST_REVIEWED = "2026-01-02";
         },
         [fixture_format_tool()],
       );
-      expect(fixture_format_report(await gate_run(root))).toContain(`미완성 표식 ${name}`);
+      expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain(`미완성 표식 ${name}`);
     }
   });
 
@@ -541,7 +550,7 @@ const LAST_REVIEWED = "2026-01-02";
       },
       [fixture_format_tool()],
     );
-    const hit = (await gate_run(root)).find((v) => v.message.includes("미완성 표식 TODO"));
+    const hit = (await gate_run(root, FIXTURE_GATE)).find((v) => v.message.includes("미완성 표식 TODO"));
     expect(hit).toBeDefined();
     expect(hit.message).toContain("Sources."); // 앞쪽 문맥
     expect(hit.message).toContain("the author"); // 뒤쪽 문맥
@@ -583,17 +592,17 @@ describe("FN5: 게이트 배선", () => {
         delete s.prepare;
       }),
     });
-    expect(fixture_format_report(await gate_run(root))).toContain("core.hooksPath");
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain("core.hooksPath");
   });
 
   it("뮤턴트: 훅 파일을 지우면 잡힌다", async () => {
     const root = fixture_write_wired({ [HOOK_FILE]: null });
-    expect(fixture_format_report(await gate_run(root))).toContain("푸시 훅이 없다");
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain("푸시 훅이 없다");
   });
 
   it("뮤턴트: 훅이 check:full 대신 다른 것을 돌리면 잡힌다", async () => {
     const root = fixture_write_wired({ [HOOK_FILE]: `#!/bin/sh\necho skip\n` });
-    expect(fixture_format_report(await gate_run(root))).toContain(
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain(
       "푸시 훅이 `npm run check:full`을 돌리지 않는다",
     );
   });
@@ -606,7 +615,7 @@ describe("FN5: 게이트 배선", () => {
       ".git/config": "[core]\n\trepositoryformatversion = 0\n",
       ".git/HEAD": "ref: refs/heads/main\n",
     });
-    expect(fixture_format_report(await gate_run(root))).toContain("core.hooksPath가 .githooks가 아니다");
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain("core.hooksPath가 .githooks가 아니다");
   });
 
   it("실제 저장소는 core.hooksPath가 .githooks로 잡혀 있다", () => {
@@ -619,7 +628,7 @@ describe("FN5: 게이트 배선", () => {
         s.check = "echo ok";
       }),
     });
-    expect(fixture_format_report(await gate_run(root))).toContain(
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain(
       `scripts.check가 ${GATE_ENTRY}를 부르지 않는다`,
     );
   });
@@ -630,7 +639,7 @@ describe("FN5: 게이트 배선", () => {
         s["check:full"] = "npm run check";
       }),
     });
-    expect(fixture_format_report(await gate_run(root))).toContain("빌드 후 게이트를 돌리지 않는다");
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain("빌드 후 게이트를 돌리지 않는다");
   });
 
   // G7 — prepush와 훅이 둘 다 check:full을 돌려 Astro 빌드가 두 번 돌았다.
@@ -641,7 +650,18 @@ describe("FN5: 게이트 배선", () => {
         s.prepush = "npm run check:full";
       }),
     });
-    expect(fixture_format_report(await gate_run(root))).toContain("빌드가 두 번 된다");
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain("빌드가 두 번 된다");
+  });
+
+  it("사실 검사: 게이트 기본값은 사실 검사를 켠다 — 장부가 없으면 막힌다", async () => {
+    const root = fixture_write({}, [fixture_format_tool()]);
+    expect(fixture_format_report(await gate_run(root))).toContain("사실 검사");
+  });
+
+  it("사실 검사: 실행 경로가 audit_run을 부른다(배선이 끊기면 잡힌다)", () => {
+    const src = fixture_read_repo_file("scripts/check-publish.mjs");
+    expect(src).toContain("audit_run(root, tools)");
+    expect(src).toMatch(/gate_run\(root = REPO_ROOT, \{ audit = true \}/);
   });
 
   it("G7: 실제 저장소의 push 경로는 게이트를 한 번만 돌린다", () => {
@@ -666,7 +686,7 @@ describe("FN5: 게이트 배선", () => {
         s["check:publish"] = "node scripts/check-publish.mjs";
       }),
     });
-    expect(fixture_format_report(await gate_run(root))).toContain(
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain(
       "게이트를 부르는 스크립트가 여럿이다",
     );
   });
@@ -683,6 +703,27 @@ describe("FN5: 게이트 배선", () => {
         s.prebuild = "npm run check";
       }),
     });
-    expect(fixture_format_report(await gate_run(root))).toContain("빌드에 게이트를 물리지 마라");
+    expect(fixture_format_report(await gate_run(root, FIXTURE_GATE))).toContain("빌드에 게이트를 물리지 마라");
+  });
+});
+
+// 2026-09-25: `public/`은 그대로 배포되므로 미공개 도구의 공유 카드가 남아 있으면
+// /og/<slug>.png로 누구나 받는다. build-og.mjs는 공개된 것만 새로 그리지만 남은 파일을
+// 지우지는 않아, PC 쪽 폴더에 미공개 도구 7개의 카드가 실제로 남아 있었다.
+describe("공유 카드 — 미공개 도구의 카드가 남아 있으면 막는다", () => {
+  it("audit_run이 그 파일 이름을 대고 막는다", async () => {
+    const { audit_run } = await import("./audit/check-audit.mjs");
+    const root = mkdtempSync(join(tmpdir(), "og-stray-"));
+    mkdirSync(join(root, "public/og"), { recursive: true });
+    mkdirSync(join(root, "dist"), { recursive: true });
+    writeFileSync(join(root, "public/og/default.png"), "x");
+    writeFileSync(join(root, "public/og/unpublished-tool.png"), "x");
+    const TOOLS = [{ slug: "published-tool", published: true, category: "chance" }];
+    const out = audit_run(root, { TOOLS, CATEGORIES: [] });
+    const hit = out.filter((m) => m.includes("미공개 도구의 공유 카드"));
+    expect(hit).toHaveLength(1);
+    expect(hit[0]).toContain("unpublished-tool.png");
+    expect(hit[0]).not.toContain("default.png");
+    rmSync(root, { recursive: true, force: true });
   });
 });

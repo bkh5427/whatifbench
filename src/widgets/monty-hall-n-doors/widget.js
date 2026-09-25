@@ -20,6 +20,7 @@ import {
   model_calculate_stay_win_rate,
   model_calculate_switch_win_rate,
   model_calculate_switch_advantage,
+  model_format_switch_advantage,
   model_clamp_value,
   model_clamp_door_count,
   model_clamp_opened_count,
@@ -100,7 +101,8 @@ const CHART_LABEL_HEIGHT_PX = 12;
 // 축을 1로 고정하면 곡선이 아직 창 밖인 왼쪽이 빈다. 그냥 비워 두면 독자는
 // "여기 데이터가 없나?"로 읽는다. 옅은 띠 + 경계선 + 그 안의 글자로 답을 그림 안에 둔다.
 // (툴팁 뒤에 숨기지 않는다 — 독자의 10~15%만 인터랙션을 건드린다)
-const CHART_BLANK_EDGE_DASH = [3, 3];
+// 경계선은 실선이다. 범례가 "Dashed = what the math says"라고 못박고 있어서,
+// 이 세로선을 점선으로 그리면 범례에 없는 네 번째 점선이 그림 안에 생긴다.
 const CHART_BLANK_LABEL_PAD_PX = 8;
 const CHART_BLANK_LABEL_TOP_PX = 6;
 const CHART_BLANK_LABEL_SHORT = 'Too jumpy';
@@ -133,7 +135,7 @@ const COLOR_FALLBACK_SURFACE = '#ffffff';
 
 // 축 제목 (모든 위젯이 축에 이름을 단다)
 const CHART_TITLE_Y = 'Share of games won';
-const CHART_TITLE_X = 'Games played (each mark is 10×)';
+const CHART_TITLE_X = 'Games played (log scale)';
 
 // 범례에서 **선 종류의 뜻**을 적는 문장. 축 문장과 분리해 상수로 둔다 —
 // 캔버스가 화면에 없으면(숨긴 탭·display:none) 렌더가 null을 내는데,
@@ -184,7 +186,8 @@ const MONTY_PRESETS = [
   { key: 'classic', label: 'Classic problem (3 doors)', doorCount: 3, openedCount: 1 },
   // 문 10개 중 하나만 연다 — 이득비 1.125배, edge 구간.
   { key: 'ten-doors', label: '10 doors, one opened', doorCount: 10, openedCount: 1 },
-  // 문 100개 중에서도 딱 하나만 연다 — 남는 99문에 스위치 확률이 흩어져
+  // 문 100개 중에서도 딱 하나만 연다 — 바꿀 수 있는 98문(R = N−1−K = 98)에
+  // 스위치 확률이 흩어져
   // 이득비가 1.01배까지 가라앉는다(break 구간). "문이 많으면 유리하다"는
   // 직관과 반대로, 여는 문 수가 늘지 않으면 오히려 이득이 사라진다.
   { key: 'hundred-doors', label: '100 doors, one opened', doorCount: 100, openedCount: 1 },
@@ -211,15 +214,27 @@ const VERDICT_EDGE_MIN_ADVANTAGE = 1.1;
 // 판정 한 줄. 배너의 첫 문장이 결론이어야 한다 — 숫자를 찾아 읽게 만들지 않는다.
 // 주어는 언제나 모델이다. "바꾸는 게 낫다"가 아니라 "모델이 ~라고 놓는다".
 const VERDICT_HEADLINE = {
-  hold: 'The classic 2× gap holds:',
-  edge: 'The gap is shrinking:',
+  hold: 'The gap is 2× or wider:',
+  edge: 'The gap is under 2×:',
   break: 'The gap is nearly gone:',
 };
 
 /** 0~1 값을 백분율 문자열로. 작은 값은 자릿수를 한 자리 더 준다. */
+/**
+ * 비율을 백분율로 — **0.5는 올림**으로 반올림한다.
+ *
+ * `toFixed`는 이진 부동소수를 반올림한다. 1351/2000 = 67.55%는 이진으로 67.5499…라
+ * 67.5%로 찍혔다(2026-09-21 5차 검사, 2·20·200천 판 단계에서 2,316건).
+ * 이 위젯의 비율은 모두 정수의 비(승수/판수, 1/N 등)이고, 분모가 백만 이하면 참값이
+ * 반올림 경계(…5)에서 떨어진 거리는 최소 1/(2·분모)라 PERCENT_ROUND_EPS보다 훨씬 크다.
+ * 그래서 이 작은 보정은 경계에 **정확히** 놓인 값만 올리고, 나머지는 건드리지 않는다.
+ */
+const PERCENT_ROUND_EPS = 1e-9;
 export function display_format_percent(rate) {
   const digits = rate < PERCENT_SMALL_THRESHOLD ? PERCENT_SMALL_DIGITS : PERCENT_DIGITS;
-  return `${(rate * PERCENT_SCALE).toFixed(digits)}%`;
+  const scale = 10 ** digits;
+  const rounded = Math.floor(rate * PERCENT_SCALE * scale + 0.5 + PERCENT_ROUND_EPS) / scale;
+  return `${rounded.toFixed(digits)}%`;
 }
 
 /**
@@ -335,6 +350,11 @@ const chart_read_color = canvas_read_css_color;
  * 이득비를 hold / edge / break 로 판정한다.
  * 이 위젯이 시험하는 통념은 "바꾸면 크게 이득"이다.
  */
+/** 판정에 쓰는 이득비 — 화면에 찍히는 자릿수로 맞춘 값. 문구와 숫자가 갈리지 않게 한다. */
+export function state_calculate_shown_advantage(advantage) {
+  return Number(advantage.toFixed(ADVANTAGE_DIGITS));
+}
+
 export function state_calculate_verdict(advantage) {
   if (advantage >= VERDICT_HOLD_MIN_ADVANTAGE) return 'hold';
   if (advantage >= VERDICT_EDGE_MIN_ADVANTAGE) return 'edge';
@@ -576,12 +596,11 @@ export function chart_render_convergence(canvasEl, result) {
   if (blankWidth > 0) {
     context.strokeStyle = colorText;
     context.lineWidth = CHART_GRID_WIDTH;
-    context.setLineDash(CHART_BLANK_EDGE_DASH);
+    context.setLineDash([]);
     context.beginPath();
     context.moveTo(blankRight, CHART_PAD_TOP);
     context.lineTo(blankRight, CHART_PAD_TOP + plotHeight);
     context.stroke();
-    context.setLineDash([]);
 
     const blankLabel = chart_pick_blank_label(startTrial, blankWidth, (text) => context.measureText(text).width);
     if (blankLabel) {
@@ -771,7 +790,7 @@ function display_render_sensitivity(tableBodyEl, currentDoorCount) {
       display_format_count(openedCount),
       display_format_percent(model_calculate_stay_win_rate(doorCount)),
       display_format_percent(model_calculate_switch_win_rate(doorCount, openedCount)),
-      `${model_calculate_switch_advantage(doorCount, openedCount).toFixed(ADVANTAGE_DIGITS)}×`,
+      `${model_format_switch_advantage(doorCount, openedCount, ADVANTAGE_DIGITS)}×`,
     ];
     cells.forEach((text, index) => {
       // 첫 칸은 행 제목이다. 전부 <td>로 두면 스크린리더가 나머지 칸을 읽을 때
@@ -837,9 +856,11 @@ export function widget_mount(rootEl) {
 
   const legend = document.createElement('p');
   legend.className = 'widget-legend';
+  // 항목 사이에 구분 문자를 둔다. 화면에서는 flex gap이 갈라 주지만 복사한 글과
+  // 스크린리더는 텍스트만 읽어 "SwitchStayDashed = …"로 붙어 버린다.
   legend.innerHTML =
-    '<span class="legend-key legend-switch"></span>Switch' +
-    '<span class="legend-key legend-stay"></span>Stay';
+    '<span class="legend-key legend-switch"></span>Switch · ' +
+    '<span class="legend-key legend-stay"></span>Stay. ';
   const legendNote = document.createElement('span');
   legendNote.className = 'legend-note';
   legend.appendChild(legendNote);
@@ -850,7 +871,7 @@ export function widget_mount(rootEl) {
   readouts.className = 'readouts';
   const switchReadout = widget_build_readout('Switch wins', '');
   const stayReadout = widget_build_readout('Stay wins', '');
-  const advantageReadout = widget_build_readout('How much swapping helps', 'times as many wins as staying');
+  const advantageReadout = widget_build_readout('How much swapping helps', 'as many wins as staying');
   // R = N − 1 − K. 이득비를 실제로 움직이는 값인데 지금까지 화면 어디에도 없었다 —
   // K를 늘려도 왜 이득이 줄어드는지를 이 숫자 하나가 설명한다.
   const remainingReadout = widget_build_readout(
@@ -870,8 +891,8 @@ export function widget_mount(rootEl) {
   const table = document.createElement('table');
   table.className = 'widget-table';
   table.innerHTML =
-    '<caption>What the door count does on its own. Here the host opens every door but ' +
-    'one, so only the door count changes down the rows. Your current setting is the marked row.</caption>' +
+    '<caption>Each row is a different door count, with the host opening every door ' +
+    'but two: yours and one other. If your door count is one of these, its row is marked.</caption>' +
     '<thead><tr><th scope="col">Doors</th><th scope="col">Opened</th>' +
     '<th scope="col">Stay</th><th scope="col">Switch</th><th scope="col">Ratio</th></tr></thead>' +
     '<tbody></tbody>';
@@ -970,7 +991,8 @@ export function widget_mount(rootEl) {
     });
     lastResult = result;
 
-    const advantage = model_calculate_switch_advantage(state.doorCount, state.openedCount);
+    // 화면·판정·그림 설명이 모두 **같은 문자열 하나**를 쓴다. 따로 반올림하면 갈린다.
+    const advantageText = model_format_switch_advantage(state.doorCount, state.openedCount, ADVANTAGE_DIGITS);
     const remainingCount = model_calculate_remaining_count(state.doorCount, state.openedCount);
 
     // 큰 숫자는 모델의 정확한 값(그림의 점선), 작은 글씨가 시뮬레이션(그림의 실선)이다.
@@ -978,17 +1000,19 @@ export function widget_mount(rootEl) {
     switchReadout.unit.textContent = `by the math — ${display_format_percent(result.switchWinRate)} in the games played`;
     stayReadout.value.textContent = display_format_percent(result.stayWinRateTheory);
     stayReadout.unit.textContent = STAY_INVARIANT_NOTE;
-    advantageReadout.value.textContent = `${advantage.toFixed(ADVANTAGE_DIGITS)}×`;
+    advantageReadout.value.textContent = `${advantageText}×`;
     remainingReadout.value.textContent = display_format_count(remainingCount);
 
     // 판정 배너 — 사이트 시그니처. 통념("바꾸면 크게 이득")이 어느 구간에서 깨지는지.
-    const verdictState = state_calculate_verdict(advantage);
+    // 화면에 찍히는 값으로 판정한다. 부동소수 그대로 재면 99/90이 1.0999…가 되어
+    // "1.10×"를 찍으면서 1.10 아래 문구를 띄웠다 (2026-09-21 독립 검사에서 발견).
+    const verdictState = state_calculate_verdict(Number(advantageText));
     verdict.dataset.state = verdictState;
 
     // 첫 줄에 결론과 그 근거가 되는 숫자 하나. 나머지는 뒤 문장으로 민다.
     const headlineText =
       `${VERDICT_HEADLINE[verdictState]} the model has swapping win ` +
-      `${advantage.toFixed(ADVANTAGE_DIGITS)}× as often as staying.`;
+      `${advantageText}× as often as staying.`;
     // 그림에는 눈으로 못 읽는 독자를 위해 설정과 결과를 함께 적는다. 화면에는
     // 배너가 판정 한 줄만 싣고, 숫자는 바로 아래 판독 네 장이 진다.
     const chartLabel =
@@ -996,8 +1020,8 @@ export function widget_mount(rootEl) {
       `${num_format_plural(state.doorCount, 'door')} and ${display_format_count(state.openedCount)} opened, ` +
       `${display_format_count(remainingCount)} ${num_format_plural(remainingCount, 'door is', 'doors are')} ` +
       `left to switch into. After ${display_format_count(state.trialCount)} simulated games the running ` +
-      `averages are ${display_format_percent(result.switchWinRate)} and ` +
-      `${display_format_percent(result.stayWinRate)}.`;
+      `averages are ${display_format_percent(result.switchWinRate)} for swapping and ` +
+      `${display_format_percent(result.stayWinRate)} for staying.`;
     verdictHeadline.textContent = headlineText;
     canvas.setAttribute('aria-label', chartLabel);
 
@@ -1029,8 +1053,8 @@ export function widget_mount(rootEl) {
     const blankNote =
       drawn.startTrial > drawn.axisStart
         ? ` The solid curves begin at trial ${display_format_count(drawn.startTrial)}; ` +
-          `the shaded strip to its left is where the running average was still outside this window, ` +
-          `so nothing is drawn there.`
+          `the shaded strip covers the trials up to it, and in that span at least one sampled running average fell outside this window, ` +
+          `so the solid curves are not drawn there.`
         : ' The solid curves run the full width of the axis.';
     legendNote.textContent =
       `${LEGEND_KEY_TEXT} ` +

@@ -79,7 +79,24 @@ export function model_calculate_switch_win_rate(doorCount, openedCount) {
  * 바꾸기가 유지 대비 몇 배 유리한지. → (N-1)/(N-1-K)
  */
 export function model_calculate_switch_advantage(doorCount, openedCount) {
-  return model_calculate_switch_win_rate(doorCount, openedCount) / model_calculate_stay_win_rate(doorCount);
+  // 확률 둘을 나누지 않고 (N−1)/R로 바로 낸다. 나눗셈 두 번을 거치면 19/8이
+  // 2.3749…가 되어 화면에 2.37×로 찍혔다(정확값 2.375 → 2.38). 2026-09-21 검사.
+  return (doorCount - 1) / (doorCount - 1 - openedCount);
+}
+
+/**
+ * 이득비를 화면 문자열로 — **정수 연산으로** 반올림한다.
+ *
+ * `toFixed`는 이진 부동소수를 반올림한다. 41/40 = 1.025는 이진으로 1.02499…라
+ * 1.02로 찍혔다(정확한 반올림은 1.03). 그런 상태가 슬라이더 격자에 14개 있었다
+ * (2026-09-21, 회귀 테스트가 잡음). (N−1)/R은 정수의 비이므로 반올림도 정수로 한다:
+ * round-half-up(x) = floor((2·(N−1)·10^d + R) / (2R)) / 10^d.
+ */
+export function model_format_switch_advantage(doorCount, openedCount, digits) {
+  const remaining = doorCount - 1 - openedCount;
+  const scale = 10 ** digits;
+  const scaled = Math.floor((2 * (doorCount - 1) * scale + remaining) / (2 * remaining));
+  return (scaled / scale).toFixed(digits);
 }
 
 /** 값을 [min, max] 안으로 자른다. 공통 모듈을 그대로 쓴다. */

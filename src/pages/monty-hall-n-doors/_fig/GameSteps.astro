@@ -7,6 +7,12 @@
   프런트매터가 맨 앞에 있으면 붙지 않는다. 규약 §5 제작 표준에 적힌 조항이고,
   이 파일은 그것을 지키지 않아 실제로 전송 중 깨졌다(2026-09-20).
 
+  2026-09-25 사실검사: 4단 switch 문의 점선(6 3)을 지워 실선으로 두었다.
+  이 그림에서 점선은 이미 "열린 문"(4 3)의 뜻이고, 같은 페이지 위젯 범례는 점선을
+  세 번째 뜻("Dashed = what the math says")으로 쓴다 — 한 선 모양이 세 가지 뜻을
+  질 수 없다. switch와 stay는 색(--series-1/--series-2)과 라벨로 이미 갈리고,
+  굵기는 자매 사각형(stay)과 같은 3이다.
+
   3문 게임의 진행 순서 네 단: 닫힘 → 선택 → 개봉 → 결정.
   세로형(viewBox 420폭 이하) — 폰 폭에서 글자가 짓눌리지 않도록.
   문 안의 염소는 직접 그린 실루엣 SVG(symbol+use 재사용). 사진·외부 아이콘 없음.
@@ -75,7 +81,8 @@
   <rect x="134" y="590" width="36" height="90" rx="2" fill="var(--surface)" stroke="var(--series-2)" stroke-width="3" />
   <circle cx="162" cy="635" r="3" fill="var(--graphite)" />
   <text x="210" y="584" class="fig-label" fill="var(--series-1)" text-anchor="middle">switch</text>
-  <rect x="192" y="590" width="36" height="90" rx="2" fill="var(--surface)" stroke="var(--series-1)" stroke-width="3" stroke-dasharray="6 3" />
+  <!-- switch 문은 실선이다 — 위 프런트매터의 2026-09-25 항 참조 -->
+  <rect x="192" y="590" width="36" height="90" rx="2" fill="var(--surface)" stroke="var(--series-1)" stroke-width="3" />
   <circle cx="220" cy="635" r="3" fill="var(--graphite)" />
   <text x="268" y="584" class="fig-label" fill="var(--graphite-soft)" text-anchor="middle">open</text>
   <rect x="250" y="590" width="36" height="90" rx="2" fill="var(--paper-sunk)" stroke="var(--rule)" stroke-width="2" stroke-dasharray="4 3" />

@@ -36,11 +36,11 @@ import {
   model_calculate_counter_table,
 } from './model.js';
 import {
-  SIM_QUEUE_DRAW_MAX,
   sim_create_state,
   sim_advance_state,
   sim_read_frame,
   sim_calculate_step_minutes,
+  SIM_QUEUE_DRAW_MAX,
 } from './sim.js';
 
 import { num_format_count, num_format_plural } from '../_shared/numbers.js';
@@ -211,6 +211,23 @@ const QUEUE_PRESETS = [
  * 실제로 그 밑으로 떨어진다. 그 구간에서는 `display_format_axis_minutes`와
  * 같은 유효숫자 방식으로 자릿수를 늘린다(무한히 늘지 않게 상한을 둔다).
  */
+/**
+ * 소수 `digits`자리로 **0.5는 올림** 반올림한다.
+ *
+ * `toFixed`를 부동소수에 그대로 걸면 정확히 …5인 값이 한 칸 내림된다. 이 위젯에서
+ * 실제로 났다(2026-09-24 shown.test.js): c=2·ρ=0.80의 배수는 정확히 2.25인데 `2.2×`로
+ * 찍혀 식에서 지워진 두 슬라이더(처리시간·변동계수)가 배수를 움직이는 것처럼 보였고,
+ * c=1에서 같은 양인 두 배치의 카드가 3.7과 3.8로 갈렸다.
+ *
+ * 참값이 반올림 경계에서 떨어진 거리는 이 모델의 분모에서 ROUND_EPS보다 훨씬 크므로,
+ * 이 보정은 경계에 **정확히** 놓인 값만 올리고 나머지는 건드리지 않는다.
+ */
+const ROUND_EPS = 1e-9;
+function display_round_half_up(value, digits) {
+  const scale = 10 ** digits;
+  return Math.floor(value * scale + 0.5 + ROUND_EPS) / scale;
+}
+
 export function display_format_minutes(minutes) {
   if (!Number.isFinite(minutes)) return '—';
   if (minutes > 0 && minutes < MINUTE_ROUND_TO_ZERO_MINUTES) {
@@ -218,10 +235,10 @@ export function display_format_minutes(minutes) {
       MINUTE_SMALL_DECIMALS_MAX,
       Math.max(MINUTE_SMALL_DIGITS, MINUTE_SMALL_SIGNIFICANT - 1 - Math.floor(Math.log10(minutes))),
     );
-    return minutes.toFixed(decimals);
+    return display_round_half_up(minutes, decimals).toFixed(decimals);
   }
   const digits = minutes < MINUTE_SMALL_THRESHOLD ? MINUTE_SMALL_DIGITS : MINUTE_DIGITS;
-  return minutes.toFixed(digits);
+  return display_round_half_up(minutes, digits).toFixed(digits);
 }
 
 /**
@@ -239,7 +256,7 @@ export function display_format_axis_minutes(minutes) {
 
 export function display_format_ratio(ratio) {
   if (!Number.isFinite(ratio)) return '—';
-  return `${ratio.toFixed(RATIO_DIGITS)}×`;
+  return `${display_round_half_up(ratio, RATIO_DIGITS).toFixed(RATIO_DIGITS)}×`;
 }
 
 /**
@@ -310,15 +327,23 @@ export function display_describe_verdict(result) {
   return { verdict, headline, detail };
 }
 
-/** 변동계수가 1이 아니면 카드가 근사임을 말한다. 정확한 자리와 섞어 두지 않는다. */
+/**
+ * 변동계수가 1이 아니면 카드가 근사임을 말한다. 정확한 자리와 섞어 두지 않는다.
+ *
+ * "is exact"가 아니라 "leaves both exact"다(2026-09-25 사실검사). 창구 하나에서는
+ * CV≠1에서도 **평균 대기**가 Pollaczek–Khinchine으로 정확하고, 정확하지 않은 것은
+ * 맞춘 꼬리에서 나오는 95퍼센타일뿐이다. CV 1.00은 **둘 다**를 정확하게 남긴다.
+ * 본문 Four rules 절이 같은 구분을 적는다.
+ */
 export function display_describe_exactness(result) {
   if (result.exact) {
     return `Exponential service times, so both layouts are the model's closed forms with nothing approximated.`;
   }
+  const spread = result.variation > QUEUE_CV_EXACT ? 'more' : 'less';
   return (
-    `Service times vary more than the exponential case (CV ${result.variation.toFixed(2)}), so the means carry ` +
+    `Service times vary ${spread} than the exponential case (CV ${result.variation.toFixed(2)}), so the means carry ` +
     `the two-moment approximation and the ${display_format_percent(QUEUE_PERCENTILE)} figures keep an ` +
-    `exponential tail shape fitted to them. Only CV ${QUEUE_CV_EXACT.toFixed(2)} is exact.`
+    `exponential tail shape fitted to them. Only CV ${QUEUE_CV_EXACT.toFixed(2)} leaves both exact.`
   );
 }
 
@@ -671,8 +696,11 @@ export function hero_describe_frame(frame, counterCount) {
     `layout and not luck. ${display_format_count(frame.arrivedCount)} ` +
     `${num_format_plural(frame.arrivedCount, 'customer has', 'customers have')} arrived so far across ` +
     `${display_format_count(counterCount)} ${num_format_plural(counterCount, 'counter')}.` +
-    `${stranded} Queues longer than ${SIM_QUEUE_DRAW_MAX} are drawn up to that length; the count in each ` +
-    `label is the real one.`
+    // 한계가 둘이다 — sim.js의 26(`SIM_QUEUE_DRAW_MAX`)과 캔버스 폭. 데스크톱(자리 28~37개)
+    // 에서는 26이 먼저 걸리고, 390px 히어로(자리 9개, 창구 8개면 0개)에서는 폭이 먼저 걸린다.
+    // 하나만 적으면 다른 화면 폭에서 거짓이 된다 — 2026-09-25에 양쪽으로 한 번씩 났다.
+    `${stranded} A long queue is drawn up to ${SIM_QUEUE_DRAW_MAX} waiting, and only as far as the ` +
+    `strip has room; the count in each label is the real one.`
   );
 }
 
@@ -714,7 +742,7 @@ export function widget_mount(rootEl) {
   const serviceSlider = control_build_slider(
     'queue-service',
     'Minutes at the counter',
-    'How long one transaction takes on average. It multiplies every figure on this page and changes none of the comparisons.',
+    'How long one transaction takes on average. It scales every wait on this page and leaves the ratios between the layouts unchanged.',
     {
       min: QUEUE_SERVICE_MIN_MINUTES,
       max: QUEUE_SERVICE_MAX_MINUTES,

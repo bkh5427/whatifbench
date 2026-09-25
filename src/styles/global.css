@@ -923,13 +923,25 @@ code {
 }
 .widget-table td { font-family: var(--mono); }
 /* 현재 행: paper-sunk는 흰 배경 대비 1.14:1로 사실상 안 보인다.
-   색만으로 구분하지 않도록 왼쪽 표시선도 같이 준다. */
-.widget-table tr[aria-current="true"] td {
+   색만으로 구분하지 않도록 왼쪽 표시선도 같이 준다.
+   **첫 칸은 <td>가 아니라 행 제목 <th>다.** `td:first-child`로 잡으면 강조도
+   표시선도 그 칸만 빠져나가, 현재 행의 첫 칸이 혼자 하얗게 남는다. */
+.widget-table tr[aria-current="true"] > * {
   background: var(--surface-mark);
+}
+.widget-table tr[aria-current="true"] td {
   font-weight: 500;
 }
-.widget-table tr[aria-current="true"] td:first-child {
+.widget-table tr[aria-current="true"] > :first-child {
   box-shadow: inset 3px 0 0 var(--graphite);
+}
+
+/* 390px에서 다섯 칸이 컨테이너보다 11px 넓어 마지막 칸이 잘렸다 —
+   머리글이 "Ratic", 비율의 "×"가 사라졌다. 좌우 여백만 줄여 안에 넣는다.
+   (세로 여백은 그대로다. 손가락 타깃 높이를 건드리지 않는다) */
+@media (max-width: 26rem) {
+  .widget-table th,
+  .widget-table td { padding: 0.4rem 0.3rem; }
 }
 
 /* --- 도입부 리드 --- */
@@ -1088,6 +1100,19 @@ code {
 
 @media (max-width: 34rem) {
   .math-steps td:nth-child(2) { white-space: normal; }
+}
+
+/**
+ * `hidden` 속성이 저작자 스타일에 지지 않게 한다.
+ *
+ * 브라우저 기본은 `[hidden]{display:none}`인데 우선순위가 가장 낮아, `display`를
+ * 정하는 클래스가 하나라도 붙어 있으면 그 요소는 `hidden`인데도 계속 보인다.
+ * 2026-09-25 전수검사에서 실제로 났다 — 심슨 위젯이 무효 상태에서 가중치 띠를
+ * `hidden`으로 뺐는데 `.bar-block{display:grid}`가 이겨, 배너가 "비교할 것이 없다"고
+ * 말하는 화면에 앞 상태의 가중치가 그대로 남았다.
+ */
+[hidden] {
+  display: none !important;
 }
 
 .sr-only {
@@ -1626,6 +1651,10 @@ figure.fig .fig-cap { padding: 0 1rem 0.9rem; }
 }
 .site-foot a { color: #e7e7ea; }
 .site-foot a:hover { color: var(--steel-300); }
+/* 묶음 표찰은 종이 위를 전제로 --graphite(#1d1f20)로 잡혀 있었다. 바닥이 강철
+   판이 되면서 #1d2d3d 위의 #1d1f20 — 대비 1.18:1이라 눈으로는 읽히지 않고
+   스크린리더에만 남았다. 본문과 같은 --steel-200이면 11.50:1이다. */
+.site-foot .foot-label { color: var(--steel-200); }
 
 
 /* --- 위젯 판: 채워진 상자에서 도면 위의 장치로 ---
@@ -1688,6 +1717,17 @@ figure.fig .fig-cap { padding: 0 1rem 0.9rem; }
 @media (forced-colors: active) {
   .widget-preset[aria-pressed="true"] { outline: 3px solid ButtonText; outline-offset: -3px; }
   .tool-card::before, figure.fig::before, .widget::before { forced-color-adjust: none; }
+  /* 범례 견본은 배경색 하나로만 그려진다. 강제 색 모드가 그 배경을 치환하면
+     견본이 통째로 사라져 "Switch  Stay" 글자만 남는다 — 캔버스의 곡선은
+     치환되지 않으므로 견본만 제 색을 지키게 둔다. 선으로 그린 견본
+     (.legend-reference)은 테두리라 강제 색으로 다시 칠해져야 보인다. */
+  .legend-key:not(.legend-reference) { forced-color-adjust: none; }
+  /* 강제 색 모드는 배경과 box-shadow를 함께 지운다. 현재 행 표시는 칩과 같은
+     방식으로, 살아남는 윤곽선 하나로 남긴다. */
+  .widget-table tr[aria-current="true"] > :first-child {
+    outline: 3px solid CanvasText;
+    outline-offset: -3px;
+  }
 }
 
 /* 위젯 맨 위 규칙 한 줄. 컨트롤보다 위에 있어야 하고, 컨트롤보다 조용해야 한다. */

@@ -25,24 +25,46 @@
 //                      나머지는 "직관과 무관한 글"이 된다.
 //   Scale & Time     → 이미 내용물에 실패했다. Shower vs Bath는 규모도 시간도 아니다.
 //   Everyday Physics → 'everyday'가 천장이다. 차량 동역학은 everyday가 아니다.
+/**
+ * **열린** 카테고리. 헤더·홈 절·꼬리말·`/<key>` 인덱스가 이것만 읽는다.
+ *
+ * 규칙: 그 카테고리에 `published: true`가 **2개 이상** 확보된 뒤에 여기 옮긴다.
+ * 미리 열면 빈 인덱스가 "under construction" 신호가 되고, 도입글이 없는 글을
+ * 전제하는 전칭("Everything in this section…")과 미발행 도구의 수치를 싣게 된다.
+ * 2026-09-24 전수검사에서 실제로 그렇게 됐다 — scale·motion·energy가 공개 도구
+ * 0개로 열려 있으면서 결함 27건을 냈고, 그중 하나(/scale의 7.07 dB)는 같은 문장에
+ * 적힌 두 주파수로 독자가 다시 계산하면 6.38이 나오는 수였다. 그래서 셋을 닫았다.
+ * `tools.test.js`가 이 규칙을 기계로 지킨다.
+ *
+ * 헤더 가로폭 한계: 카테고리 4개(=nav 5항목)까지는 360px 모바일에서 한 줄이다.
+ * **5개가 되는 순간** 2줄로 깨지므로 헤더 패턴을 바꿔야 한다 (로고 + Tools + About).
+ */
 export const CATEGORIES = [
   { key: "chance", href: "/chance", short: "Chance", name: "Chance" },
+];
+
+/**
+ * 선언만 해 둔 **닫힌** 카테고리. 사이트 어디에도 렌더되지 않는다 —
+ * `/scale` 같은 주소도 없다. 초안 도구가 이 key를 달고 기다릴 수 있게만 둔다.
+ * 도입글(`category-intros.js`)도 그대로 남겨 둔다: 도구 둘이 발행되면 거의 그대로
+ * 다시 참이 되므로, 문장을 버리는 대신 발행 전까지 잠가 두는 쪽이 낫다.
+ */
+export const CATEGORIES_PLANNED = [
   { key: "scale", href: "/scale", short: "Scale", name: "Scale" },
   { key: "motion", href: "/motion", short: "Motion", name: "Motion" },
   { key: "energy", href: "/energy", short: "Energy", name: "Energy" },
 ];
 
-/**
- * 카테고리를 늘리는 규칙: 그 카테고리에 `published: true`가 **2개 이상** 확보된 뒤에
- * 여기 추가한다. 미리 열면 빈 인덱스가 "under construction" 신호가 된다.
- *
- * 헤더 가로폭 한계: 카테고리 4개(=nav 5항목)까지는 360px 모바일에서 한 줄이다.
- * **5개가 되는 순간** 2줄로 깨지므로 헤더 패턴을 바꿔야 한다 (로고 + Tools + About).
- */
+/** 열렸든 닫혔든 이름이 붙어 있는 모든 카테고리. 도구의 `category` 검증용. */
+export const CATEGORIES_ALL = [...CATEGORIES, ...CATEGORIES_PLANNED];
 import { tags_check_unknown, tags_read_domain } from "./tags.js";
 import { meta as MONTY_HALL_N_DOORS } from "../pages/monty-hall-n-doors/_meta.js";
+import { meta as SIMPSONS_PARADOX } from "../pages/simpsons-paradox/_meta.js";
+import { meta as ONE_LINE_OR_MANY } from "../pages/one-line-or-many/_meta.js";
 
 export const CATEGORY_MAX_BEFORE_HEADER_CHANGE = 4;
+/** 카테고리를 열 수 있는 최소 발행 수. 위 주석의 규칙을 기계가 읽는 값으로. */
+export const CATEGORY_OPEN_MIN_PUBLISHED = 2;
 
 // 발행된 글은 자기 폴더에서 자기 메타를 선언한다 (`_meta.js`).
 // 여기 배열은 **순서 목록**이다 — 관련 도구 동점을 이 순서로 깨므로
@@ -51,10 +73,8 @@ export const CATEGORY_MAX_BEFORE_HEADER_CHANGE = 4;
 // 검수를 통과할 때 아래 인라인 항목이 그 폴더의 `_meta.js`로 옮겨 간다.
 export const TOOLS = [
   MONTY_HALL_N_DOORS,
-  // figure의 조건을 라벨에 넣는다 — 프리셋이 바뀌면 다른 값이 되는 수치다.
-  { slug: "simpsons-paradox", category: "chance", name: "Simpson's Paradox Mixer", blurb: "Two groups where one option leads in each group, and trails once the model pools them.", grade: "A", since: null, updated: null, changed: "", tags: ["probability", "counterintuitive", "aggregation", "abstract"], figure: { value: "19.4 pp", label: "the model's pooled gap in the Berkeley preset, against a lead in both departments" }, published: false },
-  // 5.4배는 창구 4개·80% 바쁨에서만 참이다 — 창구 2개면 2.3배, 8개면 14.0배.
-  { slug: "one-line-or-many", category: "chance", name: "One Line or Many?", blurb: "A single queue against one queue per counter, on average wait and on worst-case wait.", grade: "A", since: null, updated: null, changed: "", tags: ["probability", "counterintuitive", "queueing", "errands"], figure: { value: "5.4×", label: "the model's cut in mean wait from one line, at four counters 80% busy" }, published: false },
+  SIMPSONS_PARADOX,
+  ONE_LINE_OR_MANY,
 
   {
     slug: "folding-paper-moon",
@@ -108,7 +128,7 @@ export function tools_read_one(slug) {
   return TOOLS.find((t) => t.slug === slug) ?? null;
 }
 
-/** key로 카테고리 하나. */
+/** key로 **열린** 카테고리 하나. 닫힌 카테고리는 null이다 — 페이지가 안 만들어진다. */
 export function tools_read_category(key) {
   return CATEGORIES.find((c) => c.key === key) ?? null;
 }
@@ -212,6 +232,22 @@ export function tools_check_publishable(pool = TOOLS) {
   const overTagged = pool.filter((t) => (t.tags ?? []).length > TAG_MAX);
   if (overTagged.length > 0) {
     throw new Error(`태그가 ${TAG_MAX}개를 넘는다: ${overTagged.map((t) => t.slug).join(", ")}`);
+  }
+  // 열려 있는데 발행이 모자란 카테고리. 빈 인덱스는 "under construction" 신호다.
+  const thin = CATEGORIES.filter(
+    (c) => pool.filter((t) => t.published && t.category === c.key).length < CATEGORY_OPEN_MIN_PUBLISHED,
+  );
+  if (thin.length > 0) {
+    throw new Error(
+      `공개 도구가 ${CATEGORY_OPEN_MIN_PUBLISHED}개 미만인 카테고리가 열려 있다 (CATEGORIES_PLANNED로 옮길 것): ${thin.map((c) => c.key).join(", ")}`,
+    );
+  }
+  // 발행된 도구가 닫힌 카테고리에 있으면 그 글은 브레드크럼도 인덱스도 없다.
+  const homeless = pool.filter((t) => t.published && !CATEGORIES.some((c) => c.key === t.category));
+  if (homeless.length > 0) {
+    throw new Error(
+      `발행된 도구의 카테고리가 닫혀 있다: ${homeless.map((t) => `${t.slug}[${t.category}]`).join(", ")}`,
+    );
   }
   return true;
 }

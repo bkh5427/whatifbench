@@ -1,0 +1,39 @@
+---
+// 없는 주소의 페이지. 이 파일이 없으면 Cloudflare Pages가 사이트를 SPA로 보고
+// 없는 주소마다 홈을 **200**으로 돌려준다 — 검색엔진에게는 같은 홈이 수없이
+// 많은 주소에 있는 사이트로 보인다 (2026-09-21 독립 검사에서 발견).
+// 도구 이름을 하드코딩하지 않는다. 발행된 것이 없으면 그 목록이 사라진다.
+import Base from "@layouts/Base.astro";
+import { tools_read_published } from "@data/tools.js";
+
+const published = tools_read_published();
+
+// 이 문장은 바로 아래 목록의 개수를 약속한다 — 발행된 도구가 하나인데 "the tools"라고
+// 쓰면 거짓이다. `[category].astro`의 `elsewhere_text`와 같은 규율: 개수에서 문장을 만든다.
+const PUBLISHED_MIN_FOR_PLURAL_TEXT = 2;
+const published_text = (n) =>
+  n >= PUBLISHED_MIN_FOR_PLURAL_TEXT
+    ? "These are the tools on the site:"
+    : "This is the one tool on the site:";
+---
+
+{/* noindex: 이 화면은 없는 주소 전부에 나온다. canonical·og:url을 달면 그 주소마다
+    "/404라는 진짜 페이지"를 가리키게 된다 — 아래 본문과 정반대다. */}
+<Base title="Page not found" description="There is no page at this address." noindex>
+  <h1>Page not found</h1>
+
+  <p>There is no page at this address. It may have been mistyped, or it may never have existed.</p>
+
+  {published.length > 0 && (
+    <>
+      <p>{published_text(published.length)}</p>
+      <ul>
+        {published.map((tool) => (
+          <li><a href={`/${tool.slug}`}>{tool.name}</a></li>
+        ))}
+      </ul>
+    </>
+  )}
+
+  <p><a href="/">Back to the home page</a></p>
+</Base>

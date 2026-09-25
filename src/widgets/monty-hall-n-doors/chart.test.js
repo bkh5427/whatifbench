@@ -385,7 +385,7 @@ describe("판정 배너 — 첫 줄이 결론이다", () => {
     const banner = verdict_read(dom);
     expect(banner.state).toBe("hold");
     // 실제 출력을 받아 적은 값이다.
-    expect(banner.headline).toBe("The classic 2× gap holds: the model has swapping win 2.00× as often as staying.");
+    expect(banner.headline).toBe("The gap is 2× or wider: the model has swapping win 2.00× as often as staying.");
     // 예전에는 여기에 N·K·R·두 승률·시뮬값을 다시 적은 문장이 붙어 있었다. 판독 네 장이
     // 띄우는 숫자의 완전한 복제였고, 그만큼 조작과 숫자 사이가 멀어졌다.
     // **배너 = 판정 한 줄**이 계약이다.
@@ -412,8 +412,8 @@ describe("판정 배너 — 첫 줄이 결론이다", () => {
     }
     expect(states).toEqual(["hold", "edge", "break"]);
     expect(headlines).toEqual([
-      "The classic 2× gap holds: the model has swapping win 2.00× as often as staying.",
-      "The gap is shrinking: the model has swapping win 1.13× as often as staying.",
+      "The gap is 2× or wider: the model has swapping win 2.00× as often as staying.",
+      "The gap is under 2×: the model has swapping win 1.13× as often as staying.",
       "The gap is nearly gone: the model has swapping win 1.01× as often as staying.",
     ]);
     expect(new Set(headlines).size).toBe(3);

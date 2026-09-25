@@ -45,3 +45,16 @@ export function prose_format_fallback_lead(published, siblingCount) {
   if (!published) return "Nothing here links into ";
   return siblingCount > 0 ? "Nothing here pairs closely with the rest of " : "Nothing else sits in ";
 }
+
+/**
+ * 목록 끝의 마침표. 마지막 항목이 이미 문장 부호로 끝나면 붙이지 않는다.
+ *
+ * 2026-09-24 전수검사: /about의 "Finished so far: … One Line or Many?**?.**" —
+ * 도구 이름이 물음표로 끝나는데 목록 끝 마침표를 그대로 붙여 "?." 이 찍혔다.
+ * 셋째 도구를 발행한 날 처음 생긴 결함이다.
+ */
+const LIST_TERMINALS = [".", "?", "!", "\u2026"];
+export function prose_format_period(lastItem) {
+  const text = String(lastItem ?? "").trimEnd();
+  return LIST_TERMINALS.some((mark) => text.endsWith(mark)) ? "" : ".";
+}

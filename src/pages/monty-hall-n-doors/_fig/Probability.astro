@@ -28,18 +28,27 @@ const REST_X = X0 + MINE_W; // 63
 const REST_W = W - MINE_W; // 343
 
 const BAR_H = 44;
+const LABEL_Y = 22; // 위 띠 머리글 줄 — 왼쪽은 상태, 오른쪽은 몫
 const Y1 = 30; // 위 띠(고른 직후) 상단
 const ARROW_Y0 = Y1 + BAR_H + 10; // 84 — 호스트 화살표 시작
 const ARROW_CX = 210; // 전체 폭 중앙
 const Y2 = 158; // 아래 띠(호스트가 연 뒤) 상단
 const TOTAL_H = Y2 + BAR_H + 56; // 258
 
-const MINE = "fill:var(--series-1,#1f4e79)";
+const MINE = "fill:var(--series-2,#c2570a)";
 const OTHER = "fill:var(--surface,#fff);stroke:var(--graphite,#2b2f33);stroke-width:1.5";
 const GONE = "fill:var(--paper-sunk,#f0f0ea);stroke:var(--rule,#d6d8d1);stroke-width:1.5";
-const SURVIVOR = "fill:var(--series-2,#c2570a);fill-opacity:0.18;stroke:var(--series-2,#c2570a);stroke-width:2";
+const SURVIVOR = "fill:var(--series-1,#1f4e79);fill-opacity:0.18;stroke:var(--series-1,#1f4e79);stroke-width:2";
 
-const pct = (v) => `${(v * 100).toFixed(1)}%`;
+// 살아남은 문 한 칸의 몫은 7/16 = 43.75%다. 한 자리로 깎으면 43.8%가 되어
+// 두 칸 합이 87.6%로 읽히고, 같은 그림의 "87.5%"와 어긋난다 (2026-09-24 검사).
+// 그래서 자릿수는 간격의 크기가 아니라 **값의 정밀도**로 정한다 — 두 자리까지
+// 찍고 남는 0만 버린다. 1/8 → 12.5%, 7/8 → 87.5%, 7/16 → 43.75%.
+const PCT_DIGITS_MAX = 2;
+const pct = (v) => {
+  const text = (v * 100).toFixed(PCT_DIGITS_MAX);
+  return `${text.includes(".") ? text.replace(/\.?0+$/, "") : text}%`;
+};
 ---
 
 <figure class="fig">
@@ -47,16 +56,19 @@ const pct = (v) => `${(v * 100).toFixed(1)}%`;
        aria-label={`Two stacked probability bars for ${N} doors. Top: right after you pick, your door holds one eighth and the other seven doors share seven eighths in equal slices. Bottom: after the host opens ${K} of them, your door still holds one eighth — the slice is unchanged, shown by a dashed line connecting the two bars — and the same seven eighths now sits on the ${R} doors left, so each of them is wider than before.`}>
 
     {/* ── 띠 1: 고른 직후 ── */}
-    <text x={X0} y="22" class="fig-label-dim">Right after you pick</text>
+    <text x={X0} y={LABEL_Y} class="fig-label-dim">Right after you pick</text>
+    {/* 이 문구는 띠 **안**에 있었다. 칸이 7개라 칸 경계선 넉 줄이 글자 사이를 지나
+        글이 그어진 것처럼 읽혔다 (2026-09-22 검사). 띠 위 같은 줄로 올린다 —
+        칸 위에 얹히므로 무엇의 몫인지는 그대로 보인다. */}
+    <text x={X0 + W} y={LABEL_Y} text-anchor="end" class="fig-label">
+      {pct((N - 1) / N)} spread over {N - 1} doors
+    </text>
     <rect x={X0} y={Y1} width={MINE_W} height={BAR_H} style={MINE} />
     {Array.from({ length: N - 1 }, (_, i) => (
       <rect x={REST_X + i * UNIT} y={Y1} width={UNIT} height={BAR_H} style={OTHER} />
     ))}
     <text x={X0 + MINE_W / 2} y={Y1 + 28} text-anchor="middle" class="fig-num"
           style="fill:var(--surface,#fff)">{pct(1 / N)}</text>
-    <text x={REST_X + REST_W / 2} y={Y1 + 28} text-anchor="middle" class="fig-label">
-      {pct((N - 1) / N)} spread over {N - 1} doors
-    </text>
 
     {/* ── 호스트의 행동 ── */}
     <g style="stroke:var(--graphite-soft,#5f666b);stroke-width:2;fill:none" stroke-linecap="round">
@@ -67,8 +79,18 @@ const pct = (v) => `${(v * 100).toFixed(1)}%`;
       the host opens {K} of them — all losing
     </text>
 
-    {/* ── 띠 2: 호스트가 연 뒤 ── */}
-    <text x={X0} y={Y2 - 8} class="fig-label-dim">After the host opens</text>
+    {/* 내 문의 몫이 안 변한다는 것 — 두 띠를 세로선으로 잇는다.
+        아래 머리글보다 **먼저** 그린다. 나중에 그리면 선이 글자 위를 지나 글이
+        그어진 것처럼 읽힌다 (2026-09-22 검사). */}
+    <path d={`M${X0 + MINE_W} ${Y1 + BAR_H} V${Y2}`}
+          style="stroke:var(--series-2,#c2570a);stroke-width:1.5;stroke-dasharray:3 4;fill:none" />
+
+    {/* ── 띠 2: 호스트가 연 뒤 ──
+        위의 점선이 이 문구를 지나는 자리다. 선을 끊으면 이 그림의 논지가 끊기므로,
+        글자에 종이색 테두리를 둘러 선이 글자를 피해 가게 한다
+        (`paint-order="stroke"` — 테두리를 먼저 칠하고 그 위에 글자를 칠한다). */}
+    <text x={X0} y={Y2 - 8} class="fig-label-dim"
+          stroke="var(--paper,#f2f2f3)" stroke-width="4" paint-order="stroke">After the host opens</text>
     <rect x={X0} y={Y2} width={MINE_W} height={BAR_H} style={MINE} />
     {Array.from({ length: R }, (_, i) => (
       <rect x={REST_X + i * (REST_W / R)} y={Y2} width={REST_W / R} height={BAR_H} style={SURVIVOR} />
@@ -77,24 +99,22 @@ const pct = (v) => `${(v * 100).toFixed(1)}%`;
           style="fill:var(--surface,#fff)">{pct(1 / N)}</text>
     {Array.from({ length: R }, (_, i) => (
       <text x={REST_X + (i + 0.5) * (REST_W / R)} y={Y2 + 28} text-anchor="middle" class="fig-num"
-            style="fill:var(--series-2,#c2570a)">{pct((N - 1) / (N * R))}</text>
+            style="fill:var(--series-1,#1f4e79)">{pct((N - 1) / (N * R))}</text>
     ))}
 
-    {/* 내 문의 몫이 안 변한다는 것 — 두 띠를 세로선으로 잇는다 */}
-    <path d={`M${X0 + MINE_W} ${Y1 + BAR_H} V${Y2}`}
-          style="stroke:var(--series-1,#1f4e79);stroke-width:1.5;stroke-dasharray:3 4;fill:none" />
-    <text x={X0} y={Y2 + BAR_H + 22} class="fig-label-dim" style="fill:var(--series-1,#1f4e79)">
+    <text x={X0} y={Y2 + BAR_H + 22} class="fig-label-dim" style="fill:var(--series-2,#c2570a)">
       your door: unchanged
     </text>
-    <text x={X0} y={Y2 + BAR_H + 40} class="fig-label-dim" style="fill:var(--series-2,#c2570a)">
+    <text x={X0} y={Y2 + BAR_H + 40} class="fig-label-dim" style="fill:var(--series-1,#1f4e79)">
       same {pct((N - 1) / N)}, now on {R} doors
     </text>
   </svg>
   <figcaption>
     <b>Why opening doors moves the answer.</b> The probability on your door is fixed
-    the moment you choose it — nothing the host does afterwards touches it. What the
+    the moment you choose it. In this model the host picks at random, so nothing he
+    does afterwards touches it. What the
     host changes is how many doors the rest of it has to sit on. In this model that
-    is the whole mechanism, and it is why the count that matters is how many doors
-    are <em>left</em>, not how many there were.
+    is the whole mechanism, and it is why opening doors moves the answer while
+    adding doors alone does not help.
   </figcaption>
 </figure>

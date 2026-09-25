@@ -31,12 +31,15 @@
 //    흘러드는 문자열(Byline의 REVIEW_PENDING, tools.js의 updated)까지 여기서 잡힌다.
 //    발행된 도구·소스 페이지마다 산출물이 실재하는지도 대조한다.
 // 3) tools.js 데이터: 발행 게이트 + updated 날짜 형식.
+// 4) 집필 규약: `check-standard.mjs`에 있다 — 절 순서 · 분량 · 도해 · 금지어 · CRUMB.
 //
 // 위반은 **전부 모아서** 보고한다. 첫 건에서 멈추지 않는다.
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { standard_run } from "./check-standard.mjs";
+import { audit_run } from "./audit/check-audit.mjs";
 
 // ── 상수 ───────────────────────────────────────────────────
 /** 저장소 루트. 이 스크립트가 있는 scripts/의 부모다. cwd에 의존하지 않는다. */
@@ -649,7 +652,7 @@ function gate_check_tools(tools) {
  * 게이트 전체. 위반 배열을 돌려준다(비어 있으면 푸시 가능).
  * `root`를 받는 이유는 테스트가 임시 저장소 사본을 검사하기 위해서다.
  */
-export async function gate_run(root = REPO_ROOT) {
+export async function gate_run(root = REPO_ROOT, { audit = true } = {}) {
   const violations = [];
   violations.push(...gate_check_wiring(root));
 
@@ -666,6 +669,14 @@ export async function gate_run(root = REPO_ROOT) {
   violations.push(...gate_check_markdown_pages(root));
   violations.push(...gate_check_pages(root, tools, pages));
   violations.push(...gate_check_dist(root, tools, pages));
+
+  // 집필 규약 §1·§5·§6·§7·§8. 별도 모듈이지만 사람이 도는 명령은 하나여야 한다.
+  violations.push(...standard_run(root, tools));
+
+  // 사실 전수검사 장부(`audit/ledger.json`). 배포될 모든 단위가 검사를 통과했는지.
+  // 절차는 00_project_main/audit-skill/SKILL.md. 도구는 scripts/audit/.
+  // `audit:false`는 다른 규칙만 따로 시험하는 픽스처용이다. 실행 경로(isMain)는 항상 켠다.
+  if (audit) violations.push(...audit_run(root, tools).map((message) => ({ file: "audit/ledger.json", message })));
   return violations;
 }
 
@@ -681,7 +692,7 @@ const isMain =
 if (isMain) {
   const violations = await gate_run();
   if (violations.length === 0) {
-    console.log("  ✓ 배선 / 데이터 게이트 / 소스 페이지 / 빌드 산출물 — 미완성 표식 없음");
+    console.log("  ✓ 배선 / 데이터 / 소스 페이지 / 산출물 / 집필 규약 — 위반 없음");
     console.log("\n푸시 가능.");
   } else {
     console.error(`푸시 게이트 위반 ${violations.length}건:\n`);
