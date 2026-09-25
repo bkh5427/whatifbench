@@ -733,6 +733,19 @@
    "date": "2026-09-25",
    "id": "081961e14c32"
   },
+  "08500a30a6f8": {
+   "page": "/simpsons-paradox",
+   "kind": "og-card",
+   "text": "공유 카드 simpsons-paradox.png: 분류 \"Chance\" · 제목 \"Simpson's Paradox Mixer\" · 숫자 \"19.4 pp\" · 설명 \"the model's pooled gap in the Berkeley preset, against a lead in both departments\"",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "VIS: dist/og/simpsons-paradox.png를 열었다 — 분류 \"CHANCE\", 제목 \"Simpson's Paradox Mixer\", 숫자 \"19.4 pp\", 설명 \"the model's pooled gap in the Berkeley preset, against a lead in both departments\"가 그려져 있고 페이지 카드의 글자와 같다. CALC: 534/1198 − 113/449 = 0.4457429... − 0.2516703... = 0.1940726... → 19.4 pp이고, 두 학과 모두에서 앞선 쪽은 여성이다(82.4 > 62.1, 7.0 > 5.9). DEF: 카드에 실린 제3자 요소는 도구 이름 안의 \"Simpson\" 하나이고 그것은 현상의 통용 이름이다 — 카드는 누가 무엇을 했다는 주장을 담지 않고, 베클리 프리셋 수치의 출처는 페이지의 출처 목록이 따로 밝힌다. CALC: 이 PNG는 클라우드에서 그린 카드와 픽셀이 한 바이트도 다르지 않다 — PIL로 두 파일을 디코드해 크기(1200×630)·모드·픽셀 바이트를 대조 → 불일치 0. 바이트가 달라진 것은 PC로 옮길 때 붙은 caBX 청크(콘텐츠 자격 증명 메타데이터 5,758바이트) 하나뿐이고, 카드에 그려진 글자는 그대로다.",
+   "deps": {},
+   "siteRefs": [],
+   "run": "og-pc-bytes",
+   "date": "2026-09-25",
+   "id": "9cd64ef952da"
+  },
   "0862452522fc": {
    "page": "/",
    "kind": "text:p",
@@ -4779,6 +4792,25 @@
    "date": "2026-09-25",
    "id": "3c7e0834e664"
   },
+  "3ca85419359f": {
+   "page": "/contact",
+   "kind": "og-card:og/default.png",
+   "text": "공유 카드 default.png: 분류 \"Interactive calculators\" · 제목 \"Move the number and see what happens.\"",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "VIS: dist/og/default.png을 직접 열어 그린 글자를 읽었다 — 눈썹 INTERACTIVE CALCULATORS, 제목 Move the number and see what happens., 아래 줄은 whatifbench와 whatifbench.com뿐이다. 2026-09-24 검사에서 문제였던 사이트에 없는 두 문장(Move the slider. Watch the intuition break. / Drag a slider — the model answers.)은 그림에서 사라졌다. CODE: src/data/site.js:20 — SITE_HEADLINE 하나를 홈 h1(CODE: src/pages/index.astro:16)과 카드(CODE: scripts/build-og.mjs:76)가 함께 읽는다. CODE: scripts/build-og.mjs:86 — 발행 도구가 2개 이상(3개)이라 눈썹이 복수형 Interactive calculators다. PNG의 sha256 2dcaa111fca7588a7d6b946bf390043daed6a21592435b2420db30f73060f77b 가 scripts/audit/og-manifest.json의 default 값과 같다. SITE: b7190d75fd02 DEF: 기본 카드는 사이트 카드다. CALC: 이 PNG는 클라우드에서 그린 카드와 픽셀이 한 바이트도 다르지 않다 — PIL로 두 파일을 디코드해 크기(1200×630)·모드·픽셀 바이트를 대조 → 불일치 0. 바이트가 달라진 것은 PC로 옮길 때 붙은 caBX 청크(콘텐츠 자격 증명 메타데이터 5,758바이트) 하나뿐이고, 카드에 그려진 글자는 그대로다.",
+   "deps": {
+    "src/data/site.js": "69039b64bdef43a6",
+    "src/pages/index.astro": "d5b949c9ba0f8f2f",
+    "scripts/build-og.mjs": "d850e579b4a4250d"
+   },
+   "siteRefs": [
+    "b7190d75fd02"
+   ],
+   "run": "og-pc-bytes",
+   "date": "2026-09-25",
+   "id": "41674e02b652"
+  },
   "3cac85cb5782": {
    "page": "/monty-hall-n-doors",
    "kind": "text",
@@ -5023,6 +5055,19 @@
    "run": "6a57bfee4d23",
    "date": "2026-09-25",
    "id": "3e8764fae57b"
+  },
+  "3e9dedb4ade0": {
+   "page": "/one-line-or-many",
+   "kind": "og-card:og/one-line-or-many.png",
+   "text": "공유 카드 one-line-or-many.png: 분류 \"Chance\" · 제목 \"One Line or Many?\" · 숫자 \"5.4×\" · 설명 \"the model's cut in mean wait from one line, at four counters 80% busy\"",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "VIS: dist/og/one-line-or-many.png를 직접 열었다 — 눈썹 CHANCE, 제목 One Line or Many?, 숫자 5.4×, 설명 the model's cut in mean wait from one line, at four counters 80% busy. 화면의 카드·홈 카드와 같은 말이다. CALC: c=4, ρ=0.8에서 평균 비 = cρ/C(4,3.2) = 3.2 ÷ (8192/13735) = 5.36516… → 5.4×, 80%는 ρ = 0.8이다. PNG의 sha256이 scripts/audit/og-manifest.json의 one-line-or-many 값(74e344a9ce769f1580388db4641ae896a189dc75a9f1dab43e9a07b55665d513)과 같다. CALC: 이 PNG는 클라우드에서 그린 카드와 픽셀이 한 바이트도 다르지 않다 — PIL로 두 파일을 디코드해 크기(1200×630)·모드·픽셀 바이트를 대조 → 불일치 0. 바이트가 달라진 것은 PC로 옮길 때 붙은 caBX 청크(콘텐츠 자격 증명 메타데이터 5,758바이트) 하나뿐이고, 카드에 그려진 글자는 그대로다.",
+   "deps": {},
+   "siteRefs": [],
+   "run": "og-pc-bytes",
+   "date": "2026-09-25",
+   "id": "f288097ef62f"
   },
   "3e9fe9f55016": {
    "page": "/monty-hall-n-doors",
@@ -5272,14 +5317,14 @@
    "text": "https://whatifbench.com/og/default.png",
    "verdict": "OK",
    "checks": "o-o----oo---o------o--",
-   "evidence": "CODE: src/layouts/Base.astro:52-59 og_read_path가 public/og/<slug>.png를 찾고 없으면 default.png로 떨어지며, 둘 다 없으면 태그를 내지 않는다. CODE: public/og/default.png:1 파일이 실재하므로 이 주소가 404가 아니다. CODE: dist/og/default.png:1 산출물에도 같은 파일이 들어 있다(sha256이 public 쪽과 같다). 카드에 그려진 글자의 문제는 이 페이지의 og-card 단위에서 따로 판정했다.",
+   "evidence": "CODE: src/layouts/Base.astro:52-59 og_read_path가 public/og/<slug>.png를 찾고 없으면 default.png로 떨어지며, 둘 다 없으면 태그를 내지 않는다. CODE: public/og/default.png:1 파일이 실재하므로 이 주소가 404가 아니다. CODE: dist/og/default.png:1 산출물에도 같은 파일이 들어 있다(sha256이 public 쪽과 같다). 카드에 그려진 글자의 문제는 이 페이지의 og-card 단위에서 따로 판정했다. CALC: 이 PNG는 클라우드에서 그린 카드와 픽셀이 한 바이트도 다르지 않다 — PIL로 두 파일을 디코드해 크기(1200×630)·모드·픽셀 바이트를 대조 → 불일치 0. 바이트가 달라진 것은 PC로 옮길 때 붙은 caBX 청크(콘텐츠 자격 증명 메타데이터 5,758바이트) 하나뿐이고, 카드에 그려진 글자는 그대로다.",
    "deps": {
     "src/layouts/Base.astro": "68d7efa08bf99022",
-    "public/og/default.png": "df88b5c78f8aefeb",
-    "dist/og/default.png": "df88b5c78f8aefeb"
+    "public/og/default.png": "ee72efe9df26c464",
+    "dist/og/default.png": "ee72efe9df26c464"
    },
    "siteRefs": [],
-   "run": "6a57bfee4d23",
+   "run": "og-pc-bytes",
    "date": "2026-09-25",
    "id": "4122289e7796"
   },
@@ -6905,6 +6950,21 @@
    "date": "2026-09-25",
    "id": "574063c464c7"
   },
+  "57764ddfd775": {
+   "page": "/chance",
+   "kind": "og-card",
+   "text": "공유 카드 default.png: 분류 \"Interactive calculators\" · 제목 \"Move the number and see what happens.\"",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "VIS: dist/og/default.png를 열었다 — 분류 \"INTERACTIVE CALCULATORS\"와 제목 \"Move the number and see what happens.\"가 그려져 있고 도구별 숫자 블록은 없다. CODE: src/layouts/Base.astro:58 — 페이지 이름의 PNG가 없으면 기본 카드로 떨어지므로 분류 페이지 /chance는 이 카드를 쓴다. DEF: \"see what happens\"는 카드 안의 권유 문구라 페이지 밖의 특정 대상을 가리키지 않고, 카드에 도구 수치가 없으므로 사이트와 어긋날 값도 없다. CALC: 이 PNG는 클라우드에서 그린 카드와 픽셀이 한 바이트도 다르지 않다 — PIL로 두 파일을 디코드해 크기(1200×630)·모드·픽셀 바이트를 대조 → 불일치 0. 바이트가 달라진 것은 PC로 옮길 때 붙은 caBX 청크(콘텐츠 자격 증명 메타데이터 5,758바이트) 하나뿐이고, 카드에 그려진 글자는 그대로다.",
+   "deps": {
+    "src/layouts/Base.astro": "68d7efa08bf99022"
+   },
+   "siteRefs": [],
+   "run": "og-pc-bytes",
+   "date": "2026-09-25",
+   "id": "e4dbe0d80905"
+  },
   "5777793bcc38": {
    "page": "/simpsons-paradox",
    "kind": "svg-text",
@@ -8225,6 +8285,25 @@
    "date": "2026-09-25",
    "id": "6a3e71dbd122"
   },
+  "6a59e3a58038": {
+   "page": "/about",
+   "kind": "og-card:og/default.png",
+   "text": "공유 카드 default.png: 분류 \"Interactive calculators\" · 제목 \"Move the number and see what happens.\"",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "VIS: dist/og/default.png을 직접 열어 그린 글자를 읽었다 — 눈썹 INTERACTIVE CALCULATORS, 제목 Move the number and see what happens., 아래 줄은 whatifbench와 whatifbench.com뿐이다. 2026-09-24 검사에서 문제였던 사이트에 없는 두 문장(Move the slider. Watch the intuition break. / Drag a slider — the model answers.)은 그림에서 사라졌다. CODE: src/data/site.js:20 — SITE_HEADLINE 하나를 홈 h1(CODE: src/pages/index.astro:16)과 카드(CODE: scripts/build-og.mjs:76)가 함께 읽는다. CODE: scripts/build-og.mjs:86 — 발행 도구가 2개 이상(3개)이라 눈썹이 복수형 Interactive calculators다. PNG의 sha256 2dcaa111fca7588a7d6b946bf390043daed6a21592435b2420db30f73060f77b 가 scripts/audit/og-manifest.json의 default 값과 같다. SITE: b7190d75fd02 DEF: 기본 카드는 사이트 카드다. CALC: 이 PNG는 클라우드에서 그린 카드와 픽셀이 한 바이트도 다르지 않다 — PIL로 두 파일을 디코드해 크기(1200×630)·모드·픽셀 바이트를 대조 → 불일치 0. 바이트가 달라진 것은 PC로 옮길 때 붙은 caBX 청크(콘텐츠 자격 증명 메타데이터 5,758바이트) 하나뿐이고, 카드에 그려진 글자는 그대로다.",
+   "deps": {
+    "src/data/site.js": "69039b64bdef43a6",
+    "src/pages/index.astro": "d5b949c9ba0f8f2f",
+    "scripts/build-og.mjs": "d850e579b4a4250d"
+   },
+   "siteRefs": [
+    "b7190d75fd02"
+   ],
+   "run": "og-pc-bytes",
+   "date": "2026-09-25",
+   "id": "b4a2baefd586"
+  },
   "6a9f6c511700": {
    "page": "/",
    "kind": "text:p",
@@ -9201,6 +9280,25 @@
    "run": "6a57bfee4d23",
    "date": "2026-09-25",
    "id": "76678a682c4b"
+  },
+  "766d9189bba7": {
+   "page": "/",
+   "kind": "og-card:og/default.png",
+   "text": "공유 카드 default.png: 분류 \"Interactive calculators\" · 제목 \"Move the number and see what happens.\"",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "VIS: dist/og/default.png을 직접 열어 그린 글자를 읽었다 — 눈썹 INTERACTIVE CALCULATORS, 제목 Move the number and see what happens., 아래 줄은 whatifbench와 whatifbench.com뿐이다. 2026-09-24 검사에서 문제였던 사이트에 없는 두 문장(Move the slider. Watch the intuition break. / Drag a slider — the model answers.)은 그림에서 사라졌다. CODE: src/data/site.js:20 — SITE_HEADLINE 하나를 홈 h1(CODE: src/pages/index.astro:16)과 카드(CODE: scripts/build-og.mjs:76)가 함께 읽는다. CODE: scripts/build-og.mjs:86 — 발행 도구가 2개 이상(3개)이라 눈썹이 복수형 Interactive calculators다. PNG의 sha256 2dcaa111fca7588a7d6b946bf390043daed6a21592435b2420db30f73060f77b 가 scripts/audit/og-manifest.json의 default 값과 같다. SITE: b7190d75fd02 CALC: 이 PNG는 클라우드에서 그린 카드와 픽셀이 한 바이트도 다르지 않다 — PIL로 두 파일을 디코드해 크기(1200×630)·모드·픽셀 바이트를 대조 → 불일치 0. 바이트가 달라진 것은 PC로 옮길 때 붙은 caBX 청크(콘텐츠 자격 증명 메타데이터 5,758바이트) 하나뿐이고, 카드에 그려진 글자는 그대로다.",
+   "deps": {
+    "src/data/site.js": "69039b64bdef43a6",
+    "src/pages/index.astro": "d5b949c9ba0f8f2f",
+    "scripts/build-og.mjs": "d850e579b4a4250d"
+   },
+   "siteRefs": [
+    "b7190d75fd02"
+   ],
+   "run": "og-pc-bytes",
+   "date": "2026-09-25",
+   "id": "dd5f682ad274"
   },
   "76cc8f6d9cc9": {
    "page": "/simpsons-paradox",
@@ -10270,6 +10368,21 @@
    "run": "6a57bfee4d23",
    "date": "2026-09-25",
    "id": "8219cb738caf"
+  },
+  "8237b9d89ba3": {
+   "page": "/monty-hall-n-doors",
+   "kind": "og-card",
+   "text": "공유 카드 monty-hall-n-doors.png: 분류 \"Chance\" · 제목 \"Monty Hall with N doors\" · 숫자 \"0.667\" · 설명 \"the model's switch win rate at three doors\"",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "VIS: dist/og/monty-hall-n-doors.png를 열었다 — 분류 \"CHANCE\", 제목 \"Monty Hall with N doors\", 숫자 \"0.667\", 설명 \"the model's switch win rate at three doors\"가 그려져 있고 페이지 카드의 글자와 같다. CALC: N = 3이면 K는 1뿐이라 R = 1이고 P_switch = 2/3 = 0.6666... → 0.667. CODE: src/pages/monty-hall-n-doors/_meta.js:26 CALC: 이 PNG는 클라우드에서 그린 카드와 픽셀이 한 바이트도 다르지 않다 — PIL로 두 파일을 디코드해 크기(1200×630)·모드·픽셀 바이트를 대조 → 불일치 0. 바이트가 달라진 것은 PC로 옮길 때 붙은 caBX 청크(콘텐츠 자격 증명 메타데이터 5,758바이트) 하나뿐이고, 카드에 그려진 글자는 그대로다.",
+   "deps": {
+    "src/pages/monty-hall-n-doors/_meta.js": "34e5c489cf4dd483"
+   },
+   "siteRefs": [],
+   "run": "og-pc-bytes",
+   "date": "2026-09-25",
+   "id": "328d7173f604"
   },
   "82593011f0c5": {
    "page": "/one-line-or-many",
@@ -12527,14 +12640,14 @@
    "text": "https://whatifbench.com/og/default.png",
    "verdict": "OK",
    "checks": "o-o----oo---o------o--",
-   "evidence": "CODE: src/layouts/Base.astro:52-59 og_read_path가 public/og/<slug>.png를 찾고 없으면 default.png로 떨어지며, 둘 다 없으면 태그를 내지 않는다. CODE: public/og/default.png:1 파일이 실재하므로 이 주소가 404가 아니다. CODE: dist/og/default.png:1 산출물에도 같은 파일이 들어 있다(sha256이 public 쪽과 같다). 카드에 그려진 글자의 문제는 이 페이지의 og-card 단위에서 따로 판정했다.",
+   "evidence": "CODE: src/layouts/Base.astro:52-59 og_read_path가 public/og/<slug>.png를 찾고 없으면 default.png로 떨어지며, 둘 다 없으면 태그를 내지 않는다. CODE: public/og/default.png:1 파일이 실재하므로 이 주소가 404가 아니다. CODE: dist/og/default.png:1 산출물에도 같은 파일이 들어 있다(sha256이 public 쪽과 같다). 카드에 그려진 글자의 문제는 이 페이지의 og-card 단위에서 따로 판정했다. CALC: 이 PNG는 클라우드에서 그린 카드와 픽셀이 한 바이트도 다르지 않다 — PIL로 두 파일을 디코드해 크기(1200×630)·모드·픽셀 바이트를 대조 → 불일치 0. 바이트가 달라진 것은 PC로 옮길 때 붙은 caBX 청크(콘텐츠 자격 증명 메타데이터 5,758바이트) 하나뿐이고, 카드에 그려진 글자는 그대로다.",
    "deps": {
     "src/layouts/Base.astro": "68d7efa08bf99022",
-    "public/og/default.png": "df88b5c78f8aefeb",
-    "dist/og/default.png": "df88b5c78f8aefeb"
+    "public/og/default.png": "ee72efe9df26c464",
+    "dist/og/default.png": "ee72efe9df26c464"
    },
    "siteRefs": [],
-   "run": "6a57bfee4d23",
+   "run": "og-pc-bytes",
    "date": "2026-09-25",
    "id": "99d33f25ff57"
   },
@@ -12677,6 +12790,25 @@
    "run": "6a57bfee4d23",
    "date": "2026-09-25",
    "id": "9b3ff12e5188"
+  },
+  "9b4def1f8a11": {
+   "page": "/privacy",
+   "kind": "og-card:og/default.png",
+   "text": "공유 카드 default.png: 분류 \"Interactive calculators\" · 제목 \"Move the number and see what happens.\"",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "VIS: dist/og/default.png을 직접 열어 그린 글자를 읽었다 — 눈썹 INTERACTIVE CALCULATORS, 제목 Move the number and see what happens., 아래 줄은 whatifbench와 whatifbench.com뿐이다. 2026-09-24 검사에서 문제였던 사이트에 없는 두 문장(Move the slider. Watch the intuition break. / Drag a slider — the model answers.)은 그림에서 사라졌다. CODE: src/data/site.js:20 — SITE_HEADLINE 하나를 홈 h1(CODE: src/pages/index.astro:16)과 카드(CODE: scripts/build-og.mjs:76)가 함께 읽는다. CODE: scripts/build-og.mjs:86 — 발행 도구가 2개 이상(3개)이라 눈썹이 복수형 Interactive calculators다. PNG의 sha256 2dcaa111fca7588a7d6b946bf390043daed6a21592435b2420db30f73060f77b 가 scripts/audit/og-manifest.json의 default 값과 같다. SITE: b7190d75fd02 DEF: 기본 카드는 사이트 카드다. CALC: 이 PNG는 클라우드에서 그린 카드와 픽셀이 한 바이트도 다르지 않다 — PIL로 두 파일을 디코드해 크기(1200×630)·모드·픽셀 바이트를 대조 → 불일치 0. 바이트가 달라진 것은 PC로 옮길 때 붙은 caBX 청크(콘텐츠 자격 증명 메타데이터 5,758바이트) 하나뿐이고, 카드에 그려진 글자는 그대로다.",
+   "deps": {
+    "src/data/site.js": "69039b64bdef43a6",
+    "src/pages/index.astro": "d5b949c9ba0f8f2f",
+    "scripts/build-og.mjs": "d850e579b4a4250d"
+   },
+   "siteRefs": [
+    "b7190d75fd02"
+   ],
+   "run": "og-pc-bytes",
+   "date": "2026-09-25",
+   "id": "a3422a3edacd"
   },
   "9b6b24b90508": {
    "page": "/one-line-or-many",
@@ -15920,14 +16052,14 @@
    "text": "https://whatifbench.com/og/default.png",
    "verdict": "OK",
    "checks": "o-o----oo---o------o--",
-   "evidence": "CODE: src/layouts/Base.astro:52-59 og_read_path가 public/og/<slug>.png를 찾고 없으면 default.png로 떨어지며, 둘 다 없으면 태그를 내지 않는다. CODE: public/og/default.png:1 파일이 실재하므로 이 주소가 404가 아니다. CODE: dist/og/default.png:1 산출물에도 같은 파일이 들어 있다(sha256이 public 쪽과 같다). 카드에 그려진 글자의 문제는 이 페이지의 og-card 단위에서 따로 판정했다.",
+   "evidence": "CODE: src/layouts/Base.astro:52-59 og_read_path가 public/og/<slug>.png를 찾고 없으면 default.png로 떨어지며, 둘 다 없으면 태그를 내지 않는다. CODE: public/og/default.png:1 파일이 실재하므로 이 주소가 404가 아니다. CODE: dist/og/default.png:1 산출물에도 같은 파일이 들어 있다(sha256이 public 쪽과 같다). 카드에 그려진 글자의 문제는 이 페이지의 og-card 단위에서 따로 판정했다. CALC: 이 PNG는 클라우드에서 그린 카드와 픽셀이 한 바이트도 다르지 않다 — PIL로 두 파일을 디코드해 크기(1200×630)·모드·픽셀 바이트를 대조 → 불일치 0. 바이트가 달라진 것은 PC로 옮길 때 붙은 caBX 청크(콘텐츠 자격 증명 메타데이터 5,758바이트) 하나뿐이고, 카드에 그려진 글자는 그대로다.",
    "deps": {
     "src/layouts/Base.astro": "68d7efa08bf99022",
-    "public/og/default.png": "df88b5c78f8aefeb",
-    "dist/og/default.png": "df88b5c78f8aefeb"
+    "public/og/default.png": "ee72efe9df26c464",
+    "dist/og/default.png": "ee72efe9df26c464"
    },
    "siteRefs": [],
-   "run": "6a57bfee4d23",
+   "run": "og-pc-bytes",
    "date": "2026-09-25",
    "id": "c42bc9fe50d5"
   },
@@ -16733,6 +16865,25 @@
    "run": "6a57bfee4d23",
    "date": "2026-09-25",
    "id": "cf71c5bcb361"
+  },
+  "cf741741dea6": {
+   "page": "/404",
+   "kind": "og-card:og/default.png",
+   "text": "공유 카드 default.png: 분류 \"Interactive calculators\" · 제목 \"Move the number and see what happens.\"",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "VIS: dist/og/default.png을 직접 열어 그린 글자를 읽었다 — 눈썹 INTERACTIVE CALCULATORS, 제목 Move the number and see what happens., 아래 줄은 whatifbench와 whatifbench.com뿐이다. 2026-09-24 검사에서 문제였던 사이트에 없는 두 문장(Move the slider. Watch the intuition break. / Drag a slider — the model answers.)은 그림에서 사라졌다. CODE: src/data/site.js:20 — SITE_HEADLINE 하나를 홈 h1(CODE: src/pages/index.astro:16)과 카드(CODE: scripts/build-og.mjs:76)가 함께 읽는다. CODE: scripts/build-og.mjs:86 — 발행 도구가 2개 이상(3개)이라 눈썹이 복수형 Interactive calculators다. PNG의 sha256 2dcaa111fca7588a7d6b946bf390043daed6a21592435b2420db30f73060f77b 가 scripts/audit/og-manifest.json의 default 값과 같다. SITE: b7190d75fd02 DEF: 기본 카드는 사이트 카드다. CALC: 이 PNG는 클라우드에서 그린 카드와 픽셀이 한 바이트도 다르지 않다 — PIL로 두 파일을 디코드해 크기(1200×630)·모드·픽셀 바이트를 대조 → 불일치 0. 바이트가 달라진 것은 PC로 옮길 때 붙은 caBX 청크(콘텐츠 자격 증명 메타데이터 5,758바이트) 하나뿐이고, 카드에 그려진 글자는 그대로다.",
+   "deps": {
+    "src/data/site.js": "69039b64bdef43a6",
+    "src/pages/index.astro": "d5b949c9ba0f8f2f",
+    "scripts/build-og.mjs": "d850e579b4a4250d"
+   },
+   "siteRefs": [
+    "b7190d75fd02"
+   ],
+   "run": "og-pc-bytes",
+   "date": "2026-09-25",
+   "id": "dc1d8dcfbb51"
   },
   "d0197b6bc78b": {
    "page": "/privacy",
@@ -18926,14 +19077,14 @@
    "text": "https://whatifbench.com/og/default.png",
    "verdict": "OK",
    "checks": "o-o----oo---o------o--",
-   "evidence": "CODE: src/layouts/Base.astro:52-59 og_read_path가 public/og/<slug>.png를 찾고 없으면 default.png로 떨어지며, 둘 다 없으면 태그를 내지 않는다. CODE: public/og/default.png:1 파일이 실재하므로 이 주소가 404가 아니다. CODE: dist/og/default.png:1 산출물에도 같은 파일이 들어 있다(sha256이 public 쪽과 같다). 카드에 그려진 글자의 문제는 이 페이지의 og-card 단위에서 따로 판정했다.",
+   "evidence": "CODE: src/layouts/Base.astro:52-59 og_read_path가 public/og/<slug>.png를 찾고 없으면 default.png로 떨어지며, 둘 다 없으면 태그를 내지 않는다. CODE: public/og/default.png:1 파일이 실재하므로 이 주소가 404가 아니다. CODE: dist/og/default.png:1 산출물에도 같은 파일이 들어 있다(sha256이 public 쪽과 같다). 카드에 그려진 글자의 문제는 이 페이지의 og-card 단위에서 따로 판정했다. CALC: 이 PNG는 클라우드에서 그린 카드와 픽셀이 한 바이트도 다르지 않다 — PIL로 두 파일을 디코드해 크기(1200×630)·모드·픽셀 바이트를 대조 → 불일치 0. 바이트가 달라진 것은 PC로 옮길 때 붙은 caBX 청크(콘텐츠 자격 증명 메타데이터 5,758바이트) 하나뿐이고, 카드에 그려진 글자는 그대로다.",
    "deps": {
     "src/layouts/Base.astro": "68d7efa08bf99022",
-    "public/og/default.png": "df88b5c78f8aefeb",
-    "dist/og/default.png": "df88b5c78f8aefeb"
+    "public/og/default.png": "ee72efe9df26c464",
+    "dist/og/default.png": "ee72efe9df26c464"
    },
    "siteRefs": [],
-   "run": "6a57bfee4d23",
+   "run": "og-pc-bytes",
    "date": "2026-09-25",
    "id": "f0379e10245a"
   },
@@ -23957,6 +24108,15 @@
    ],
    "promptHash": null,
    "units": 1712
+  },
+  {
+   "run": "og-pc-bytes",
+   "date": "2026-09-25",
+   "auditors": [
+    "판정관"
+   ],
+   "units": 13,
+   "note": "PC 쪽 공유 카드 PNG 바이트(caBX 청크)로 og-card id가 바뀐 13단위를 옛 판정에서 옮김. 픽셀 동일 확인."
   }
  ]
 }
