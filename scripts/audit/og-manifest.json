@@ -20,6 +20,20 @@
     "figureLabel": "the model's cut in mean wait from one line, at four counters 80% busy",
     "sha256": "c2ba95c5f7012eea74604ac10891553acb96cf936daed46d6be3544bfa86404e"
   },
+  "folding-paper-moon": {
+    "eyebrow": "Scale",
+    "headline": "Folding Paper to the Moon",
+    "figureValue": "42",
+    "figureLabel": "folds until the model's stack passes the Moon, at 0.1 mm paper",
+    "sha256": "d23cd45a86c5490f2bc54f32708ac4447b323ec8a56997ce69e7239cf85b18ea"
+  },
+  "solar-system-light-delay": {
+    "eyebrow": "Scale",
+    "headline": "Talking Across the Solar System",
+    "figureValue": "4.82×",
+    "figureLabel": "the model’s swing in one-way delay to Mars, closest against farthest",
+    "sha256": "3817648f6eacd307fe5edf0a3e37222fe3fe42f95f5f7b3aea5971bcc5f4415c"
+  },
   "default": {
     "eyebrow": "Interactive calculators",
     "headline": "Move the number and see what happens.",

@@ -1,0 +1,479 @@
+---
+import Base from "@layouts/Base.astro";
+import Byline from "@components/Byline.astro";
+import RelatedTools from "@components/RelatedTools.astro";
+import Figure from "@components/Figure.astro";
+// 도해 셋. 설정 → 메커니즘 → 증명 (규약 §5).
+// 설정은 위젯 앞, 메커니즘은 반전 절, 증명은 손계산 절이다.
+import ChordAtTheSun from "./_fig/ChordAtTheSun.astro";
+import EarthRingStep from "./_fig/EarthRingStep.astro";
+import TwoRoutes from "./_fig/TwoRoutes.astro";
+import { tools_read_category } from "@data/tools.js";
+import {
+  BODY_DEFAULT_KEY,
+  LEGS_ROUND_TRIP,
+  TURNS_DEFAULT,
+  model_calculate_body_table,
+  model_calculate_elliptic_band,
+  model_calculate_result,
+  model_calculate_steepest_theta_deg,
+} from "@widgets/solar-system-light-delay/model.js";
+// **형식까지 화면과 같은 것을 쓴다** (규약 §5.5 S4). 본문이 따로 반올림하면
+// 독자가 화면에서 못 찾는 숫자가 생긴다. 그래서 위젯이 쓰는 그 함수를 부른다 —
+// `widget.js`의 마운트는 `typeof document`로 막혀 있어 SSR에서 돌지 않는다.
+import {
+  display_format_duration,
+  display_format_swing,
+} from "@widgets/solar-system-light-delay/widget.js";
+
+// 곡선이 가장 가파른 각. 리터럴 48.98을 박아두지 않고 모델에서 계산한다 —
+// model.test.js가 이 함수를 유한차분 대조 경로로 따로 검증한다.
+const defaultBodySteepestThetaDeg = model_calculate_steepest_theta_deg(BODY_DEFAULT_KEY);
+
+// 본문이 부르는 값은 전부 여기서 모델이 낸다. 본문에 숫자를 손으로 적지 않는다.
+const rows = Object.fromEntries(model_calculate_body_table().map((row) => [row.body.key, row]));
+const mars = rows.mars;
+const sun = rows.sun;
+const neptune = rows.neptune;
+
+const marsClosest = display_format_duration(mars.closestSeconds);
+const marsFarthest = display_format_duration(mars.farthestSeconds);
+const marsRoundTrip = display_format_duration(mars.roundTripFarthestSeconds);
+const marsRoundTripClosest = display_format_duration(mars.closestSeconds * LEGS_ROUND_TRIP);
+const marsSwing = display_format_swing(mars.swingRatio);
+const venusSwing = display_format_swing(rows.venus.swingRatio);
+const neptuneSwing = display_format_swing(neptune.swingRatio);
+const neptuneClosest = display_format_duration(neptune.closestSeconds);
+const neptuneFarthest = display_format_duration(neptune.farthestSeconds);
+
+// 태양은 곧 지구 궤도의 반지름이다. 두 배가 궤도를 가로지르는 시간 —
+// 뢰머가 1676년에 값을 준 바로 그 양이다.
+const sunOneWay = display_format_duration(sun.closestSeconds);
+const sunAcrossOrbit = display_format_duration(sun.closestSeconds * LEGS_ROUND_TRIP);
+
+// 대화 카드. 여덟 턴은 슬라이더 기본값이다.
+const conversationFar = display_format_duration(
+  model_calculate_result("mars", 180, true, TURNS_DEFAULT).conversationSeconds,
+);
+const conversationNear = display_format_duration(
+  model_calculate_result("mars", 0, true, TURNS_DEFAULT).conversationSeconds,
+);
+
+// 원궤도 밖의 대조값. 한계 절이 이 모델의 가장 큰 단순화에 값을 매긴다.
+const marsEllipse = model_calculate_elliptic_band("mars");
+const marsEllipseClosest = display_format_duration(marsEllipse.closestSeconds);
+const marsEllipseFarthest = display_format_duration(marsEllipse.farthestSeconds);
+
+// 등급·검수일은 Byline이 tools.js에서 읽는다. 페이지가 다시 말하지 않는다.
+const SLUG = "solar-system-light-delay";
+const CATEGORY = "scale";
+const cat = tools_read_category(CATEGORY);
+
+// 브레드크럼 이름. 화면과 구조화 데이터가 **같은 상수 하나**를 읽는다.
+const CRUMB = "Talking Across the Solar System";
+---
+
+<Base
+  title="Talking across the Solar System: how long is the delay?"
+  description="One-way and round-trip light delay to every planet, as a function of where the two bodies stand in their orbits. Circular orbits, exact constants, one division."
+  category={CATEGORY}
+  crumbTool={true}
+  crumbLabel={CRUMB}
+>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span aria-hidden="true">›</span>{" "}
+    <a href={cat.href}>{cat.name}</a> <span aria-hidden="true">›</span>{" "}
+    {CRUMB}
+  </nav>
+
+  <h1>Talking across the Solar System: how long is the delay?</h1>
+
+  <p class="deck">
+    Pick a body, then slide it around its orbit with the angle slider. One
+    question to Mars, and one
+    answer home. The model gives {marsRoundTripClosest} — or {marsRoundTrip}.
+    Which one is the delay?
+  </p>
+
+  <Byline slug={SLUG} />
+
+  <p class="lead">
+    In 1676 Ole Rømer timed a moon of Jupiter coming out of Jupiter's shadow. The
+    moon was clockwork. The timings were not. They ran early when Earth was near
+    Jupiter. They ran late when Earth was far. Rømer said the shadow was on time
+    and the light was late.
+  </p>
+
+  <p class="lead">
+    He put a number on it. By his figure, light needed about 22 minutes to cross
+    Earth's orbit, end to end. Many people did not accept that light took any time at all. The
+    argument took decades to close.
+  </p>
+
+  <p class="lead">
+    <span class="lead-turn">There is no single distance to cross.</span> Pick a
+    body below, then move it around its orbit with the angle slider. The one-way figure for Mars moves
+    by nearly five times. Switch between One way and There and back and the big
+    number doubles or halves at every angle, apart from rounding, so that factor
+    stays the same.
+  </p>
+
+  <Figure caption="In this model the rings are true circles, and each straight line is the signal's whole path.">
+    <ChordAtTheSun />
+  </Figure>
+
+  <div data-widget="solar-system-light-delay">
+    <noscript>
+      <p>
+        The buttons, sliders, cards, chart, bars and table need JavaScript. The
+        Mars case below is worked by hand with the same figures.
+      </p>
+    </noscript>
+  </div>
+
+  <h2 data-block="reversal">Distance sets the delay. Earth's own ring makes it swing.</h2>
+
+  <p>
+    Ask how long a message takes to reach Mars and you expect one number. The
+    model does not have one. It has a band. The one-way figure runs from
+    {" "}{marsClosest} to {marsFarthest}. Quote a figure with no angle and it is
+    loose by {marsSwing}.
+  </p>
+
+  <p>
+    That figure comes from the card marked <strong>Closest to farthest</strong>.
+    Every body has its own. The model puts Venus at {venusSwing} and Neptune
+    at {neptuneSwing}. Venus is the near planet and Neptune the far one. The near
+    one swings far more.
+  </p>
+
+  <Figure caption="In this model, the step added and taken away is Earth's own ring, and it is the same 1.00 au against every target.">
+    <EarthRingStep />
+  </Figure>
+
+  <p>
+    Earth is the reason. The model measures from Earth's ring, not from the Sun.
+    That ring has a radius of one astronomical unit. So the model takes the same
+    1.00 au off one end. Then it adds that same step to the other end, every
+    time. Against Venus's
+    ring of 0.72 au that step is most of the answer. Against Neptune's 30.07 au
+    it is a rounding error.
+  </p>
+
+  <p>
+    The delay itself runs the other way. The model puts the Sun at {sunOneWay}.
+    It puts Neptune between {neptuneClosest} and {neptuneFarthest}. So in this
+    model Earth's orbit is what makes the swing, and the target's distance
+    decides how much it matters. The delay columns and the Swing column disagree
+    about which body is interesting, though every figure in them comes from the
+    same eight rows. The bars above draw both — position for the delay, length
+    for the swing — and here is how to read the whole widget.
+  </p>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 data-block="howto" id="howto-title">How to read what you are looking at</h2>
+
+    <p>
+      Two groups of buttons sit at the top. <strong>Jump straight to a case</strong>
+      {" "}loads a whole setting at once. <strong>Who you are talking to</strong>
+      {" "}picks the other body.
+    </p>
+
+    <p>
+      Under them is the slider <strong>How far around its orbit the other body
+      is</strong>. It sets the angle at the Sun between Earth and that body. At 0°
+      both sit on the same side of the Sun. At 180° the Sun sits between them.
+      Pick the Sun and the slider switches off, because no angle moves it.
+    </p>
+
+    <p>
+      <strong>What the big number counts</strong> has two settings, One way and
+      There and back. With One way picked, <strong>Signal delay</strong> and
+      {" "}<strong>Distance now</strong> are one quantity in two units; There and
+      back doubles the delay. Closest to
+      farthest is the band: this body's two ends, and the factor between them.
+    </p>
+
+    <p>
+      The chart plots delay against the angle. One way is solid and there and back
+      is dashed. Its up-and-down axis rescales for every body. So{" "}
+      <strong>read the axis before you compare two screens</strong>. The curve is
+      flattest at both ends. Its steepest point is not at 90°. It moves with the
+      body, and for Mars the model puts it at {defaultBodySteepestThetaDeg.toFixed(2)}°.
+    </p>
+
+    <p>
+      The bars under the chart are the comparison the chart cannot make. Each runs from a
+      body's closest delay to its farthest. That axis is marked One-way delay,
+      minutes (log scale). Its marks at 10 and 100 minutes are ten times apart;
+      the labels at the two ends only show where the axis stops. Bar length is the swing and bar
+      position is the distance. Venus draws the longest bar and Neptune one of the
+      shortest. All of it is one division, and here it is.
+    </p>
+  </section>
+
+  <section class="math" aria-labelledby="math-title">
+    <h2 data-block="math" class="math-title" id="math-title">Why the distance is a chord</h2>
+
+    <p>The model is one division.</p>
+
+    <div class="math-eq">
+      <span>t</span><span class="op">=</span>
+      <span class="frac"><span class="frac-num">d</span><span class="frac-den">c</span></span>
+    </div>
+
+    <dl class="math-where">
+      <dt>d</dt><dd>distance between the two bodies, in metres</dd>
+      <dt>c</dt><dd>speed of light in vacuum, exactly 299 792 458 m/s</dd>
+      <dt>t</dt><dd>one-way delay, in seconds</dd>
+      <dt>a<sub>p</sub>, a<sub>E</sub></dt><dd>the radius of the circle the target rides on, and of Earth's circle</dd>
+      <dt>θ</dt><dd>angle at the Sun between Earth and the target, 0°–180°</dd>
+    </dl>
+
+    <p>
+      The rest is the work of getting a number for <em>d</em>. The model puts each
+      body on a circle around the Sun. All the circles lie in one plane. Two
+      bodies set apart by an angle θ at the Sun are a straight chord apart. The
+      law of cosines gives that chord.
+    </p>
+
+    <div class="math-eq">
+      <span>d(θ)</span><span class="op">=</span>
+      <span>√( a<sub>p</sub>² + a<sub>E</sub>² − 2 · a<sub>p</sub> · a<sub>E</sub> · cos θ )</span>
+    </div>
+
+    <p>
+      At θ = 0° the chord shrinks to the difference of the two radii. At θ = 180°
+      it grows to their sum. So the slider can only reach
+      |a<sub>p</sub> − a<sub>E</sub>| ≤ d ≤ a<sub>p</sub> + a<sub>E</sub>. The Sun
+      is a circle of radius zero here, which is why θ cannot move it.
+    </p>
+
+    <p>
+      There and back is 2t, because the reply covers the same chord. A
+      conversation of <em>n</em> turns is n · 2t. Thinking time is given a value of
+      zero. Any other value would have to be picked and defended; zero keeps the
+      count to travel alone.
+    </p>
+
+    <p class="math-check">
+      Two things fall out before any body is picked. The <strong>swing</strong>,
+      farthest delay over closest, is (a<sub>p</sub> + a<sub>E</sub>) ÷
+      |a<sub>p</sub> − a<sub>E</sub>|. It is largest when the two radii are close.
+      The <strong>delay</strong> itself is set by a<sub>p</sub> alone, once it is
+      much the larger. Beyond Venus, going outward, the two move opposite ways.
+      One case counted by hand makes that easier to trust.
+    </p>
+  </section>
+
+  <h2 data-block="byhand">Mars at both ends, counted by hand</h2>
+
+  <p>
+    Take Mars at θ = 180° and follow one number down. The two radii add:
+    1.523 710 34 + 1.000 002 61 = 2.523 712 95 au. In metres that is
+    2.523 712 95 × 149 597 870 700, or 3.7754 × 10¹¹ m. Call it 377.5 million
+    kilometres. Divide by c.
+  </p>
+
+  <div class="math-eq">
+    <span>3.7754 × 10¹¹ m</span><span class="op">÷</span>
+    <span>299 792 458 m/s</span><span class="op">=</span><span>1 259.3 s</span>
+  </div>
+
+  <p>
+    The card rounds that to {marsFarthest}. There and back doubles it to
+    2 518.7 s, or {marsRoundTrip}.
+  </p>
+
+  <Figure caption="In this model, the chord and the plain sum are two routes to one second, and the page uses them to check each other.">
+    <TwoRoutes />
+  </Figure>
+
+  <p>
+    The same steps at θ = 0° subtract instead. 1.523 710 34 − 1.000 002 61 =
+    0.523 707 73 au, or 78.3 million kilometres. Dividing by c gives 261.3 s,
+    which the card shows as {marsClosest}.
+  </p>
+
+  <p>
+    Now divide the two one-way figures: 1 259.3 ÷ 261.3 = 4.82. That is the swing
+    column, reached from two distances rather than read off the row. The same
+    ratio holds in kilometres, in seconds and in astronomical units. The only
+    step between those units is a division by a constant.
+  </p>
+
+  <p>
+    The card under <strong>How many times you each speak</strong> multiplies from
+    there. The model puts eight turns at θ = 180° at {conversationFar}. It puts
+    the same eight turns at θ = 0° at {conversationNear}. Nothing changed but
+    where the two bodies
+    were standing. All of it rests on three rules.
+  </p>
+
+  <h2 data-block="assumptions">Three rules, and two numbers fixed by definition</h2>
+
+  <p>Drop any one of these and the figures stop meaning what they say.</p>
+
+  <ol>
+    <li>
+      Each body rides a circle around the Sun. Its radius is that body's orbital
+      semi-major axis. All the circles lie in one plane.
+    </li>
+    <li>The signal runs straight through empty space at exactly c.</li>
+    <li>Nobody takes any time to think. A turn counts travel and nothing else.</li>
+  </ol>
+
+  <p>
+    <strong>There is no simulation.</strong> Every figure is the closed form
+    worked once in double precision. So the largest error in the table is the
+    geometry, not the arithmetic.
+  </p>
+
+  <p>
+    <strong>The two exact numbers.</strong> The speed of light in vacuum is
+    299 792 458 m/s. That is a defined value, not a measured one. The 17th CGPM
+    fixed the metre by it in 1983. The astronomical unit is 149 597 870 700 m,
+    adopted by the IAU in 2012. Neither carries an uncertainty, so
+    1 au = 499.004784 light-seconds is exact to the digits shown.
+  </p>
+
+  <p>
+    <strong>The radii.</strong> Each one is a semi-major axis, not a mean distance
+    and not a current one. The values are the J2000 elements in JPL's{" "}
+    <em>Approximate Positions of the Planets</em>. They are good for 1800–2050.
+    The row used for Earth is the Earth–Moon barycentre. That offset sits far
+    below the error the circles already carry. Circles are the large omission,
+    and the next section prices them in minutes.
+  </p>
+
+  <h2 data-block="limits">Real orbits are ellipses, and that breaks both ends</h2>
+
+  <p>
+    <strong>Eccentricity.</strong> Real orbits are ellipses, and circles narrow
+    the band at both ends. From the same elements, Mars's perihelion is 1.3814 au
+    and Earth's aphelion 1.0167 au. The difference is 0.3647 au, or
+    {" "}{marsEllipseClosest}. The two aphelia add to 2.6827 au, or
+    {" "}{marsEllipseFarthest}. On this page those
+    ends are {marsClosest} and {marsFarthest}. The three minutes often quoted for
+    Mars is not a figure the circles can produce. Only the ellipses reach it. The widget prints both bands
+    under its table, so the gap stays visible.
+  </p>
+
+  <p>
+    <strong>One plane.</strong> Every orbit lies flat here. A tilt lifts one body
+    off the flat plane. At the same angle measured along the plane, that
+    lengthens the chord near θ = 0° and shortens it near θ = 180°, by under a
+    second for Mars either way.
+  </p>
+
+  <p>
+    <strong>The Sun in the way.</strong> Near θ = 180° the Sun stands between the
+    two bodies. The model still returns a delay, because it holds only geometry.
+    It has no term for solar plasma along the path. It has nothing for signal
+    strength, or for the weeks when commanding stops.
+  </p>
+
+  <p>
+    <strong>No clock.</strong> There is no date input. So the model cannot say
+    when a line-up happens, or how long it lasts. It has no term for relay hops or
+    for atmosphere. It has none for the light-time correction near the Sun. The
+    width of Earth's own orbit is one distance people went out and measured,
+    again and again: by parallax in 1672, by transits of Venus in 1761 and 1769
+    and again in 1874 and 1882, and by radar from 1961.
+  </p>
+
+  <h2 data-block="closing">Rømer was long by a third. The method held.</h2>
+
+  <p>
+    Press <strong>Sunlight reaching Earth</strong> and the card reads {sunOneWay}.
+    Double it for the full width of Earth's orbit and the model gives
+    {" "}{sunAcrossOrbit}. Rømer said about 22 minutes. He was long by roughly a
+    third.
+  </p>
+
+  <p>
+    The size of that error is not the interesting part. Rømer had no trustworthy
+    distance to the Sun to work with. He gave his answer as a time. 22 minutes is
+    what that looks like. Turning his time into a speed needed that distance too.
+  </p>
+
+  <p>
+    Clear radar echoes from Venus arrived in 1961. Several groups timed them.
+    Three of their papers are listed below. The method ran the same division the
+    other way round. The speed was well known by then, so timing the
+    echo gave the distance. Their figures settled the astronomical unit.
+  </p>
+
+  <p>
+    The constant in the arithmetic above is where that line ends. In 2012 the IAU
+    stopped measuring the astronomical unit. It set the unit at
+    149 597 870 700 m exactly. The division that made Rømer's shadow run late is
+    the one that fixes it.
+  </p>
+
+  <h2 data-block="about">About this page</h2>
+
+  <p class="note">
+    The chord comes from the law of cosines. The test file gets the same distance
+    from Cartesian coordinates. It takes a path of its own. The same file pins
+    1 au = 499.004784 light-seconds. A second test file pins every delay and swing in
+    the table, all eight rows, to the exact strings it prints. <a href="/about">How I check things</a>.
+  </p>
+
+  <p><strong>Sources.</strong></p>
+
+  <ul class="sources">
+    <li>
+      Rømer's announcement appeared in the <em>Journal des Sçavans</em> of
+      7 December 1676. That original could not be consulted here. Its English
+      rendering is "A demonstration concerning the motion of light, communicated
+      from Paris, in the journal des scavans, and here made English", <a
+      href="https://doi.org/10.1098/rstl.1677.0024"><em>Philosophical
+      Transactions</em> 12(136), 1677, pp. 893–894</a> — the record was checked,
+      the text was not, so the figure of 22 minutes is reported here rather than
+      verified.
+    </li>
+    <li>
+      BIPM, <a href="https://www.bipm.org/en/publications/si-brochure"><em>The
+      International System of Units (SI)</em>, 9th edition</a> — c, and the
+      astronomical unit in Table 8.
+    </li>
+    <li>
+      IAU, <a href="https://www.iau.org/static/resolutions/IAU2012_English.pdf">Resolution
+      B2 (2012)</a>, on the re-definition of the astronomical unit of length —
+      149 597 870 700 m exactly.
+    </li>
+    <li>
+      NASA/JPL Solar System Dynamics, <a
+      href="https://ssd.jpl.nasa.gov/planets/approx_pos.html"><em>Approximate
+      Positions of the Planets</em></a> — semi-major axes and eccentricities,
+      J2000, valid 1800–2050.
+    </li>
+    <li>
+      J. H. Thomson, J. E. B. Ponsonby, G. N. Taylor and R. S. Roger, "A New
+      Determination of the Solar Parallax by Means of Radar Echoes from Venus",{" "}
+      <a href="https://doi.org/10.1038/190519a0"><em>Nature</em> 190, 1961,
+      pp. 519–520</a>.
+    </li>
+    <li>
+      G. H. Pettengill and others, "A radar investigation of Venus", <a
+      href="https://doi.org/10.1086/108692"><em>The Astronomical Journal</em> 67,
+      1962, p. 181</a>.
+    </li>
+    <li>
+      D. O. Muhleman, D. B. Holdridge and N. Block, "The astronomical unit
+      determined by radar reflections from Venus", <a
+      href="https://doi.org/10.1086/108693"><em>The Astronomical Journal</em> 67,
+      1962, p. 191</a>. These three records were checked one by one; the papers
+      themselves could not be opened, so the observing groups and dates are
+      reported here rather than verified.
+    </li>
+  </ul>
+
+
+  <RelatedTools slug={SLUG} />
+
+  <script>
+    import "@widgets/solar-system-light-delay/widget.js";
+  </script>
+</Base>

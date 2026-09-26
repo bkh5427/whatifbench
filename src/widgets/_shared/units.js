@@ -82,6 +82,8 @@ export function units_format_length(metres, significantDigits = 4) {
  * 큰 개수를 짧게. 4398046511104 → "4.4 trillion"
  * 겹 수를 카드에 그대로 찍으면 열세 자리라 아무도 읽지 못한다.
  */
+// 이웃한 이름 사이의 배수 (thousand → million → billion …)
+const COUNT_STEP = 1000;
 const COUNT_NAMES = [
   { floor: 1e18, name: 'quintillion' },
   { floor: 1e15, name: 'quadrillion' },
@@ -94,10 +96,17 @@ const COUNT_NAMES = [
 export function units_format_count_words(value, significantDigits = 2) {
   if (!Number.isFinite(value)) return String(value);
   const size = Math.abs(value);
-  for (const { floor, name } of COUNT_NAMES) {
-    if (size >= floor) {
-      return `${units_format_significant(value / floor, significantDigits)} ${name}`;
+  for (let index = 0; index < COUNT_NAMES.length; index += 1) {
+    const { floor, name } = COUNT_NAMES[index];
+    if (size < floor) continue;
+    // 이름은 **반올림한 뒤** 고른다. 9.9655×10¹¹을 먼저 billion으로 고르면
+    // 996.55가 1000으로 올라가 "1000 billion"이 된다 — 한 단계 위 이름이 맞다.
+    const rounded = Number((size / floor).toPrecision(significantDigits));
+    const larger = COUNT_NAMES[index - 1];
+    if (rounded >= COUNT_STEP && larger) {
+      return `${units_format_significant(value / larger.floor, significantDigits)} ${larger.name}`;
     }
+    return `${units_format_significant(value / floor, significantDigits)} ${name}`;
   }
   return String(Math.round(value));
 }

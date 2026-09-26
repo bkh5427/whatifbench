@@ -51,7 +51,7 @@ const FOOT_Y = 136;
   class="fig-svg"
   viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
   role="img"
-  aria-label="Two layouts of the same shop, drawn side by side. On the left, labelled one line, three customers drawn as dots stand in a single queue. One path leaves that queue and fans out to all three counters, drawn as open rectangles, so whoever is at the front takes whichever counter frees up first. On the right, labelled a line per counter, the same three customers stand in three separate queues of one. Each queue has its own path to its own counter and no path crosses to another counter. The counters and the customers are the same on both sides; only the routing differs."
+  aria-label="Two layouts of the same shop, drawn side by side. On the left, labelled one line, three customers drawn as dots stand in a single queue. One path leaves that queue and fans out to all three counters, drawn as filled rectangles because each is already serving someone, so whoever is at the front takes whichever counter frees up first. On the right, labelled a line per counter, the same three customers stand in three separate queues of one. Each queue has its own path to its own counter and no path crosses to another counter. The counters and the customers are the same on both sides; only the routing differs."
 >
   <text x="10" y={TITLE_Y} class="fig-label">One line</text>
 
@@ -70,7 +70,7 @@ const FOOT_Y = 136;
   ))}
   {ROW_MIDS.map((mid) => (
     <rect x={ONE_BOX_X} y={box_y(mid)} width={BOX_W} height={BOX_H} rx="2"
-      fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+      fill="var(--graphite-soft)" stroke="var(--graphite)" stroke-width="2" />
   ))}
 
   <line x1={SPLIT_X} y1={SPLIT_TOP} x2={SPLIT_X} y2={SPLIT_BOTTOM} stroke="var(--rule)" stroke-width="1" />
@@ -85,9 +85,9 @@ const FOOT_Y = 136;
         fill="none" stroke="var(--graphite-soft)" stroke-width="2"
       />
       <rect x={MANY_BOX_X} y={box_y(mid)} width={BOX_W} height={BOX_H} rx="2"
-        fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+        fill="var(--graphite-soft)" stroke="var(--graphite)" stroke-width="2" />
     </g>
   ))}
 
-  <text x="10" y={FOOT_Y} class="fig-label-dim">three people, three counters, both sides</text>
+  <text x="10" y={FOOT_Y} class="fig-label-dim">three waiting, three busy counters, both sides</text>
 </svg>

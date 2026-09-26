@@ -82,3 +82,34 @@ ${nodes}${bar}</svg>
 `;
   writeFileSync("src/art/chance.svg", svg);
 }
+
+// ── Scale: 같은 두 배 증가를 선형 축(왼쪽: 바닥에 붙어 있다가 벽처럼 솟음)과 로그 축(오른쪽: 곧은 선)에 ──
+{
+  const W = 560, H = 360;
+  const panel = (x0, logAxis) => {
+    const X1 = x0 + 220, Y0 = 290, Y1 = 60, N = 20;
+    let d = "";
+    for (let k = 0; k <= N; k++) {
+      const x = x0 + (k / N) * (X1 - x0);
+      const v = 2 ** k; // 1 … 2^20
+      const t = logAxis ? k / N : (v - 1) / (2 ** N - 1);
+      const y = Y0 - t * (Y0 - Y1);
+      d += `${k ? "L" : "M"}${f(x)} ${f(y)}`;
+    }
+    let ticks = "";
+    if (logAxis) for (let k = 0; k <= N; k += 5) { const y = Y0 - (k / N) * (Y0 - Y1); ticks += `M${x0 - 6} ${f(y)}H${x0}`; }
+    else for (let q = 0; q <= 4; q++) { const y = Y0 - (q / 4) * (Y0 - Y1); ticks += `M${x0 - 6} ${f(y)}H${x0}`; }
+    return `  <path d="M${x0} ${Y1 - 10}V${Y0}H${X1 + 10}" style="fill:none;stroke:var(--steel-500);stroke-width:1.5"/>
+  <path d="${ticks}" style="fill:none;stroke:var(--steel-500);stroke-width:1.5"/>
+  <path d="${d}" style="fill:none;stroke:var(--steel-200);stroke-width:3.5;stroke-linejoin:round;stroke-linecap:round"/>
+`;
+  };
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+  <!-- Scale: 같은 2의 거듭제곱 스무 단계를 왼쪽은 선형 축, 오른쪽은 로그 축에 그렸다. 가운데 주황 화살표는 '같은 수, 다른 축'. 글자·숫자 없음 -->
+${grid(W, H, 20)}
+${panel(40, false)}${panel(310, true)}  <path d="M270 175H296" style="fill:none;stroke:var(--series-2);stroke-width:3;stroke-linecap:round"/>
+  <path d="M304 175L292 168.5V181.5Z" style="fill:var(--series-2)"/>
+</svg>
+`;
+  writeFileSync("src/art/scale.svg", svg);
+}

@@ -122,6 +122,8 @@ const COLOR_FALLBACK_ROUND_TRIP = '#c2570a';
 const COLOR_FALLBACK_GRID = '#d6d8d1';
 const COLOR_FALLBACK_TEXT = '#5f666b';
 const COLOR_FALLBACK_AXIS = '#2b2f33';
+const COLOR_VAR_PICKED = '--graphite';
+const COLOR_FALLBACK_PICKED = '#2b2f33';
 
 // ── 문구 ────────────────────────────────────────────────────
 const NAME_ONE_WAY = 'one way';
@@ -137,7 +139,7 @@ const CHART_LEGEND_KEYS = [
 ];
 const BARS_LEGEND_KEYS = [
   { swatch: 'legend-mean-1', label: 'Closest to farthest' },
-  { swatch: 'legend-mean-2', label: 'The one you picked' },
+  { swatch: 'legend-picked', label: 'The one you picked' },
 ];
 
 const VERDICT_HEADLINE = {
@@ -145,6 +147,8 @@ const VERDICT_HEADLINE = {
   edge: 'One number is already stretched here.',
   break: 'One number cannot stand for this delay.',
 };
+// 흔들림이 정확히 1.00×(태양)일 때 — "very nearly"가 아니라 그냥 덮는다.
+const VERDICT_HEADLINE_EXACT = 'One number covers this delay.';
 
 const TABLE_HEADINGS = [
   'Body',
@@ -177,11 +181,18 @@ export const PRESET_CUSTOM = 'custom';
  */
 export function display_format_duration(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return '—';
-  if (seconds < DURATION_MINUTE_FLOOR_S) {
-    return `${seconds.toFixed(DURATION_SECOND_DIGITS)} s`;
+  // 단위는 **찍힐 값(반올림 뒤)**으로 고른다. 반올림 전 값으로 고르면
+  // 59.96 s가 "60.0 s", 3599.7 s가 "60.0 min"이 된다 — 둘 다 윗단위의 몫이다.
+  // 반올림은 정수 연산으로. (69 / 60).toFixed(1)은 부동소수 때문에 1.15를 "1.1"로 내린다.
+  const secondScale = 10 ** DURATION_SECOND_DIGITS;
+  const minuteScale = 10 ** DURATION_MINUTE_DIGITS;
+  const secondsShown = Math.round(seconds * secondScale) / secondScale;
+  if (secondsShown < DURATION_MINUTE_FLOOR_S) {
+    return `${secondsShown.toFixed(DURATION_SECOND_DIGITS)} s`;
   }
-  if (seconds < DURATION_HOUR_FLOOR_S) {
-    return `${(seconds / SECONDS_PER_MINUTE).toFixed(DURATION_MINUTE_DIGITS)} min`;
+  const minutesShown = Math.round((seconds * minuteScale) / SECONDS_PER_MINUTE) / minuteScale;
+  if (minutesShown < DURATION_HOUR_FLOOR_S / SECONDS_PER_MINUTE) {
+    return `${minutesShown.toFixed(DURATION_MINUTE_DIGITS)} min`;
   }
   let hours = Math.floor(seconds / SECONDS_PER_HOUR);
   let minutes = Math.round((seconds - hours * SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
@@ -241,7 +252,7 @@ export function display_format_axis_minutes(minutes) {
  */
 export function display_describe_verdict(result) {
   const name = result.body.name;
-  const headline = VERDICT_HEADLINE[result.verdict];
+  const headline = result.swingRatio === 1 ? VERDICT_HEADLINE_EXACT : VERDICT_HEADLINE[result.verdict];
 
   const band =
     result.swingRatio > 1
@@ -532,7 +543,9 @@ export function chart_render_bodies(canvasEl, rows, currentKey) {
   const scale = chart_calculate_body_scale(rows);
 
   const colorBand = chart_read_color(canvasEl, COLOR_VAR_ONE_WAY, COLOR_FALLBACK_ONE_WAY);
-  const colorCurrent = chart_read_color(canvasEl, COLOR_VAR_ROUND_TRIP, COLOR_FALLBACK_ROUND_TRIP);
+  // 고른 막대는 흑연색. 주황(--series-2)은 바로 위 곡선에서 '왕복'이라, 여기서
+  // 같은 색을 쓰면 편도 막대가 왕복으로 읽힌다.
+  const colorCurrent = chart_read_color(canvasEl, COLOR_VAR_PICKED, COLOR_FALLBACK_PICKED);
   const colorGrid = chart_read_color(canvasEl, COLOR_VAR_GRID, COLOR_FALLBACK_GRID);
   const colorText = chart_read_color(canvasEl, COLOR_VAR_TEXT, COLOR_FALLBACK_TEXT);
   const colorAxis = chart_read_color(canvasEl, COLOR_VAR_AXIS, COLOR_FALLBACK_AXIS);

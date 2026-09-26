@@ -354,6 +354,30 @@ describe('urlstate — 주소창에 실제로 쓴다', () => {
     expect(dom.urlsWritten[1]).toBe('/test?n=3');
   });
 
+  it('샌드박스(origin null)에서는 주소창을 건드리지 않는다 — 예외로 위젯 갱신이 끊기지 않게', () => {
+    const dom = urlstate_build_window('');
+    const originBefore = window.origin;
+    window.origin = 'null';
+    try {
+      expect(() => urlstate_write({ n: 7 })).not.toThrow();
+      expect(dom.urlsWritten).toHaveLength(0);
+    } finally {
+      window.origin = originBefore;
+    }
+  });
+
+  it('srcdoc 미리보기(about: 주소)에서도 예외 없이 건너뛴다', () => {
+    const dom = urlstate_build_window('');
+    const protocolBefore = window.location.protocol;
+    window.location.protocol = 'about:';
+    try {
+      expect(() => urlstate_write({ n: 7 })).not.toThrow();
+      expect(dom.urlsWritten).toHaveLength(0);
+    } finally {
+      window.location.protocol = protocolBefore;
+    }
+  });
+
   it('window가 없으면 아무 일도 하지 않는다', () => {
     // 서버 렌더·테스트 환경. 던지면 위젯 전체가 죽는다.
     expect(() => urlstate_write({ n: 1 })).not.toThrow();

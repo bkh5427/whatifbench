@@ -269,6 +269,9 @@ async function widget_sweep(page, index, statesFile, viewportName, exhaustive) {
   for (let s = 0; s < Math.min(INPUT_PATH_SAMPLES, grid.length); s++) {
     const settings = grid[Math.floor((s * grid.length) / INPUT_PATH_SAMPLES)];
     await page.evaluate(browser_set_state, { index, settings, useInput: false });
+    // change 경로도 같은 시간을 기다린다. 배지처럼 최소 체류 시간(≈344 ms)이 있는
+    // 표시는 2프레임 뒤에 아직 앞 상태를 보인다 — 그걸 불일치로 세면 도구의 산물이다.
+    await page.waitForTimeout(INPUT_PATH_WAIT_MS);
     const viaChange = await page.evaluate(browser_widget_snapshot, index);
     await page.evaluate(browser_set_state, { index, settings, useInput: true });
     await page.waitForTimeout(INPUT_PATH_WAIT_MS);

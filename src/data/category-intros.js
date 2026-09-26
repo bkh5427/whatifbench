@@ -49,40 +49,37 @@ export const INTROS = {
   scale: {
     description:
       "Orders of magnitude, and the axis you draw them on. What a number does when the exponent moves.",
+    // 2026-09-26: 두 편(folding-paper-moon · solar-system-light-delay)으로 다시 연다.
+    // 예전 셋째 문단(데시벨 · Wi-Fi)은 그 도구가 미발행이라 뺐다 — 발행하는 날 되돌린다.
     paragraphs: [
       `Arithmetic that adds and arithmetic that multiplies run away from each
        other fast. Start at one: twenty steps of adding one leaves you at 21, and
        twenty steps of doubling at 1,048,576.
-       Everything in this section turns on that gap — a thickness that doubles, a
-       distance light needs real minutes to cross, a signal that falls away by a
-       factor rather than a subtraction.`,
+       Folding Paper to the Moon lives on the multiplying side of that gap — a
+       thickness that doubles with every fold. Talking Across the Solar System
+       deals in a distance so large that light needs real minutes to cross it.`,
       `The recurring device here is the axis. A doubling process on a linear axis
        looks like nothing happening, then a wall. The same process on a
        logarithmic axis is a straight line with no drama in it at all. Neither
        picture is wrong, and the disagreement between them is the whole point —
        when a headline says something grew tenfold, which axis you imagine can change
        whether that sounds alarming or ordinary.`,
-      `Decibels are the same idea with a unit attached, which is why radio
-       coverage belongs here rather than with the mechanics. At equal radiated
-       power, with antennas of the same gain at both ends, the model starts 5 GHz
-       7.07 dB below 2.4 GHz with no walls in the way at all. That offset comes
-       from the ratio of the two frequencies under that antenna assumption. Walls
-       then move the gap one wall at a time: a 100 mm concrete wall widens it by
-       about six decibels, a 100 mm brick wall by under half a decibel, and an
-       11 mm glass pane narrows it — and each of those figures changes with the
-       thickness.`,
-      `The doubling and light-delay models are deliberately thin — a doubling is
-       one multiplication, a light delay one division. Keeping the arithmetic
-       trivial makes the result easy to check, and it moves the interesting
-       question from "is this calculated correctly" to "why does the correct
-       answer feel wrong".`,
-      `A question belongs here when the answer is a band rather than a number and
-       the width of the band is the interesting part. A single figure quoted for an
-       orbital distance or a signal margin is a figure taken at one setting; the
-       model behind it will produce a very different one two clicks away, and
-       saying which setting was used is most of the honesty in the answer. Each
-       page names what it approximates — treating orbits as circular, holding a
-       coefficient fixed — and what its formula has no term for at all.`,
+      `Both models are deliberately thin — a doubling is one multiplication, a
+       light delay one division. Keeping the arithmetic trivial makes the result
+       easy to check, and it moves the interesting question from "is this
+       calculated correctly" to "why does the correct answer feel wrong".`,
+      `A question belongs here when the answer depends on a setting and how much
+       it depends is the interesting part. A single figure quoted for the distance
+       to another planet is one moment's value, an average, or one end of a range; the
+       light-delay model puts Mars nearly five times farther from Earth at one end
+       of its band than at the other, and saying which kind a figure is makes up
+       most of the honesty in the answer. A
+       number of folds is the opposite case: across its whole range the
+       thickness slider moves the Moon answer by only three folds, and that
+       narrowness is the finding. Each
+       page names what it simplifies — circular orbits on one, perfect layers with
+       no air and no loss at the crease on the other — and what its formula has no
+       term for at all.`,
     ],
   },
 

@@ -223,5 +223,8 @@ describe('길이 표기', () => {
     expect(units_format_count_words(32768)).toBe('33 thousand');
     // 슬라이더 상한 2⁵⁰. "1100 trillion"으로 나오면 자릿수 이름이 모자란 것이다.
     expect(units_format_count_words(Math.pow(2, 50))).toBe('1.1 quadrillion');
+    // 이름은 반올림 뒤에 고른다 — 996.55 billion이 "1000 billion"으로 찍히면 안 된다.
+    expect(units_format_count_words(9.9655e11)).toBe('1 trillion');
+    expect(units_format_count_words(999600)).toBe('1 million');
   });
 });

@@ -1,0 +1,103 @@
+---
+/*
+  ** 이 파일이 `---`로 시작하는 이유 **
+  `<svg`나 주석으로 시작하는 `.astro`는 전송 중 콘텐츠 서명(C2PA)이 붙어
+  +7,774바이트가 끼어들고 파일이 깨진다. 규약 §5 제작 표준.
+
+  도해 3 — **증명.** 손계산 절에 놓는다.
+  상위 형태는 "독립된 두 경로가 같은 답에서 합류하는 그림"이다 (규약 §5).
+  왼쪽은 코사인법칙으로 현을 구해 미터로 내리고 c로 나눈다.
+  오른쪽은 두 반지름을 그냥 더하고 au당 광초 상수를 한 번 곱한다.
+  `model.test.js`가 코드에서 대조하는 두 경로가 바로 이 둘이다.
+  숫자는 전부 모델이 내는 값이다 — 이 파일이 새로 만드는 수는 없다.
+*/
+const W = 420;
+const H = 398;
+
+const LEFT_X = 105;
+const RIGHT_X = 315;
+const MEET_X = 210;
+
+const HEAD_Y = 42;
+const HEAD_H = 28;
+const HEAD_TEXT_Y = 61;
+const STEP_TOP_Y = 106;
+const STEP_GAP = 26;
+
+const ARROW_FROM_Y = 250;
+const RESULT_Y = 288;
+const RESULT_H = 64;
+
+const leftSteps = [
+  '√( 1.5237² + 1.0000²',
+  '+ 2·1.5237·1.0000 )',
+  // 적힌 네 자리 피연산자에서 나오는 값만 적는다. 여섯 자리 합은 오른쪽 열 몫이다.
+  '= 2.5237 au',
+  '× 149 597 870 700 m/au',
+  '= 3.7754 × 10¹¹ m',
+  '÷ 299 792 458 m/s',
+];
+
+const rightSteps = [
+  '1.523 710',
+  '+ 1.000 003',
+  '= 2.523 713 au',
+  '× 499.004 784 s/au',
+];
+
+const stepY = (index) => STEP_TOP_Y + index * STEP_GAP;
+---
+<svg
+  class="fig-svg"
+  viewBox={`0 0 ${W} ${H}`}
+  role="img"
+  aria-label="Two columns of arithmetic that meet at one number. The left column is headed law of cosines at theta equals 180 degrees. It takes the square root of 1.5237 squared plus 1.0000 squared plus twice 1.5237 times 1.0000, which gives 2.5237 astronomical units, multiplies by 149597870700 metres per astronomical unit to get 3.7754 times ten to the eleventh metres, then divides by 299792458 metres per second. The right column is headed just add the two radii. It adds 1.523710 and 1.000003 to get 2.523713 astronomical units, then multiplies by the constant 499.004784 seconds in an astronomical unit. An arrow runs down from each column into a single box, which reads 1259.3 seconds, equal to 21.0 minutes one way. A tick mark below the box is labelled: same second, two routes."
+>
+  <text x={W / 2} y="26" class="fig-label" text-anchor="middle">two routes to the same second</text>
+
+  <rect x="14" y={HEAD_Y} width="182" height={HEAD_H} fill="var(--paper-sunk)" stroke="var(--rule)" stroke-width="1.5" />
+  <text x={LEFT_X} y={HEAD_TEXT_Y} class="fig-label" text-anchor="middle">law of cosines, θ = 180°</text>
+
+  <rect x="224" y={HEAD_Y} width="182" height={HEAD_H} fill="var(--paper-sunk)" stroke="var(--rule)" stroke-width="1.5" />
+  <text x={RIGHT_X} y={HEAD_TEXT_Y} class="fig-label" text-anchor="middle">just add the two radii</text>
+
+  {leftSteps.map((step, index) => (
+    <text x={LEFT_X} y={stepY(index)} class="fig-value" text-anchor="middle">{step}</text>
+  ))}
+
+  {rightSteps.map((step, index) => (
+    <text x={RIGHT_X} y={stepY(index)} class="fig-value" text-anchor="middle">{step}</text>
+  ))}
+
+  <path
+    d={`M ${LEFT_X} ${ARROW_FROM_Y} L ${LEFT_X} ${RESULT_Y - 24} L ${MEET_X - 34} ${RESULT_Y - 6}`}
+    fill="none"
+    stroke="var(--graphite-soft)"
+    stroke-width="2"
+  />
+  <path
+    d={`M ${MEET_X - 34} ${RESULT_Y - 6} L ${MEET_X - 45} ${RESULT_Y - 10} M ${MEET_X - 34} ${RESULT_Y - 6} L ${MEET_X - 42} ${RESULT_Y - 16}`}
+    fill="none"
+    stroke="var(--graphite-soft)"
+    stroke-width="2"
+  />
+  <path
+    d={`M ${RIGHT_X} ${ARROW_FROM_Y} L ${RIGHT_X} ${RESULT_Y - 24} L ${MEET_X + 34} ${RESULT_Y - 6}`}
+    fill="none"
+    stroke="var(--graphite-soft)"
+    stroke-width="2"
+  />
+  <path
+    d={`M ${MEET_X + 34} ${RESULT_Y - 6} L ${MEET_X + 45} ${RESULT_Y - 10} M ${MEET_X + 34} ${RESULT_Y - 6} L ${MEET_X + 42} ${RESULT_Y - 16}`}
+    fill="none"
+    stroke="var(--graphite-soft)"
+    stroke-width="2"
+  />
+
+  <rect x="108" y={RESULT_Y} width="204" height={RESULT_H} fill="var(--paper-sunk)" stroke="var(--graphite)" stroke-width="2" />
+  <text x={MEET_X} y={RESULT_Y + 26} class="fig-num" text-anchor="middle">1 259.3 s</text>
+  <text x={MEET_X} y={RESULT_Y + 50} class="fig-label" text-anchor="middle">= 21.0 min one way</text>
+
+  <path d="M 150 376 L 157 384 L 172 366" fill="none" stroke="var(--graphite)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+  <text x="182" y="382" class="fig-label">same second, two routes</text>
+</svg>

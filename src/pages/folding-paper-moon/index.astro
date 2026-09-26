@@ -1,0 +1,438 @@
+---
+import Base from "@layouts/Base.astro";
+import Byline from "@components/Byline.astro";
+import RelatedTools from "@components/RelatedTools.astro";
+import Figure from "@components/Figure.astro";
+// 도해 셋. 규약 §5의 역할 순서다 — 설정(위젯 앞) · 메커니즘(반전) · 증명(손계산).
+import FoldDoubling from "./_fig/FoldDoubling.astro";
+import TenfoldIsThreeFolds from "./_fig/TenfoldIsThreeFolds.astro";
+import TwoRoutes from "./_fig/TwoRoutes.astro";
+import { tools_read_category } from "@data/tools.js";
+// 본문의 숫자는 지어내지 않는다 — 모델을 불러 여기서 계산한다 (규약, 본보기와 같은 방식).
+import {
+  FOLD_THICKNESS_DEFAULT_MM,
+  FOLD_THICKNESS_MIN_MM,
+  FOLD_THICKNESS_MAX_MM,
+  FOLD_COUNT_MAX,
+  model_calculate_thickness_m,
+  model_calculate_folds_to_reach,
+  model_calculate_length_required_m,
+  model_read_reference,
+} from "@widgets/folding-paper-moon/model.js";
+import { units_format_length } from "@widgets/_shared/units.js";
+
+// 등급·검수일은 여기서 들지 않는다. tools.js가 진실 원본이고 Byline이 읽는다.
+const SLUG = "folding-paper-moon";
+const CATEGORY = "scale";
+const cat = tools_read_category(CATEGORY);
+
+// 브레드크럼 이름. 화면과 구조화 데이터가 **같은 상수 하나**를 읽는다.
+// `tools.js`의 `name`과 글자 하나까지 같아야 한다 (규약 §7, 게이트가 대조한다).
+const CRUMB = "Folding Paper to the Moon";
+
+// ── 본문이 인용하는 값 ──────────────────────────────────────
+const MOON = model_read_reference("moon");
+const MOON_FOLDS = model_calculate_folds_to_reach(FOLD_THICKNESS_DEFAULT_MM, MOON.metres);
+const MOON_FOLDS_THIN = model_calculate_folds_to_reach(FOLD_THICKNESS_MIN_MM, MOON.metres);
+const MOON_FOLDS_THICK = model_calculate_folds_to_reach(FOLD_THICKNESS_MAX_MM, MOON.metres);
+const AT_MOON_M = model_calculate_thickness_m(FOLD_THICKNESS_DEFAULT_MM, MOON_FOLDS);
+const BEFORE_MOON_M = model_calculate_thickness_m(FOLD_THICKNESS_DEFAULT_MM, MOON_FOLDS - 1);
+const AT_32_M = model_calculate_thickness_m(FOLD_THICKNESS_DEFAULT_MM, 32);
+const LENGTH_12_M = model_calculate_length_required_m(FOLD_THICKNESS_DEFAULT_MM, 12);
+const LENGTH_AT_MOON_M = model_calculate_length_required_m(FOLD_THICKNESS_DEFAULT_MM, MOON_FOLDS);
+// 본문이 인용하는 우주정거장 표시 높이 — 모델 기준값을 읽는다(400 km).
+const ISS = model_read_reference("iss");
+const ISS_FOLDS = model_calculate_folds_to_reach(FOLD_THICKNESS_DEFAULT_MM, ISS.metres);
+const AT_ISS_FOLDS_M = model_calculate_thickness_m(FOLD_THICKNESS_DEFAULT_MM, ISS_FOLDS);
+// 쌀 표시(어림값 6 mm)가 기본 두께에서 몇 번째 접기에 걸리는지 — 더 긴 품종이면 한 번 더.
+const RICE = model_read_reference("rice");
+const RICE_FOLDS = model_calculate_folds_to_reach(FOLD_THICKNESS_DEFAULT_MM, RICE.metres);
+const AT_RICE_FOLDS_M = model_calculate_thickness_m(FOLD_THICKNESS_DEFAULT_MM, RICE_FOLDS);
+const MM_PER_M = 1000;
+// 서수 접미사 — 7th, 33rd. 11·12·13은 th.
+const ordinal = (n) => {
+  const tens = n % 100;
+  if (tens >= 11 && tens <= 13) return `${n}th`;
+  return `${n}${({ 1: "st", 2: "nd", 3: "rd" })[n % 10] ?? "th"}`;
+};
+// 선형 축 바닥에 눌린 예시 접기. 42접기의 2⁻¹²이라 어떤 화면 높이에서도 1픽셀 안이다.
+const PINNED_EXAMPLE_FOLD = 30;
+const PINNED_EXAMPLE_M = model_calculate_thickness_m(FOLD_THICKNESS_DEFAULT_MM, PINNED_EXAMPLE_FOLD);
+// 위젯 판독값의 유효숫자(widget.js SIGNIFICANT_DIGITS)와 같아야 본문과 화면이 같은 수를 보인다.
+const READOUT_SIGNIFICANT_DIGITS = 4;
+
+const km = (metres) => Math.round(metres / 1000).toLocaleString("en-GB");
+// 32번 접기는 429.5 km다. 정수로 반올림하면 도해 3의 라벨과 갈라진다.
+const km1 = (metres) => (metres / 1000).toFixed(1);
+// 지수는 위첨자 글자로 쓴다 — 화면의 요약 카드가 내는 형식과 같아야 한다 (규약 §5.5 S4).
+const SUPERSCRIPT = "\u2070\u00b9\u00b2\u00b3\u2074\u2075\u2076\u2077\u2078\u2079";
+const exp3 = (metres) => {
+  const [mantissa, power] = metres.toExponential(3).split("e");
+  const digits = String(Number(power)).replace(/\d/g, (d) => SUPERSCRIPT[Number(d)]);
+  return `${mantissa} × 10${digits}`;
+};
+---
+
+<Base
+  title="Folding paper to the Moon: how many folds is that, really?"
+  description="Move the sheet thickness and the fold count, and watch the same numbers look like nothing and then like a wall. A linear axis, a log axis, and a fixed log rail."
+  category={CATEGORY}
+  crumbTool={true}
+  crumbLabel={CRUMB}
+>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span aria-hidden="true">›</span>{" "}
+    <a href={cat.href}>{cat.name}</a> <span aria-hidden="true">›</span>{" "}
+    {CRUMB}
+  </nav>
+
+  <h1>Folding paper to the Moon: how many folds is that, really?</h1>
+
+  <p class="deck">
+    Fold a 0.1 mm sheet 42 times and the stack passes the Moon. Drag the thickness
+    across its whole range and that number barely moves. So which slider is
+    doing the work?
+  </p>
+
+  <Byline slug={SLUG} />
+
+  <p class="lead">
+    In January 2002 Britney Gallivan folded a sheet of paper in half twelve
+    times. She was a high-school student in Pomona, California. The standing
+    claim was that no sheet folds more than seven or eight times. She worked out
+    her own equations for the limit first, then went and did it.
+  </p>
+
+  <p class="lead">
+    A second story about paper runs the other way. Fold a sheet forty-two times,
+    people say, and the stack reaches the Moon. Both stories are about one sheet.
+    Both are arithmetic anyone can check.
+  </p>
+
+  <p class="lead">
+    <span class="lead-turn">They are about two different quantities.</span>{" "}
+    One is thickness and the other is length. The chart and the rail below
+    follow the thickness; the length shows up once, as a single readout.
+  </p>
+
+  <Figure caption="In this model, only the stack of layers is counted — the area halves at every fold, and it is not tracked.">
+    <FoldDoubling />
+  </Figure>
+
+  <div id="sliders" data-widget="folding-paper-moon">
+    <noscript>
+      <p>
+        The explorer, its rail, chart and table need JavaScript. Every thickness
+        it shows follows from t = t₀ · 2ⁿ, worked out in the text below.
+      </p>
+    </noscript>
+  </div>
+
+  <h2 data-block="reversal">The folds move the answer. The sheet barely does.</h2>
+
+  <p>
+    There are two sliders. <strong>Starting thickness</strong> sets how thick the
+    flat sheet is. <strong>Folds</strong> sets how many times it is folded in
+    half. Three buttons above them jump to preset settings, and one more control,{" "}
+    <strong>Vertical axis</strong>, draws the same numbers two ways.
+  </p>
+
+  <p>
+    At {FOLD_THICKNESS_DEFAULT_MM.toFixed(2)} mm and {MOON_FOLDS} folds the model
+    puts the stack at {exp3(AT_MOON_M)} m. That is about {km(AT_MOON_M)} km, which
+    the readout rounds to {units_format_length(AT_MOON_M, READOUT_SIGNIFICANT_DIGITS)}. The
+    Moon is at {km(MOON.metres)} km, so the stack is past it. Fold
+    {" "}{MOON_FOLDS - 1} falls short, at {exp3(BEFORE_MOON_M)} m.
+  </p>
+
+  <Figure caption="In this model, one fold is one doubling, so a sheet ten times thicker is worth only about three folds.">
+    <TenfoldIsThreeFolds />
+  </Figure>
+
+  <p>
+    Now leave <strong>Folds</strong> alone and drag <strong>Starting
+    thickness</strong> from end to end. The whole range is a factor of ten. The
+    crossing moves from fold {MOON_FOLDS_THIN} to fold {MOON_FOLDS_THICK}, and no
+    further. For the Moon, ten times the paper buys three folds.
+  </p>
+
+  <p>
+    So the model does not make this a fact about paper being thin. In this model
+    the answer is moved mostly by the number of folds; across its whole range,
+    the sheet you start with moves it by three.
+  </p>
+
+  <p>
+    Nothing speeds up along the way, either. The doubling rate at fold 3 and at
+    fold 43 is the same. What changes is the axis under the curve, and here is
+    how to read it.
+  </p>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 data-block="howto" id="howto-title">How to read what you are looking at</h2>
+
+    <p>
+      <strong>Almost everything on screen is one number — the height of the
+      stack — drawn three ways.</strong> The <strong>Length needed</strong> card
+      is the one figure from a different formula, explained below. The
+      readout under the sliders gives the height.
+      A badge names the last thing the stack has grown past, or the first one it
+      has yet to pass. Drag{" "}
+      <strong>Folds</strong> and the number doubles at every step. The badge moves
+      far more slowly. It changes only when the stack crosses a marked height, up
+      or down.
+    </p>
+
+    <p>
+      Under the readout, the rail puts that same height on a fixed ruler. The ruler is marked
+      in powers of ten and never rescales. A position on it means the same thing
+      at every setting. Each power of ten on it is ten times the one before; on a
+      narrow screen only some of them carry a label. So every fold slides the
+      marker the same distance. The ticks above the rail are the flat sheet and
+      each fold made so far. The dots are the marked heights, filled in once the
+      stack has passed them.
+    </p>
+
+    <p>
+      The chart plots that same height against fold count. The{" "}
+      <strong>Vertical axis</strong> toggle is the point of the page. On{" "}
+      <strong>Linear</strong> the axis has to reach the largest value on screen.
+      Once the fold count is high, the early folds are pinned flat against zero.
+      Many of those values are not small: at the default setting, fold{" "}
+      {PINNED_EXAMPLE_FOLD} is already {km(PINNED_EXAMPLE_M)} km. They are small
+      next to the last one. On <strong>Logarithmic</strong> the
+      same numbers become a straight line with no bend anywhere.
+    </p>
+
+    <p>
+      The table at the end lists the first fold that passes each height. One line
+      of arithmetic produces all of it.
+    </p>
+  </section>
+
+  <section class="math" aria-labelledby="math-title">
+    <h2 data-block="math" class="math-title" id="math-title">Why a tenfold sheet buys at most four folds</h2>
+
+    <p>A fold doubles the number of layers. That is the whole model.</p>
+
+    <div class="math-eq">
+      <span>t</span><span class="op">=</span>
+      <span>t<sub>0</sub></span><span class="op">·</span><span>2<span class="sr-only"> to the power of </span><sup>n</sup></span>
+    </div>
+
+    <dl class="math-where">
+      <dt>t<sub>0</sub></dt><dd>thickness of the flat sheet — the <strong>Starting thickness</strong> slider</dd>
+      <dt>n</dt><dd>how many times it is folded — the <strong>Folds</strong> slider</dd>
+      <dt>t</dt><dd>thickness after n folds — the number on the readout</dd>
+      <dt>2<span class="sr-only"> to the power of </span><sup>n</sup></dt><dd>how many layers are stacked on each other</dd>
+    </dl>
+
+    <p>
+      The layer count is what doubles. Thickness follows, because the layers sit
+      on one another. Nothing else enters: not the width of the sheet, not the
+      material, not the direction of the folds.
+    </p>
+
+    <p>
+      Multiplying t<sub>0</sub> by ten is worth log<sub>2</sub>(10) ≈ 3.32 folds.
+      The whole thickness slider is a factor of ten from end to end. So it moves
+      most answers by three folds. Sometimes four, where that leftover 0.32
+      crosses one more doubling: a standing adult, a 10-storey building and
+      Mercury's orbit shift by four. The grain of sand shifts by one, because the
+      thickest sheet is already past it.
+    </p>
+
+    <p>
+      Each fold adds the same amount to log<sub>2</sub>(t). The exponent grows in
+      a straight line. The thickness does not. A logarithmic axis is spaced by the
+      exponent, so the model draws a ramp with no bend. A linear axis is spaced by
+      the thickness, so the same numbers look like nothing and then a wall. The
+      exponent is easier to trust once one sheet is counted by hand.
+    </p>
+  </section>
+
+  <h2 data-block="byhand">Forty-two folds, counted by hand</h2>
+
+  <p>Take the default sheet, {FOLD_THICKNESS_DEFAULT_MM.toFixed(2)} mm, and follow one number.</p>
+
+  <p>
+    Seven folds gives 2⁷ = 128 layers. That is 128 × 0.1 mm = 12.8 mm, about a
+    paperback. Fifteen folds is 32,768 layers, or 3.28 m, the first fold past a
+    standing adult. Twenty-seven folds reaches 13.4 km and clears Mount Everest at
+    8.85 km. Thirty-two folds reaches {km1(AT_32_M)} km and passes the model's{" "}
+    {km(ISS.metres)} km mark for the space station.
+  </p>
+
+  <p>
+    Each fold is the one before it doubled. Fold 15 and fold 27 differ by a factor
+    of four thousand. On a linear chart that must also fit fold {MOON_FOLDS}, the two sit
+    in the same row of pixels.
+  </p>
+
+  <p>
+    Ten more doublings from fold 32 gives fold {MOON_FOLDS}: {km1(AT_32_M)} km ×
+    2¹⁰ ≈ {km(AT_MOON_M)} km.
+  </p>
+
+  <Figure caption="In this model, counting by hand and raising two to the power of the fold count are separate routes, and they land on the same number.">
+    <TwoRoutes />
+  </Figure>
+
+  <p>
+    The exponent gets there in one step and lands on the same number. The
+    readout shows {exp3(AT_MOON_M)} m, and the <strong>Layers</strong> card shows
+    4.4 trillion. That is 2⁴² sheets standing on each other. All of it rests on four rules.
+  </p>
+
+  <h2 data-block="assumptions">Four rules, and eighteen marked heights</h2>
+
+  <p>
+    Every thickness on this page follows these four. Drop any of the first three
+    and the thicknesses worked out above stop meaning what they say.
+  </p>
+
+  <ol>
+    <li>Each fold doubles the layer count, and does nothing else.</li>
+    <li>The layers are perfect: no trapped air, no squashing, no paper lost to the curve at a crease.</li>
+    <li>The stack is the only thing tracked. Width, material and fold direction do not enter.</li>
+    <li>
+      The starting thickness is a slider, not a constant. ISO 534 fixes how paper
+      thickness is <em>measured</em>. It does not fix what it is for a given weight.
+    </li>
+  </ol>
+
+  <p>
+    <strong>No simulation.</strong> Every thickness is that one line of arithmetic
+    worked out directly. Each multiplication is by a power of two. Only the
+    exponent of the stored number changes, and no rounding error builds up.
+  </p>
+
+  <p>
+    <strong>The eighteen heights.</strong> The marks run from a grain of sand to
+    the Sun. There is one for every power of ten in between. Several are set by a
+    standard, and the model uses the standard's figure as written, among them:
+  </p>
+
+  <ul>
+    <li>a bank card, 0.76 mm nominal — ISO/IEC 7810</li>
+    <li>a sheet of A4, 297 mm — ISO 216</li>
+    <li>the astronomical unit, 149,597,870,700 m — IAU 2012 Resolution B2</li>
+  </ul>
+
+  <p>
+    Where no body has fixed it, the mark says so on screen. A grain of rice is a
+    round 6 mm and varies by variety. The space station is entered at about{" "}
+    {km(ISS.metres)} km. At the default
+    sheet, a mark entered a little differently can move its fold count by one. A
+    grain of rice longer than {(AT_RICE_FOLDS_M * MM_PER_M).toFixed(1)} mm takes a
+    {" "}{ordinal(RICE_FOLDS + 1)} fold, and a station above
+    {" "}{km1(AT_ISS_FOLDS_M)} km takes a {ordinal(ISS_FOLDS + 1)}. Length is a
+    different matter.
+  </p>
+
+  <p class="note"><a href="#sliders">Back to the sliders ↑</a></p>
+
+  <h2 data-block="limits">Length is the term this model does not have</h2>
+
+  <p>
+    <strong>Whether the folding is possible.</strong> This is the largest gap on
+    the page. It is not a correction but a different model. The formula Gallivan
+    derived for folding in one direction is
+  </p>
+
+  <div class="math-eq">
+    <span>L</span><span class="op">=</span>
+    <span class="frac"><span class="frac-num">π t</span><span class="frac-den">6</span></span>
+    <span class="op">×</span><span>(2<span class="sr-only"> to the power of </span><sup>n</sup> + 4)</span>
+    <span class="op">×</span><span>(2<span class="sr-only"> to the power of </span><sup>n</sup> − 1)</span>
+  </div>
+
+  <p>
+    L is the length of material needed and t its thickness, in the same units. At
+    {" "}{FOLD_THICKNESS_DEFAULT_MM.toFixed(2)} mm that puts twelve folds at
+    {" "}{Math.round(LENGTH_12_M)} m of paper. Forty-two folds need
+    {" "}{exp3(LENGTH_AT_MOON_M)} m. That is around a hundred thousand light
+    years.
+  </p>
+
+  <p>
+    The two formulas take the same sheet and the same fold count. Neither one's
+    answer feeds the other. The thickness model has no length term at all.
+    It will report fold {MOON_FOLDS} for a sheet the size of a postage stamp.
+    Nothing here argues that a sheet can be folded any particular number of times.
+  </p>
+
+  <p>
+    <strong>Folds that alternate.</strong> Folding along alternate sides, rather
+    than always along the same side, is a separate case. Later work has derived
+    lost-length formulas for it, on square and rectangular paper. Only the
+    single-direction case appears here; that extension is not in this model.
+  </p>
+
+  <p>
+    <strong>The folklore, and the slider.</strong> No primary source was found for
+    the seven-fold claim. This page does not attribute it to anyone. The{" "}
+    <strong>Folds</strong> slider stops at {FOLD_COUNT_MAX}. Far past that, the
+    stack outgrows what a stored number can hold.
+  </p>
+
+  <p class="note"><a href="#sliders">Back to the sliders ↑</a></p>
+
+  <h2 data-block="about">About this page</h2>
+
+  <p class="note">
+    Every computed figure here comes from the two formulas above, worked out
+    directly rather than simulated.{" "}
+    <a href="/about">How I check things</a>.
+  </p>
+
+  <p><strong>Sources.</strong></p>
+
+  <ul class="sources">
+    <li>
+      Ivars Peterson, <a href="https://www.sciencenews.org/article/folding-paper-half-twelve-times">"Folding
+      Paper in Half—Twelve Times"</a>, <em>Science News</em>, 22 January 2004 —
+      the January 2002 fold, and Gallivan's own equations for the limit.
+    </li>
+    <li>
+      Britney C. Gallivan, <em>How to Fold Paper in Half Twelve Times</em>{" "}
+      (Historical Society of Pomona Valley, 2002) is the source of the length
+      formula. No copy could be consulted, so it is reported here rather than
+      verified.
+    </li>
+    <li>
+      Kabir Srivastav, <a href="https://doi.org/10.1007/978-981-95-9630-0_34">"Paper
+      Folding: Extensions of Gallivan's Formula"</a>, in <em>Proceedings of the
+      11th IRC Conference on Science, Engineering and Technology</em> (Springer,
+      2026) — generalizes Gallivan's model and derives lost-length formulas for
+      alternate-side folding, on square and rectangular paper.
+    </li>
+    <li>
+      The marked heights that come from a document follow ISO 14688-1 (the
+      silt/sand line), ISO/IEC 7810, ISO 216, the R&amp;A rule on the minimum golf
+      ball diameter, the World Athletics rule on track length, the FAI's 100 km
+      Kármán line, the IUGG mean Earth radius, the ITU figure for geostationary
+      orbit, IAU Resolutions B2 (2012) and B3 (2015), and NASA fact sheets for the
+      Moon and Mercury. Each of those figures is used as written, with two changes:
+      the IUGG mean radius, 6,371.0087714 km, is entered as 6,371 km, and the
+      Sun's width is twice the IAU nominal solar radius of 695,700 km. The standing
+      adult, the building, the grain of rice, the airliner and the space station
+      are round figures chosen for this page; the station's {km(ISS.metres)} km
+      sits inside NASA's 370–460 km range. ISO 534 covers how the starting
+      thickness is measured. ISO/IEC 7810, ISO 216 and ISO 534 are reported from
+      published descriptions rather than checked against a copy, and ISO 14688-1
+      was read in its free preview.
+    </li>
+    <li>
+      Mount Everest at 8,848.86 m is the snow height announced jointly by Nepal
+      and China on 8 December 2020, taken from contemporary news reports rather
+      than from a survey document.
+    </li>
+  </ul>
+
+  <RelatedTools slug={SLUG} />
+
+  <script>
+    import "@widgets/folding-paper-moon/widget.js";
+  </script>
+</Base>

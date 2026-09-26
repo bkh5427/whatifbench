@@ -158,7 +158,7 @@ export const FOLD_REFERENCE_LIST = [
   { key: 'card', label: 'A bank card', short: 'Card', icon: ICON.card, metres: 7.6e-4, note: '0.76 mm nominal, ±0.08 mm in ISO/IEC 7810 ID-1' },
   { key: 'rice', label: 'A grain of rice', short: 'Rice', icon: ICON.rice, metres: 6e-3, note: 'a round 6 mm; varies by variety' },
   { key: 'golf', label: 'A golf ball', short: 'Golf ball', icon: ICON.golf, metres: 4.267e-2, note: '42.67 mm, the minimum legal diameter' },
-  { key: 'a4', label: 'A sheet of A4 paper', short: 'A4', icon: ICON.a4, metres: 0.297, note: '297 mm exactly, the long edge in ISO 216' },
+  { key: 'a4', label: 'A sheet of A4 paper', short: 'A4', icon: ICON.a4, metres: 0.297, note: '297 mm, the long edge in ISO 216' },
   { key: 'human', label: 'An adult standing', short: 'Person', icon: ICON.human, metres: 1.7, note: 'a round 1.7 m' },
   { key: 'storey', label: 'A 10-storey building', short: 'Building', icon: ICON.storey, metres: 30, note: '3 m per storey' },
   { key: 'track', label: 'One lap of a running track', short: 'Track', icon: ICON.track, metres: 400, note: '400 m by rule' },

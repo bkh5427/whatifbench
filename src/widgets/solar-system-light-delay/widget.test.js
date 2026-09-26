@@ -114,7 +114,13 @@ describe('표시 문자열', () => {
     expect(display_format_duration(60)).toBe('1.0 min');
     expect(display_format_duration(261.346)).toBe('4.4 min');
     expect(display_format_duration(1259.35)).toBe('21.0 min');
-    expect(display_format_duration(3599)).toBe('60.0 min');
+    // 반올림하면 60.0분 — 윗단위로 넘긴다. 화성 θ=52°·3턴이 3599.71 s였다.
+    expect(display_format_duration(3599)).toBe('1 h 0 min');
+    expect(display_format_duration(3599.71)).toBe('1 h 0 min');
+    expect(display_format_duration(3596.9)).toBe('59.9 min');
+    expect(display_format_duration(59.96)).toBe('1.0 min');
+    // 69 s는 정확히 1.15분 — 0.5 올림이면 1.2. 부동소수 toFixed는 1.1로 내렸다.
+    expect(display_format_duration(69)).toBe('1.2 min');
     expect(display_format_duration(3600)).toBe('1 h 0 min');
     expect(display_format_duration(4259.85)).toBe('1 h 11 min');
     expect(display_format_duration(31008)).toBe('8 h 37 min');

@@ -41,6 +41,7 @@
  */
 export const CATEGORIES = [
   { key: "chance", href: "/chance", short: "Chance", name: "Chance" },
+  { key: "scale", href: "/scale", short: "Scale", name: "Scale" },
 ];
 
 /**
@@ -50,7 +51,6 @@ export const CATEGORIES = [
  * 다시 참이 되므로, 문장을 버리는 대신 발행 전까지 잠가 두는 쪽이 낫다.
  */
 export const CATEGORIES_PLANNED = [
-  { key: "scale", href: "/scale", short: "Scale", name: "Scale" },
   { key: "motion", href: "/motion", short: "Motion", name: "Motion" },
   { key: "energy", href: "/energy", short: "Energy", name: "Energy" },
 ];
@@ -61,6 +61,8 @@ import { tags_check_unknown, tags_read_domain } from "./tags.js";
 import { meta as MONTY_HALL_N_DOORS } from "../pages/monty-hall-n-doors/_meta.js";
 import { meta as SIMPSONS_PARADOX } from "../pages/simpsons-paradox/_meta.js";
 import { meta as ONE_LINE_OR_MANY } from "../pages/one-line-or-many/_meta.js";
+import { meta as FOLDING_PAPER_MOON } from "../pages/folding-paper-moon/_meta.js";
+import { meta as SOLAR_SYSTEM_LIGHT_DELAY } from "../pages/solar-system-light-delay/_meta.js";
 
 export const CATEGORY_MAX_BEFORE_HEADER_CHANGE = 4;
 /** 카테고리를 열 수 있는 최소 발행 수. 위 주석의 규칙을 기계가 읽는 값으로. */
@@ -75,24 +77,9 @@ export const TOOLS = [
   MONTY_HALL_N_DOORS,
   SIMPSONS_PARADOX,
   ONE_LINE_OR_MANY,
+  FOLDING_PAPER_MOON,
+  SOLAR_SYSTEM_LIGHT_DELAY,
 
-  {
-    slug: "folding-paper-moon",
-    category: "scale",
-    name: "Folding Paper to the Moon",
-    blurb: "Doubling thickness, on a linear axis and a log axis. The same numbers, two different stories.",
-    grade: "A",
-    since: null,
-    updated: null,
-    changed: "",
-    tags: ["exponential", "log-axis", "counterintuitive", "abstract"],
-    // 42는 기본 두께 0.1 mm에서만 참이다 — 0.05 mm면 43, 0.5 mm면 40.
-    // 조건을 라벨에 넣지 않으면 카드가 두께와 무관한 상수처럼 읽힌다.
-    figure: { value: "42", label: "folds until the model's stack passes the Moon, at 0.1 mm paper" },
-    published: false,
-  },
-  // requires: 같은 이유 — 거리 축이 로그다. 축을 먼저 읽고 오면 표가 다르게 보인다.
-  { slug: "solar-system-light-delay", category: "scale", name: "Talking Across the Solar System", blurb: "One-way and round-trip light delay as the planets move.", grade: "A", since: null, updated: null, changed: "", tags: ["distance", "log-axis", "space"], requires: ["folding-paper-moon"], figure: { value: "4.82×", label: "the model’s swing in one-way delay to Mars, closest against farthest" }, published: false },
   // 5.00분은 40→60 km/h · 10 km에서만 참이다 — 같은 +20이라도 70→90이면 1.90분이다.
   { slug: "speed-vs-time-saved", category: "motion", name: "How Little Time Speeding Saves", blurb: "Time saved against speed, with the fixed delays held constant on both sides.", grade: "A", since: null, updated: null, changed: "", tags: ["counterintuitive", "rates", "commute"], figure: { value: "5.00 min", label: "the model’s saving from 40 to 60 km/h over 10 km" }, published: false },
   { slug: "shower-vs-bath", category: "energy", name: "Shower vs Bath", blurb: "Water and heating energy plotted together, each with its own crossing minute marked — the model does not put the two in the same place.", grade: "A", since: null, updated: null, changed: "", tags: ["rates", "energy", "home"], figure: { value: "8.4 min", label: "the minute the model has a 9.5 L/min shower pass an 80 L bath" }, published: false },

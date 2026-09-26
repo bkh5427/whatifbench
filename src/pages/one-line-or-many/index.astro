@@ -79,7 +79,7 @@ const HAND_TAIL_SAVED = display_format_minutes(HAND.percentileSavedMinutes);
 ---
 
 <Base
-  title="One line or many: which queue makes you wait less?"
+  title="Single queue vs multiple queues: which makes you wait less?"
   description="A single snaking queue against one line per counter, on the mean wait and on the 95th percentile. Erlang C and M/M/1, pinned to independently computed values."
   category={CATEGORY}
   crumbTool={true}
@@ -155,7 +155,7 @@ const HAND_TAIL_SAVED = display_format_minutes(HAND.percentileSavedMinutes);
     What one line removes is a counter standing empty while somebody waits.
   </p>
 
-  <Figure caption="In this model, the same four people and the same four transactions land on the same two counters. Nobody is served faster; what moves is the waiting and which counter is left standing empty.">
+  <Figure caption="A hand-built case, not drawn from the model's random arrivals, run under this model's two queue rules: the same four people, all there at minute 0 and lined up A, B, C, D, bring the same four transactions to the same two counters, and each line serves first come, first served. With a line each, A and C join counter 1 and B and D counter 2. Every transaction takes as long in both charts; what moves is the waiting and which counter is left standing empty.">
     <SameWork />
   </Figure>
 
@@ -193,7 +193,7 @@ const HAND_TAIL_SAVED = display_format_minutes(HAND.percentileSavedMinutes);
       The two strips at the top get the same arrivals from the same seed. Any
       difference between them is the layout, not luck. The upper strip is one line
       into every counter. The lower strip is a line each. Filled boxes are counters
-      with someone at them. Pale boxes are counters standing empty.
+      with someone at them. Empty boxes are counters standing free.
     </p>
 
     <p>
@@ -358,7 +358,7 @@ const HAND_TAIL_SAVED = display_format_minutes(HAND.percentileSavedMinutes);
   </p>
 
   <p>
-    <strong>No simulation stands behind the numbers.</strong> The animation replays
+    <strong>No simulation stands behind the numbers.</strong> The animation runs
     one seeded arrival stream through both layouts. No card, curve or table row
     reads anything from it. Every figure is a closed form, evaluated directly.
     Each of those rules has its own way of failing.

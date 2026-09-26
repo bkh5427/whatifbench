@@ -1356,6 +1356,15 @@ code {
   background: var(--paper-sunk);
   margin: 0 0 0.6rem;
 }
+/* 그림 위 표지 — 애니메이션(표본 가게)이라는 것을 계산 결과보다 먼저 밝힌다. 고정 문구라 높이가 안 바뀐다. */
+.hero-tag {
+  margin: 0 0 0.3rem;
+  font-family: var(--sans);
+  font-size: var(--t-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--graphite-soft);
+}
 
 /* one-line-or-many 범례 — 기존 패턴을 그대로 따른다:
    견본은 `.legend-key`(폭·높이는 위에서 정의됨) + 수식 클래스, 줄은 `.legend-item`.
@@ -1368,6 +1377,8 @@ code {
 }
 .legend-mean-1 { background: var(--series-1); height: 2px; }
 .legend-mean-2 { background: var(--series-2); height: 4px; }
+/* solar 막대 그림의 '고른 천체' — 주황은 위 곡선에서 왕복이라 흑연색으로 가른다. */
+.legend-picked { background: var(--graphite); height: 6px; }
 .legend-tail-1 {
   background: none;
   border-top: 2px dashed var(--series-1);
@@ -1699,6 +1710,9 @@ figure.fig .fig-cap { padding: 0 1rem 0.9rem; }
   border: 1px solid var(--rule);
   border-left: 3px solid var(--steel-500);
 }
+/* one-line-or-many: 카드 눈금을 배치 색으로(파랑 = 한 줄, 주황 = 창구별 줄). */
+.readout.readout-single { border-left-color: var(--series-1); }
+.readout.readout-separate { border-left-color: var(--series-2); }
 .tool-figure {
   background: transparent;
   border: 1px solid var(--rule);

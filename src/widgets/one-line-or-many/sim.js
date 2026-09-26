@@ -18,8 +18,11 @@ export const SIM_QUEUE_DRAW_MAX = 26;
 export const SIM_EVENT_BUDGET = 4000;
 /** 프레임 간격이 이보다 크면 잘라 쓴다 (탭이 백그라운드에 있다가 돌아온 경우). */
 export const SIM_MAX_STEP_SECONDS = 0.25;
-/** 시뮬레이션이 실시간보다 몇 배 빠르게 도는가. 1분이 이 초에 지나간다. */
-export const SIM_MINUTES_PER_SECOND = 6;
+/**
+ * 실제 1초에 흐르는 가게 시간(분). 6이었을 때는 3분짜리 처리가 0.5초에 끝나 눈으로 따라갈 수
+ * 없었다(2026-09-26 운영자 지적). 1.5면 기본 처리 3분이 2초다.
+ */
+export const SIM_MINUTES_PER_SECOND = 1.5;
 
 /** 도착 하나가 소비하는 난수 개수. **분기와 무관하게 언제나 이만큼 뽑는다.** */
 export const SIM_RANDOM_PER_ARRIVAL = 4;

@@ -304,3 +304,23 @@ describe('접기 슬라이더의 aria-valuetext가 히어로의 정보를 대신
     expect(text).toContain('past every mark');
   });
 });
+
+// 프리셋 칩의 aria-pressed — 이게 없어서 기본값(= 첫 프리셋)에서도 늘 'false'였다.
+describe('프리셋 칩이 지금 설정을 눌린 상태로 알린다', () => {
+  function widget_read_pressed(dom) {
+    return dom.root
+      .querySelectorAll('button')
+      .filter((el) => el.getAttribute('aria-pressed') !== null)
+      .map((el) => el.getAttribute('aria-pressed'));
+  }
+
+  it('기본값은 첫 프리셋과 같다 — 첫 칩만 true', () => {
+    const { dom } = widget_build_mounted({ search: '?mm=0.10&folds=42' });
+    expect(widget_read_pressed(dom)).toEqual(['true', 'false', 'false']);
+  });
+
+  it('어느 프리셋과도 다르면 전부 false', () => {
+    const { dom } = widget_build_mounted({ search: '?mm=0.23&folds=45' });
+    expect(widget_read_pressed(dom)).toEqual(['false', 'false', 'false']);
+  });
+});

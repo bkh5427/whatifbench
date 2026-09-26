@@ -1,0 +1,86 @@
+---
+/*
+  ** 프런트매터로 시작한다 ** — 규약 §5. `<svg`로 시작하면 전송 중 C2PA 서명이
+  붙어 파일이 깨진다.
+
+  도해 2 (메커니즘) — 반전 절. **위젯 곡선·표의 재탕이 아니다.**
+  위젯은 한 번에 한 가지 시작 두께만 그린다. 자에도 마커가 하나, 표도 한 벌이다.
+  **두 두께를 나란히 놓고 비교하는 그림은 위젯에 없다** — 그런데 이 절의 주장이
+  바로 그 비교다. 그래서 이 도해가 필요하다.
+
+  위: 접기 눈금 위에서 ×10이 어디에 떨어지는가. 2를 세 번 곱하면 8, 네 번이면 16이니
+  ×10은 셋과 넷 사이(3.32)다. 그것이 "열 배가 세 접기"의 전부다.
+  아래: 그 결과 — 두께 슬라이더 양 끝이 달을 넘는 접기 수를 43과 40으로 갈라 놓는다.
+  숫자는 model.js가 실제로 내는 값이다 (model_calculate_folds_to_reach).
+
+  색만으로 정보를 주지 않는다 — ×10 표시는 점선 + 글자, 두 행은 글자로 구분된다.
+*/
+const AXIS_Y = 126;
+const AXIS_X0 = 110;
+const STEP_PX = 70;
+const ROW_NAME_X = 22;
+const FOLD_ROW_Y = AXIS_Y - 14;
+const LAYER_ROW_Y = AXIS_Y + 26;
+const TICKS = [
+  { folds: 0, layers: "1" },
+  { folds: 1, layers: "2" },
+  { folds: 2, layers: "4" },
+  { folds: 3, layers: "8" },
+  { folds: 4, layers: "16" },
+];
+const tickX = (folds) => AXIS_X0 + folds * STEP_PX;
+
+/** log₂(10) = 3.3219… — ×10이 떨어지는 자리. 눈금 셋과 넷 사이에 걸린다. */
+const TEN_FOLDS = 3.3219;
+const TEN_X = tickX(TEN_FOLDS);
+
+const ROW_A_Y = 258;
+const ROW_B_Y = 294;
+const ROW_LABEL_X = 22;
+const ROW_VALUE_X = 320;
+---
+<svg
+  class="fig-svg"
+  viewBox="0 0 420 352"
+  role="img"
+  aria-label="Two panels. The upper panel is a scale of folds marked 0 to 4, with the layer count under each mark: one, two, four, eight, sixteen. A dashed line marked times ten falls between the mark for 3 folds and the mark for 4 folds, at about 3.3 folds, because doubling three times gives eight and four times gives sixteen. A note beside it reads: a tenfold sheet is about 3.3 folds. The lower panel gives the result: the thinnest sheet, 0.05 millimetres, passes the Moon at fold 43, and the thickest sheet, 0.50 millimetres, passes it at fold 40. For the Moon, a tenfold change of sheet moves the answer by three folds."
+>
+  <text x="22" y="34" class="fig-label" fill="var(--graphite)">For the Moon, a tenfold sheet is worth three folds</text>
+
+  <line x1={AXIS_X0 - 16} y1={AXIS_Y} x2="406" y2={AXIS_Y} stroke="var(--rule)" stroke-width="2" />
+  <text x={ROW_NAME_X} y={FOLD_ROW_Y} class="fig-label-dim" fill="var(--graphite-soft)">folds</text>
+  <text x={ROW_NAME_X} y={LAYER_ROW_Y} class="fig-label-dim" fill="var(--graphite-soft)">layers</text>
+
+  {TICKS.map((tick) => (
+    <g>
+      <line x1={tickX(tick.folds)} y1={AXIS_Y - 8} x2={tickX(tick.folds)} y2={AXIS_Y + 8}
+            stroke="var(--graphite)" stroke-width="2" />
+      <text x={tickX(tick.folds)} y={FOLD_ROW_Y} class="fig-label" fill="var(--graphite)"
+            text-anchor="middle">{tick.folds}</text>
+      <text x={tickX(tick.folds)} y={LAYER_ROW_Y} class="fig-num" fill="var(--graphite)"
+            text-anchor="middle">{tick.layers}</text>
+    </g>
+  ))}
+
+  <line x1={TEN_X} y1="70" x2={TEN_X} y2={AXIS_Y + 12}
+        stroke="var(--series-2)" stroke-width="2" stroke-dasharray="5 4" />
+  <text x={TEN_X} y="62" class="fig-label" fill="var(--series-2)" text-anchor="middle">×10 lands here</text>
+  <text x="406" y="176" class="fig-label-dim" fill="var(--series-2)" text-anchor="end">a tenfold sheet ≈ 3.3 folds</text>
+
+  <line x1="22" y1="196" x2="398" y2="196" stroke="var(--rule)" stroke-width="1" />
+
+  <text x={ROW_LABEL_X} y="224" class="fig-label" fill="var(--graphite)">Folds until the stack passes the Moon</text>
+
+  <text x={ROW_LABEL_X} y={ROW_A_Y} class="fig-label" fill="var(--graphite)">thinnest sheet, 0.05 mm</text>
+  <text x={ROW_VALUE_X} y={ROW_A_Y} class="fig-num" fill="var(--graphite)">43</text>
+  <text x={ROW_VALUE_X + 28} y={ROW_A_Y} class="fig-label-dim" fill="var(--graphite-soft)">folds</text>
+
+  <text x={ROW_LABEL_X} y={ROW_B_Y} class="fig-label" fill="var(--graphite)">thickest sheet, 0.50 mm</text>
+  <text x={ROW_VALUE_X} y={ROW_B_Y} class="fig-num" fill="var(--graphite)">40</text>
+  <text x={ROW_VALUE_X + 28} y={ROW_B_Y} class="fig-label-dim" fill="var(--graphite-soft)">folds</text>
+
+  <path d="M306 268 v18 M300 274 l6 -6 6 6 M300 280 l6 6 6 -6" fill="none"
+        stroke="var(--series-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+
+  <text x={ROW_LABEL_X} y="330" class="fig-label" fill="var(--series-2)">the whole sheet range moves it 3 folds</text>
+</svg>

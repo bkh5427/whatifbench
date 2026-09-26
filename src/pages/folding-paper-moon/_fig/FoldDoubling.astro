@@ -1,0 +1,93 @@
+---
+/*
+  ** 이 파일이 `---`로 시작하는 이유 **
+  `<svg`나 주석으로 시작하는 `.astro`는 전송 중 콘텐츠 서명(C2PA)이 붙어
+  **+7,774바이트가 끼어들고 파일이 깨진다.** 프런트매터가 맨 앞이면 붙지 않는다.
+  규약 §5 제작 표준.
+
+  도해 1 (설정) — 위젯 **앞**. 규약 §5.5 S7: 규칙을 모르면 슬라이더를 만질 수가 없다.
+  밝히는 규칙은 하나다 — **한 번 접으면 겹이 두 배**. 위젯은 두께를 자와 큰 숫자로
+  보여주지, 겹이 쌓이는 모습은 안 보여준다. 숫자 결과는 담지 않는다.
+
+  ** 치수가 가로 띠인 이유 (2026-09-20 2차 개정) **
+  이 자리는 리드와 위젯 사이, 예산이 가장 빡빡한 곳이다. 세로 4단(420×424)으로
+  그렸더니 폰(390×844) 실측에서 **위젯 상단이 1,618px**까지 밀렸다 — 본보기 1,324,
+  shower-vs-bath 1,193이다. 다른 부분은 본보기와 거의 같았고 원인은 이 그림 하나였다.
+  규약 §1.5가 위젯 앞 그림에 정해 둔 치수(가로형 짧은 띠, 420 × 110 이하)를
+  S7 이후의 이 자리에도 그대로 적용해 가로 네 칸으로 다시 그렸다.
+
+  옆에서 본 단면이다. 종이를 선 하나로 보고, 접을 때마다 끝에서 되접힌다.
+  **면적이 절반씩 주는 것은 그리지 않는다** — 이 모델이 세는 것은 겹뿐이고
+  캡션이 그 사실을 적는다.
+*/
+const PANELS = [0, 1, 2, 3];
+const PANEL_X = [13, 119, 225, 331];
+const SHEET_W = 76;
+const BASE_Y = 76;
+const LAYER_GAP = 6;
+const BEND_R = LAYER_GAP / 2;
+const LABEL_Y = 18;
+const COUNT_Y = 100;
+const WORD_Y = 120;
+const GAP_MID = [104, 210, 316];
+
+const mid = (folds) => PANEL_X[folds] + SHEET_W / 2;
+const rowLabel = (n) => (n === 0 ? "flat" : n === 1 ? "1 fold" : `${n} folds`);
+
+/** 겹 2^n을 옆에서 본 경로. 끝에서 번갈아 되접힌다. */
+function fold_build_path(folds) {
+  const layers = 2 ** folds;
+  const x0 = PANEL_X[folds];
+  const x1 = x0 + SHEET_W;
+  const layerY = (i) => BASE_Y - i * LAYER_GAP;
+  let d = `M${x0} ${layerY(0)} H${x1}`;
+  for (let i = 1; i < layers; i += 1) {
+    const atRight = i % 2 === 1;
+    const y = layerY(i);
+    if (atRight) d += ` A${BEND_R} ${BEND_R} 0 0 0 ${x1} ${y} H${x0}`;
+    else d += ` A${BEND_R} ${BEND_R} 0 0 1 ${x0} ${y} H${x1}`;
+  }
+  return d;
+}
+---
+<svg
+  class="fig-svg"
+  viewBox="0 0 420 130"
+  role="img"
+  aria-label="Four cross-sections of a sheet of paper seen edge on, side by side. Flat, it is one layer. One fold makes two layers, two folds make four, three folds make eight. A small arrow marked times two sits between each pair. The layer count doubles at every fold, and that stack of layers is the only thing this model counts."
+>
+  {PANELS.map((folds) => (
+    <g>
+      <text x={mid(folds)} y={LABEL_Y} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">
+        {rowLabel(folds)}
+      </text>
+      <path
+        d={fold_build_path(folds)}
+        fill="none"
+        stroke="var(--graphite)"
+        stroke-width="2"
+        stroke-linecap="round"
+      />
+      <text x={mid(folds)} y={COUNT_Y} class="fig-num" fill="var(--graphite)" text-anchor="middle">
+        {2 ** folds}
+      </text>
+      <text x={mid(folds)} y={WORD_Y} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">
+        {folds === 0 ? "layer" : "layers"}
+      </text>
+    </g>
+  ))}
+
+  {GAP_MID.map((x) => (
+    <g>
+      <path
+        d={`M${x - 11} ${BASE_Y} h22 M${x + 5} ${BASE_Y - 6} l6 6 -6 6`}
+        fill="none"
+        stroke="var(--graphite-soft)"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <text x={x} y={BASE_Y - 14} class="fig-label" fill="var(--series-2)" text-anchor="middle">×2</text>
+    </g>
+  ))}
+</svg>

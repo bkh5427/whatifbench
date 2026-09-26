@@ -443,7 +443,9 @@ describe('교차표 문구', () => {
     expect(caption).toContain(`The slider stops at ${FOLD_COUNT_MAX} folds`);
     // 상한을 넘는 행이 막다른 골목으로 읽히면 안 된다 — 캡션이 빠져나갈 길을 준다.
     expect(caption).toContain('thickness slider brings them back into reach');
-    expect(caption).toMatch(/heights climb by huge factors/);
+    expect(caption).toMatch(/grow more than a thousand trillion times/);
+    // 이웃 행의 접기 차는 0~6이다 — "by ones"는 거짓이었다.
+    expect(caption).not.toContain('by ones');
     expect(display_format_table_caption(7)).toContain('stops at 7 folds');
   });
 

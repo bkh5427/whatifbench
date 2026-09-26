@@ -20,6 +20,10 @@ import {
 import {
   QUEUE_SEED_DEFAULT,
   widget_mount,
+  hero_format_separate_label,
+  hero_calculate_counter_pitch,
+  hero_describe_strips,
+  hero_describe_canvas,
   url_read_state,
   chart_calculate_scale,
   chart_calculate_series_start,
@@ -318,11 +322,56 @@ describe('마운트와 수명', () => {
   it('프레임이 돌면 시계가 나아가고 다음 프레임이 다시 예약된다', () => {
     const { dom } = widget_build_mounted();
     const before = dom.root.querySelectorAll('.legend-note')[0].textContent;
+    const heroTexts = dom.root.querySelectorAll('canvas')[0].getContext('2d').texts;
+    const drawnBefore = heroTexts.length;
     // 첫 프레임은 기준 시각을 잡기만 한다. 두 번째부터 시간이 흐른다.
     expect(dom.frames_run_pending(0)).toBe(1);
     expect(dom.frames_run_pending(5000)).toBe(1);
     expect(dom.frames_read_pending()).toBe(1);
-    expect(dom.root.querySelectorAll('.legend-note')[0].textContent).not.toBe(before);
+    // 프레임마다 캔버스는 다시 그린다(라벨의 대기 수가 여기서 바뀐다).
+    expect(heroTexts.length).toBeGreaterThan(drawnBefore);
+    // 캡션 문단은 그대로다 — 매 프레임 글이 바뀌면 문단 높이가 흔들려 아래 슬라이더가 튄다.
+    expect(dom.root.querySelectorAll('.legend-note')[0].textContent).toBe(before);
+    expect(before).not.toMatch(/Right now|arrived so far/);
+  });
+
+  it('위 띠 창구는 좁은 캔버스(320px 폭 = 230px 캔버스)에서도 모두 안에 들어간다', () => {
+    const PAD_X = 8;
+    for (const width of [230, 270, 300, 646]) {
+      for (let count = 1; count <= 8; count += 1) {
+        const pitch = hero_calculate_counter_pitch(width, count);
+        // 가장 왼쪽 창구의 x = width − PAD − count × pitch ≥ PAD
+        expect(width - PAD_X - count * pitch).toBeGreaterThanOrEqual(PAD_X - 1e-9);
+      }
+    }
+    // 넓은 캔버스에서는 원래 폭(36px) 그대로다.
+    expect(hero_calculate_counter_pitch(646, 8)).toBe(36);
+  });
+
+  it('위 띠에는 좁은 화면에서도 대기 점 3개 자리가 남는다 — 한 줄 쪽 줄이 통째로 사라지지 않게', () => {
+    const PAD_X = 8;
+    const DOT_STEP = 16; // 반지름 6 × 2 + 틈 4
+    for (const width of [230, 270, 300]) {
+      for (let count = 1; count <= 8; count += 1) {
+        const left = width - PAD_X - count * hero_calculate_counter_pitch(width, count);
+        expect(left - PAD_X).toBeGreaterThanOrEqual(3 * DOT_STEP);
+      }
+    }
+  });
+
+  it('창구가 하나면 캡션이 "다른 줄" 낭비를 말하지 않는다', () => {
+    expect(hero_describe_strips(1)).not.toContain('other lines');
+    expect(hero_describe_strips(4)).toContain('other lines');
+    expect(hero_describe_canvas(4)).not.toBe(hero_describe_strips(4));
+    // 움직임을 끈 화면은 정지 그림이라고 말한다.
+    expect(hero_describe_canvas(4, true)).toMatch(/^Still picture/);
+    expect(hero_describe_canvas(4, true)).not.toContain('live');
+  });
+
+  it('아래 띠 라벨은 줄이 서 있을 때만 빈 창구 수를 붙인다', () => {
+    expect(hero_format_separate_label(8, 1)).toBe('A line per counter — 8 waiting, 1 idle');
+    expect(hero_format_separate_label(0, 3)).toBe('A line per counter — 0 waiting');
+    expect(hero_format_separate_label(5, 0)).toBe('A line per counter — 5 waiting');
   });
 
   it('애니메이션이 돌아도 주소창을 건드리지 않는다 — 그림은 숫자를 만들지 않는다', () => {

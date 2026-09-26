@@ -193,8 +193,8 @@ describe("데이터 무결성", () => {
   });
 
   it("카테고리 수가 헤더 한 줄 한계 안에 있다", () => {
-    // 2026-09-24: scale·motion·energy를 닫아 열린 것은 chance 하나다.
-    expect(CATEGORIES.length).toBe(1); // 골든. 늘리려면 헤더 패턴을 먼저 본다.
+    // 2026-09-24: scale·motion·energy를 닫았다. 2026-09-26: scale을 두 편으로 다시 연다.
+    expect(CATEGORIES.length).toBe(2); // 골든(2026-09-26: scale 열림). 늘리려면 헤더 패턴을 먼저 본다.
     expect(CATEGORIES.length).toBeLessThanOrEqual(CATEGORY_MAX_BEFORE_HEADER_CHANGE);
     expect(CATEGORIES_ALL.length).toBe(4); // 이름이 붙은 것은 넷 그대로
   });
@@ -531,8 +531,11 @@ describe("최신순 — 홈의 대표 카드와 The latest 격자", () => {
     }
   });
 
-  it("현재 대표 카드는 one-line-or-many다 (2026-09-25 두 편 중 배열 뒤쪽)", () => {
-    expect(tools_read_latest()[0].slug).toBe("one-line-or-many");
+  it("최신순 맨 앞은 가장 늦은 since 중 배열 뒤쪽 도구다", () => {
+    const published = tools_read_published();
+    const maxSince = published.map((t) => t.since).sort().at(-1);
+    const sameDay = TOOLS.filter((t) => t.published && t.since === maxSince);
+    expect(tools_read_latest()[0].slug).toBe(sameDay.at(-1).slug);
   });
 });
 

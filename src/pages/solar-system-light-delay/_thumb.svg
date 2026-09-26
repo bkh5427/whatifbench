@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
+  <!-- 해(왼쪽)를 도는 두 궤도의 호. 지구 → 화성 빛(편도 = --series-1), 화성 → 지구로 돌아오는 빛(왕복의 귀로 = --series-2, 점선). 글자·숫자 없음 -->
+  <rect width="320" height="200" style="fill:var(--steel-100)"/>
+  <path d="M0 20H320M0 40H320M0 60H320M0 80H320M0 100H320M0 120H320M0 140H320M0 160H320M0 180H320M20 0V200M40 0V200M60 0V200M80 0V200M100 0V200M120 0V200M140 0V200M160 0V200M180 0V200M200 0V200M220 0V200M240 0V200M260 0V200M280 0V200M300 0V200" style="fill:none;stroke:var(--steel-200);stroke-width:1"/>
+  <circle cx="40" cy="100" r="16" style="fill:var(--steel-300);stroke:var(--graphite-soft);stroke-width:1.5"/>
+  <path d="M101.1 8.5A110 110 0 0 1 101.1 191.5" style="fill:none;stroke:var(--steel-400);stroke-width:1.5"/>
+  <path d="M145.6 -58A190 190 0 0 1 145.6 258" style="fill:none;stroke:var(--steel-400);stroke-width:1.5"/>
+  <path d="M147.2 125.3L210 49.9" style="fill:none;stroke:var(--series-1);stroke-width:2.5"/>
+  <path d="M211.3 48.3L201 52.8L208.7 59.2Z" style="fill:var(--series-1)"/>
+  <path d="M217.7 56.3L154.9 131.7" style="fill:none;stroke:var(--series-2);stroke-width:2.5;stroke-dasharray:6 4"/>
+  <path d="M153.6 133.2L156.1 122.4L163.8 128.8Z" style="fill:var(--series-2)"/>
+  <circle cx="143.3" cy="137.7" r="7" style="fill:var(--steel-700)"/>
+  <circle cx="221.5" cy="43.9" r="6" style="fill:var(--graphite-soft)"/>
+</svg>

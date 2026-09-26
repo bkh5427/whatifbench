@@ -1,0 +1,103 @@
+---
+/*
+  ** 이 파일이 `---`로 시작하는 이유 **
+  `<svg`나 주석으로 시작하는 `.astro`는 전송 중 콘텐츠 서명(C2PA)이 붙어
+  +7,774바이트가 끼어들고 파일이 깨진다. 규약 §5 제작 표준.
+
+  도해 1 — **설정.** 위젯 앞(리드 끝)에 놓는다 (규약 §5 표 · §5.5 S7).
+  숫자 결과는 담지 않는다.
+
+  ** 왜 가로 띠인가 (2026-09-20 개정) **
+  이 자리는 §1.5가 치수를 정해 둔 자리와 같다 — 가로형 짧은 띠.
+  처음에는 420 × 338의 정방형 평면도로 그렸고, 폰(390×844) 실측에서 위젯 상단이
+  **1,483px**까지 밀렸다(본보기 몬티홀 1,324). 그림 하나가 288px을 먹은 탓이다.
+  동심원을 납작한 타원으로 눌러 **420 × 148**로 다시 그리니 1,350px이 됐다.
+
+  말하는 것은 하나다 — **같은 상대라도 고리 위 어디에 있느냐로 직선이 갈린다.**
+  사잇각 호는 뺐다. 태양·두 고리·지구 한 점·상대 두 자리·직선 둘만 남겼다.
+  고리 이름은 x = CX 한 줄에 지시선과 함께 쌓아 어느 타원을 가리키는지 못박는다 —
+  첫 판에서 이름이 두 타원 사이에 떠 있어 어느 쪽인지 읽히지 않았다.
+  좌표는 전부 여기서 계산한다 (하드코딩 금지).
+*/
+const W = 420;
+const H = 148;
+
+const CX = 210;
+const CY = 70;
+
+// 고리는 진짜 원이다. 자리를 아끼려 세로만 눌러 그린다 — caption이 그것을 말한다.
+const EARTH_RX = 62;
+const EARTH_RY = 17;
+const TARGET_RX = 152;
+const TARGET_RY = 38;
+
+// 지구는 고정. 상대만 고리를 따라 움직인다 — 슬라이더가 하는 일이 그것이다.
+const EARTH_DEG = 0;
+const NEAR_DEG = 32;
+const FAR_DEG = 155;
+
+const SUN_R = 5.5;
+const SUN_HALO_R = 9.5;
+const DOT_R = 4.5;
+
+const TOP_LABEL_Y = 30;
+const TARGET_RING_LABEL_Y = 124;
+
+function fig_point(rx, ry, degrees) {
+  const rad = (degrees * Math.PI) / 180;
+  return {
+    x: Number((CX + rx * Math.cos(rad)).toFixed(1)),
+    y: Number((CY - ry * Math.sin(rad)).toFixed(1)),
+  };
+}
+
+const earth = fig_point(EARTH_RX, EARTH_RY, EARTH_DEG);
+const near = fig_point(TARGET_RX, TARGET_RY, NEAR_DEG);
+const far = fig_point(TARGET_RX, TARGET_RY, FAR_DEG);
+
+// 바깥 고리의 이름은 띠 아래로 내려가므로 어느 타원인지 지시선으로 못박는다.
+// 안쪽 고리의 이름은 그 타원의 왼쪽 끝에 바로 붙여 지시선이 필요 없다.
+// 먼 자리까지의 직선은 옅은 **실선**이다. 점선은 바로 아래 위젯에서 '왕복'을 뜻한다 —
+// 이웃 그림에서 같은 선 모양이 다른 뜻이면 안 된다. 점선은 궤도 고리에만 남긴다.
+const targetRingTick = { from: CY + TARGET_RY + 1, to: TARGET_RING_LABEL_Y - 10 };
+---
+<svg
+  class="fig-svg"
+  viewBox={`0 0 ${W} ${H}`}
+  role="img"
+  aria-label="A flat band showing the model's layout, seen almost edge on. The Sun is a filled dot at the middle, inside a thin halo, and is labelled Sun. Two thin pale rings run round it, squashed flat to fit the band: a small one labelled Earth's ring, the name set just off its left end, and a wide one labelled the other body's ring, joined to it by a short leader line. Earth is a dot on the small ring, out to the right of the Sun, and it stays there. The other body is drawn twice on the wide ring — once over on Earth's side of the Sun, labelled the other body, and once away past the far side, labelled the same body later. A short solid line joins Earth to the near position. A much longer, lighter solid line joins Earth to the far position. A note reads: Earth stays put, the other body moves round its ring."
+>
+  <text x={W / 2} y="15" class="fig-label" text-anchor="middle">what the model measures</text>
+
+  <ellipse cx={CX} cy={CY} rx={TARGET_RX} ry={TARGET_RY} fill="none" stroke="var(--rule)" stroke-width="1.5" />
+  <ellipse cx={CX} cy={CY} rx={EARTH_RX} ry={EARTH_RY} fill="none" stroke="var(--rule)" stroke-width="1.5" />
+
+  <line x1={earth.x} y1={earth.y} x2={near.x} y2={near.y} stroke="var(--graphite)" stroke-width="2.4" />
+  <line
+    x1={earth.x}
+    y1={earth.y}
+    x2={far.x}
+    y2={far.y}
+    stroke="var(--graphite-soft)"
+    stroke-width="2.4"
+  />
+
+  <circle cx={CX} cy={CY} r={SUN_HALO_R} fill="none" stroke="var(--graphite)" stroke-width="1.2" />
+  <circle cx={CX} cy={CY} r={SUN_R} fill="var(--graphite)" />
+  <circle cx={earth.x} cy={earth.y} r={DOT_R} fill="var(--graphite)" />
+  <circle cx={near.x} cy={near.y} r={DOT_R} fill="var(--graphite)" />
+  <circle cx={far.x} cy={far.y} r={DOT_R} fill="none" stroke="var(--graphite-soft)" stroke-width="2.2" />
+
+  <text x="12" y={TOP_LABEL_Y} class="fig-label-dim">the same body, later</text>
+  <text x={W - 12} y={TOP_LABEL_Y} class="fig-label" text-anchor="end">the other body</text>
+
+  <text x={CX - 14} y="78" class="fig-label-dim" text-anchor="end">Sun</text>
+  <text x={earth.x + 12} y="86" class="fig-label">Earth</text>
+
+  <text x={CX - EARTH_RX - 4} y="80" class="fig-label-dim" text-anchor="end">Earth’s ring</text>
+
+  <line x1={CX} y1={targetRingTick.from} x2={CX} y2={targetRingTick.to} stroke="var(--graphite-soft)" stroke-width="1.2" />
+  <text x={CX} y={TARGET_RING_LABEL_Y} class="fig-label-dim" text-anchor="middle">the other body’s ring</text>
+
+  <text x={W / 2} y={H - 6} class="fig-label-dim" text-anchor="middle">Earth stays put. The other body moves round its ring.</text>
+</svg>

@@ -210,6 +210,11 @@ const CHART_TITLE_Y_LOG = 'Thickness in metres (log scale)';
 
 const RECOMPUTE_DELAY_MS = 90;
 const SIGNIFICANT_DIGITS = 4;
+// 표의 높이 칸은 다섯 자리 — 넷이면 정지궤도 35,786 km가 "35,790 km"가 되어
+// 같은 줄 Note("35,786 km up")와 다른 수가 된다.
+const TABLE_SIGNIFICANT_DIGITS = 5;
+// 프리셋 칩과 슬라이더 값의 일치 판정 허용치 — 두께 눈금의 절반.
+const PRESET_MATCH_TOLERANCE_MM = FOLD_THICKNESS_STEP_MM / 2;
 // 슬라이더 눈금이 0.01이므로 소수 두 자리. **간격에서 유도한다** —
 // 자릿수를 손으로 박아 두면 step을 바꿨을 때 화면 숫자가 조용히 반올림된다.
 const THICKNESS_DIGITS = num_calculate_decimal_digits(FOLD_THICKNESS_STEP_MM);
@@ -855,7 +860,9 @@ export function rail_render(canvasEl, options) {
     context.font = CHART_LABEL_FONT;
     context.textBaseline = 'top';
     context.textAlign = 'center';
-    const text = units_format_length(cursorMetres, SIGNIFICANT_DIGITS);
+    // 라벨은 **목표값**(t₀·2ⁿ)을 찍는다. 마커는 420 ms 동안 로그 보간으로 미끄러지지만,
+    // 그 중간값을 글자로 찍으면 모델이 내지 않는 두께(예: 6.22 × 10⁸ m)가 화면에 뜬다.
+    const text = units_format_length(series[series.length - 1].thicknessM, SIGNIFICANT_DIGITS);
     const half = context.measureText(text).width / 2;
     const x = num_clamp_value(cursorSpot.x, plotLeft + half, plotLeft + plotWidth - half);
     context.fillText(text, x, 1);
@@ -965,7 +972,8 @@ export function display_describe_length_scale(metres) {
 export function display_format_table_caption(foldMax = FOLD_COUNT_MAX) {
   return (
     'First fold at which the stack passes each height. ' +
-    'The heights climb by huge factors; the fold counts creep up by ones. ' +
+    'From the first row to the last the heights grow more than a thousand trillion times, ' +
+    'while the fold count grows by about fifty. ' +
     `The slider stops at ${foldMax} folds, so the last row or two can land just beyond it. ` +
     'Thicker paper needs fewer folds, so the thickness slider brings them back into reach.'
   );
@@ -1359,6 +1367,19 @@ export function widget_mount(rootEl) {
     return { thicknessMm, foldCount, axisKind };
   }
 
+  /**
+   * 슬라이더가 프리셋과 같은 값이면 그 칩을 눌린 상태로 둔다.
+   * 이게 없어서 aria-pressed가 늘 'false'였다 — 기본값(= 첫 프리셋)에서도.
+   */
+  function preset_update_pressed(state) {
+    for (const preset of FOLD_PRESETS) {
+      const matching =
+        Math.abs(preset.thicknessMm - state.thicknessMm) < PRESET_MATCH_TOLERANCE_MM &&
+        preset.foldCount === state.foldCount;
+      presets.buttons[preset.key].setAttribute('aria-pressed', String(matching));
+    }
+  }
+
   function display_update_labels(state, metres) {
     // t₀는 step이 0.01이므로 언제나 소수 두 자리다 — 간격의 정밀도가 자릿수를 정한다.
     const thicknessText = state.thicknessMm.toFixed(THICKNESS_DIGITS);
@@ -1394,7 +1415,7 @@ export function widget_mount(rootEl) {
       // 반대쪽 끝에 있어 읽히지 않았다. 상태를 답 칸으로 옮기고 Note는 출처만 든다.
       const cells = [
         row.label,
-        units_format_length(row.metres, SIGNIFICANT_DIGITS),
+        units_format_length(row.metres, TABLE_SIGNIFICANT_DIGITS),
         row.folds === null ? '—' : note.text,
         row.note,
       ];
@@ -1485,7 +1506,8 @@ export function widget_mount(rootEl) {
   function rail_redraw() {
     if (!railSeries) return;
     // 자가 못 그려지는 순간(폭 0)에도 히어로는 갱신한다 — DOM이라 캔버스와 무관하다.
-    display_update_hero(cursorMetres);
+    // 판독값은 목표값(t₀·2ⁿ)만 찍는다 — 마커가 미끄러지는 동안의 보간값은 모델의 두께가 아니다.
+    display_update_hero(cursorTarget);
     const drawn = rail_render(railCanvas, { series: railSeries, cursorMetres });
     if (!drawn) return;
     // 캡션은 렌더가 실제로 쓴 값만 인용한다. 다시 계산하면 그림과 갈라진다.
@@ -1557,6 +1579,7 @@ export function widget_mount(rootEl) {
     const crossings = model_build_crossings(state.thicknessMm, FOLD_COUNT_MAX);
 
     display_update_labels(state, metres);
+    preset_update_pressed(state);
     layerReadout.value.textContent = units_format_count_words(model_calculate_layer_count(state.foldCount));
     // "4.4 trillion"이 어디서 나온 숫자인지 한 줄로 밝힌다. 이 도구의 전부가
     // 이 한 문장이고, 그것이 카드 안에 없으면 큰 숫자 하나로 끝난다.
@@ -1635,6 +1658,7 @@ export function widget_mount(rootEl) {
     cursorTarget = railSeries[railSeries.length - 1].thicknessM;
     // 손잡이 옆 숫자는 언제나 즉시. 마커만 움직이고 숫자가 멈춰 있으면 이상하다.
     display_update_labels(state, cursorTarget);
+    preset_update_pressed(state);
 
     if (pointerHeld) {
       // 드래그 중에는 마커가 손가락을 그대로 따라가야 한다 —

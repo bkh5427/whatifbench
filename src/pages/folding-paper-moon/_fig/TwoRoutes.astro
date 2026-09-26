@@ -1,0 +1,64 @@
+---
+/*
+  ** 프런트매터로 시작한다 ** — 규약 §5 (C2PA 전송 사고).
+
+  도해 3 (증명) — 손계산 절. 규약 §5의 상위 형태: **독립된 두 경로가 같은 답에서
+  만나는 그림.** 왼쪽은 손으로 세는 길(32번 접기의 429.497 km에서(429.5로 줄이면 ×1024가 439,808이 되어 어긋난다) 열 번 더 두 배),
+  오른쪽은 지수 한 번(0.1 mm에 2⁴²를 곱한다). 둘은 서로의 출력을 쓰지 않는다.
+  두 길이 4.398 × 10⁸ m에서 만나고, 그 값이 달의 3.844 × 10⁸ m를 넘는다.
+
+  숫자는 전부 model.js가 내는 값이다 — model_calculate_thickness_m(0.1, 32) = 4.2950e5,
+  (0.1, 42) = 4.3980e8. 달은 FOLD_REFERENCE_LIST의 384,400 km.
+
+  색만으로 정보를 주지 않는다 — 결론에 ✓와 글자를 같이 단다.
+*/
+const BOX_TOP = 44;
+const BOX_H = 92;
+const LEFT_X = 18;
+const RIGHT_X = 220;
+const BOX_W = 182;
+const LEFT_MID = LEFT_X + BOX_W / 2;
+const RIGHT_MID = RIGHT_X + BOX_W / 2;
+const JOIN_Y = 196;
+const RESULT_TOP = 202;
+const RESULT_H = 76;
+---
+<svg
+  class="fig-svg"
+  viewBox="0 0 420 372"
+  role="img"
+  aria-label="Two independent routes to the same number, drawn as two boxes joining into one. The left box starts from fold 32, where the stack is 429.497 kilometres, and doubles ten more times. The right box starts from the flat 0.1 millimetre sheet and multiplies once by two to the power 42. Arrows from both boxes meet in a single result box reading 4.398 times ten to the eighth metres, or 439,805 kilometres. Below it, a tick mark notes that the Moon sits at 384,400 kilometres, so the stack is past it."
+>
+  <rect x={LEFT_X} y={BOX_TOP} width={BOX_W} height={BOX_H} rx="3"
+        fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+  <text x={LEFT_MID} y="26" class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">route 1 · by hand</text>
+  <text x={LEFT_MID} y={BOX_TOP + 26} class="fig-label" fill="var(--graphite)" text-anchor="middle">fold 32</text>
+  <text x={LEFT_MID} y={BOX_TOP + 52} class="fig-value" fill="var(--graphite)" text-anchor="middle">429.497 km</text>
+  <text x={LEFT_MID} y={BOX_TOP + 78} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">doubled ten more times</text>
+
+  <rect x={RIGHT_X} y={BOX_TOP} width={BOX_W} height={BOX_H} rx="3"
+        fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+  <text x={RIGHT_MID} y="26" class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">route 2 · one exponent</text>
+  <text x={RIGHT_MID} y={BOX_TOP + 26} class="fig-label" fill="var(--graphite)" text-anchor="middle">flat sheet, 0.1 mm</text>
+  <text x={RIGHT_MID} y={BOX_TOP + 52} class="fig-value" fill="var(--graphite)" text-anchor="middle">× 2⁴²</text>
+  <text x={RIGHT_MID} y={BOX_TOP + 78} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">one multiplication</text>
+
+  <path d={`M${LEFT_MID} ${BOX_TOP + BOX_H} V${JOIN_Y - 32} H210 V${JOIN_Y}`} fill="none"
+        stroke="var(--graphite-soft)" stroke-width="2" stroke-linejoin="round" />
+  <path d={`M${RIGHT_MID} ${BOX_TOP + BOX_H} V${JOIN_Y - 32} H210 V${JOIN_Y}`} fill="none"
+        stroke="var(--graphite-soft)" stroke-width="2" stroke-linejoin="round" />
+  <path d={`M204 ${JOIN_Y - 6} l6 6 6 -6`} fill="none" stroke="var(--graphite-soft)"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+
+  <rect x="56" y={RESULT_TOP} width="308" height={RESULT_H} rx="3"
+        fill="var(--surface)" stroke="var(--graphite)" stroke-width="3" />
+  <text x="210" y={RESULT_TOP + 34} class="fig-num" fill="var(--graphite)" text-anchor="middle">4.398 × 10⁸ m</text>
+  <text x="210" y={RESULT_TOP + 60} class="fig-label" fill="var(--graphite)" text-anchor="middle">439,805 km — both routes</text>
+
+  <text x="210" y="312" class="fig-label" fill="var(--graphite)" text-anchor="middle">the Moon is at 384,400 km</text>
+
+  <circle cx="132" cy="340" r="11" fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+  <path d="M125,340 L130,346 L141,332" fill="none" stroke="var(--graphite)" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round" />
+  <text x="152" y="346" class="fig-label" fill="var(--graphite)">the stack is past it</text>
+</svg>

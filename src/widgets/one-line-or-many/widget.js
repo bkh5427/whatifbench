@@ -116,9 +116,19 @@ const HERO_LANE_GAP_PX = 4;
 const HERO_LABEL_HEIGHT_PX = 16;
 const HERO_COUNTER_WIDTH_PX = 30;
 const HERO_COUNTER_GAP_PX = 6;
+/** 좁은 화면에서 줄여도 이보다 좁게는 그리지 않는다(상자로 읽혀야 한다). */
+const HERO_COUNTER_MIN_WIDTH_PX = 12;
+/** 카드 눈금 색 클래스(global.css). */
+const READOUT_CLASS_SINGLE = 'readout-single';
+const READOUT_CLASS_SEPARATE = 'readout-separate';
+/** 그림 위 표지. 움직임을 끈 화면은 정지 그림이라고 적는다. */
+const HERO_TAG_LIVE = 'Animation · a sample shop, not the calculation';
+const HERO_TAG_STILL = 'Still picture · a sample shop, not the calculation';
+/** 좁은 화면에서도 위 띠에 남기는 대기 점 자리 수. */
+const HERO_QUEUE_RESERVE_DOTS = 3;
 const HERO_DOT_RADIUS_PX = 6;
 const HERO_DOT_GAP_PX = 4;
-const HERO_COUNTER_BORDER_PX = 1;
+const HERO_COUNTER_BORDER_PX = 2;
 /** 줄이 비었을 때도 '줄이 거기 있다'는 것을 보이게 하는 바닥선. */
 const HERO_LANE_LINE_PX = 1;
 /** 첫 화면이 빈 가게가 아니도록 미리 돌려 두는 시간(분). */
@@ -598,6 +608,19 @@ export function chart_render_sweep(canvasEl, points, currentLoad) {
  * 두 배치를 위아래 띠로 그린다. 오른쪽이 창구, 왼쪽으로 대기열이 늘어난다.
  * **시뮬레이션은 여기서 돌지 않는다** — 프레임 요약만 받아 그린다.
  */
+/**
+ * 위 띠에서 창구 한 칸(상자+틈)의 폭. 보통은 고정 폭이지만, 좁은 캔버스에 창구가 많으면
+ * 줄여서 모두 들어가게 한다 — 예전에는 320px·창구 8개에서 위 띠 창구 둘이 캔버스 왼쪽 밖으로
+ * 나가 "같은 8개 창구"라는 캡션과 그림이 어긋났다.
+ */
+export function hero_calculate_counter_pitch(width, counterCount) {
+  const fullPitch = HERO_COUNTER_WIDTH_PX + HERO_COUNTER_GAP_PX;
+  // 위 띠 왼쪽에 대기 점 몇 개 자리는 남긴다 — 창구가 폭을 다 먹으면 한 줄 쪽 줄이 아예 안 보인다.
+  const queueReserve = HERO_QUEUE_RESERVE_DOTS * (HERO_DOT_RADIUS_PX * 2 + HERO_DOT_GAP_PX) + HERO_COUNTER_GAP_PX;
+  const room = (width - HERO_PAD_X * 2 - queueReserve) / Math.max(1, counterCount);
+  return Math.max(HERO_COUNTER_GAP_PX + HERO_COUNTER_MIN_WIDTH_PX, Math.min(fullPitch, room));
+}
+
 export function hero_render_frame(canvasEl, frame, counterCount) {
   const setup = canvas_setup_context(canvasEl, HERO_HEIGHT_PX);
   if (!setup) return null;
@@ -607,20 +630,24 @@ export function hero_render_frame(canvasEl, frame, counterCount) {
   const colorSeparate = chart_read_color(canvasEl, COLOR_VAR_SEPARATE, COLOR_FALLBACK_SEPARATE);
   const colorGrid = chart_read_color(canvasEl, COLOR_VAR_GRID, COLOR_FALLBACK_GRID);
   const colorText = chart_read_color(canvasEl, COLOR_VAR_TEXT, COLOR_FALLBACK_TEXT);
-  const colorSunk = chart_read_color(canvasEl, COLOR_VAR_SUNK, COLOR_FALLBACK_SUNK);
   const colorSurface = chart_read_color(canvasEl, COLOR_VAR_SURFACE, COLOR_FALLBACK_SURFACE);
 
   const stripHeight = (height - HERO_STRIP_GAP_PX - HERO_PAD_Y * 2) / 2;
   context.font = HERO_LABEL_FONT;
 
-  /** 창구 하나를 그린다. 차 있으면 채우고 비어 있으면 테두리만. */
-  function hero_draw_counter(x, y, boxHeight, busy, color) {
-    context.fillStyle = busy ? color : colorSunk;
-    context.fillRect(x, y, HERO_COUNTER_WIDTH_PX, boxHeight);
-    context.strokeStyle = colorGrid;
+  /**
+   * 창구 하나를 그린다. 손님을 받고 있으면 채우고, 비어 있으면 **같은 색 테두리의 흰 상자**로.
+   * 예전에는 빈 창구를 배경색에 옅은 선으로 칠해 거의 안 보였다 — 창구 수는 그대로인데
+   * 상자가 "생겼다 없어졌다" 하는 것처럼 보였다(2026-09-26 운영자 지적).
+   */
+  function hero_draw_counter(x, y, boxHeight, busy, color, boxWidth = HERO_COUNTER_WIDTH_PX) {
+    const inset = HERO_COUNTER_BORDER_PX / 2;
+    context.fillStyle = busy ? color : colorSurface;
+    context.fillRect(x, y, boxWidth, boxHeight);
+    context.strokeStyle = color;
     context.lineWidth = HERO_COUNTER_BORDER_PX;
     context.beginPath();
-    context.rect(x, y, HERO_COUNTER_WIDTH_PX, boxHeight);
+    context.rect(x + inset, y + inset, boxWidth - HERO_COUNTER_BORDER_PX, boxHeight - HERO_COUNTER_BORDER_PX);
     context.stroke();
   }
 
@@ -657,15 +684,19 @@ export function hero_render_frame(canvasEl, frame, counterCount) {
 
   const bandTop = topY + HERO_LABEL_HEIGHT_PX;
   const bandHeight = stripHeight - HERO_LABEL_HEIGHT_PX;
-  const counterBlockWidth = counterCount * (HERO_COUNTER_WIDTH_PX + HERO_COUNTER_GAP_PX);
-  const countersLeft = width - HERO_PAD_X - counterBlockWidth;
+  const counterPitch = hero_calculate_counter_pitch(width, counterCount);
+  const counterBlockWidth = counterCount * counterPitch;
+  // 마지막 칸의 틈은 오른쪽 여백에 들어가지 않는다 — 빼 두면 위 띠가 아래 띠보다 6px 왼쪽에
+  // 서서, 창구 하나일 때 같은 줄인데도 점이 하나 덜 그려졌다.
+  const countersLeft = width - HERO_PAD_X - counterBlockWidth + HERO_COUNTER_GAP_PX;
   for (let index = 0; index < counterCount; index += 1) {
     hero_draw_counter(
-      countersLeft + index * (HERO_COUNTER_WIDTH_PX + HERO_COUNTER_GAP_PX),
+      countersLeft + index * counterPitch,
       bandTop,
       bandHeight,
       frame.single.busy[index],
       colorSingle,
+      counterPitch - HERO_COUNTER_GAP_PX,
     );
   }
   hero_draw_queue(
@@ -679,11 +710,15 @@ export function hero_render_frame(canvasEl, frame, counterCount) {
   // ── 아래 띠: 창구별 대기열 ──
   const lowerTop = HERO_PAD_Y + stripHeight + HERO_STRIP_GAP_PX;
   context.fillStyle = colorText;
-  context.fillText(
-    `${LAYOUT_NAME_SEPARATE} — ${frame.separate.waitingCounts.reduce((sum, count) => sum + count, 0)} waiting`,
-    HERO_PAD_X,
-    lowerTop,
-  );
+  const separateWaiting = frame.separate.waitingCounts.reduce((sum, count) => sum + count, 0);
+  const idleCount = frame.separate.busy.filter((busy) => !busy).length;
+  // 좁은 화면(320px 폭)에서는 빈 창구 수까지 붙이면 라벨이 캔버스를 넘친다.
+  // 그때는 대기 수만 적는다 — 빈 창구는 옅은 상자로 이미 보인다.
+  const labelRoom = width - HERO_PAD_X * 2;
+  const fullLabel = hero_format_separate_label(separateWaiting, idleCount);
+  const label =
+    context.measureText(fullLabel).width <= labelRoom ? fullLabel : hero_format_separate_label(separateWaiting, 0);
+  context.fillText(label, HERO_PAD_X, lowerTop);
 
   const lanesTop = lowerTop + HERO_LABEL_HEIGHT_PX;
   const laneHeight = (stripHeight - HERO_LABEL_HEIGHT_PX) / counterCount;
@@ -705,27 +740,57 @@ export function hero_render_frame(canvasEl, frame, counterCount) {
   return { width, height, stripHeight };
 }
 
-/** 애니메이션이 그림으로 무엇을 말하는지. 캡션은 그림이 실제로 쓴 값만 인용한다. */
-export function hero_describe_frame(frame, counterCount) {
-  const separateWaiting = frame.separate.waitingCounts.reduce((sum, count) => sum + count, 0);
-  const strandedCount = frame.separate.busy.filter((busy) => !busy).length;
-  const stranded =
-    strandedCount > 0 && separateWaiting > 0
-      ? ` Right now ${display_format_count(strandedCount)} ` +
-        `${num_format_plural(strandedCount, 'counter is', 'counters are')} free in the lower strip while ` +
-        `${display_format_count(separateWaiting)} ${num_format_plural(separateWaiting, 'person is', 'people are')} ` +
-        `still waiting — that is the waste the single line removes.`
-      : '';
+/**
+ * 아래 띠의 라벨. 줄이 서 있는데 빈 창구가 있으면 그 수를 붙인다 — 한 줄 배치가 없애는 낭비다.
+ * **실시간 숫자는 캔버스 안에만 둔다.** 예전에는 캡션 문단이 매 프레임 숫자를 다시 쓰고
+ * "Right now …" 절이 붙었다 떨어지면서 문단 높이가 바뀌어, 아래 슬라이더가 위아래로 튀었다.
+ */
+export function hero_format_separate_label(waitingCount, idleCount) {
+  const idle = waitingCount > 0 && idleCount > 0 ? `, ${display_format_count(idleCount)} idle` : '';
+  return `${LAYOUT_NAME_SEPARATE} — ${display_format_count(waitingCount)} waiting${idle}`;
+}
+
+/**
+ * 애니메이션 아래 캡션. **고정 문장이다** — 프레임마다 바뀌는 숫자를 넣지 않는다
+ * (읽는 도중 글이 바뀌고, 문단 높이가 흔들려 아래 조작부가 밀린다). 창구 수는 슬라이더를
+ * 움직일 때만 바뀌므로 넣는다.
+ */
+export function hero_describe_strips(counterCount, still = false) {
+  // 창구가 하나면 "다른 줄"이 없다 — 두 배치가 같은 가게라 낭비 문장을 뺀다.
+  const waste =
+    counterCount > 1
+      ? 'An empty box in the lower strip while people still wait in other lines is the waste ' +
+        'the single line removes. '
+      : 'With one counter the two layouts are the same shop. ';
   return (
-    `Both strips are fed the same arrivals from the same seed, so any difference between them is the ` +
-    `layout and not luck. ${display_format_count(frame.arrivedCount)} ` +
-    `${num_format_plural(frame.arrivedCount, 'customer has', 'customers have')} arrived so far across ` +
-    `${display_format_count(counterCount)} ${num_format_plural(counterCount, 'counter')}.` +
-    // 한계가 둘이다 — sim.js의 26(`SIM_QUEUE_DRAW_MAX`)과 캔버스 폭. 데스크톱(자리 28~37개)
-    // 에서는 26이 먼저 걸리고, 390px 히어로(자리 9개, 창구 8개면 0개)에서는 폭이 먼저 걸린다.
-    // 하나만 적으면 다른 화면 폭에서 거짓이 된다 — 2026-09-25에 양쪽으로 한 번씩 났다.
-    `${stranded} A long queue is drawn up to ${SIM_QUEUE_DRAW_MAX} waiting, and only as far as the ` +
-    `strip has room; the count in each label is the real one.`
+    (still
+      ? 'Motion is switched off in your system settings, so this is a still picture of a sample ' +
+        'shop, redrawn each time you move a slider. '
+      : 'This is a sample shop running live. It follows the four sliders. ') +
+    'Nothing below reads from it — the cards, curve and table are calculated. A filled box is a counter serving ' +
+    'someone, an empty box is a free counter, and each dot is a person waiting. ' +
+    `Both strips are fed the same arrivals from the same seed and get the same ` +
+    `${display_format_count(counterCount)} ${num_format_plural(counterCount, 'counter')}, so any ` +
+    `difference between them is the layout and not luck. ${waste}` +
+    // 한계가 둘이다 — sim.js의 26(`SIM_QUEUE_DRAW_MAX`)과 캔버스 폭. 넓은 화면에서는 26이 먼저
+    // 걸리고, 좁은 화면에서는 폭이 먼저 걸린다. 위 띠에는 점 HERO_QUEUE_RESERVE_DOTS개 자리를
+    // 늘 남긴다(hero_calculate_counter_pitch) — 자리가 0이면 줄이 통째로 안 보였다.
+    `A long queue is drawn up to ${SIM_QUEUE_DRAW_MAX} waiting, and only as far as the ` +
+    'strip has room; the count in each label is the real one.'
+  );
+}
+
+/**
+ * 캔버스의 aria-label. 캡션 문단과 같은 글을 두 번 읽히지 않게 그림만 짧게 말한다.
+ * 실시간 대기 수는 그림 안 라벨에만 있으므로 그렇게 밝힌다.
+ */
+export function hero_describe_canvas(counterCount, still = false) {
+  const kind = still ? 'Still picture' : 'Animation';
+  const counts = still ? 'The waiting counts are' : 'The live waiting counts are';
+  return (
+    `${kind} of ${display_format_count(counterCount)} ${num_format_plural(counterCount, 'counter')} ` +
+    `twice: one shared line above, a line per counter below. ${counts} drawn ` +
+    'in the picture only; the caption below explains it.'
   );
 }
 
@@ -747,6 +812,11 @@ export function widget_mount(rootEl) {
   const heroCanvas = document.createElement('canvas');
   heroCanvas.className = 'widget-chart hero-canvas';
   heroCanvas.setAttribute('role', 'img');
+
+  // 그림이 애니메이션(표본 가게)이라는 것을 그림 **위에** 먼저 밝힌다 — 아래 카드·곡선과
+  // 같은 계산 결과로 읽히지 않게(2026-09-26 운영자 지적).
+  const heroTag = document.createElement('p');
+  heroTag.className = 'hero-tag';
 
   const heroNote = document.createElement('p');
   heroNote.className = 'legend-note';
@@ -802,6 +872,12 @@ export function widget_mount(rootEl) {
     singlePercentile: control_build_readout(`${LAYOUT_NAME_SINGLE} — 95th percentile`, 'min'),
     separatePercentile: control_build_readout(`${LAYOUT_NAME_SEPARATE} — 95th percentile`, 'min'),
   };
+  // 카드 왼쪽 눈금을 배치 색으로 — 이 페이지에서 파랑은 한 줄, 주황은 창구별 줄이다.
+  // 공통 강철색이면 "A line per counter" 카드도 파랑 눈금을 달아 뜻이 엇갈렸다.
+  cards.singleMean.box.classList.add(READOUT_CLASS_SINGLE);
+  cards.singlePercentile.box.classList.add(READOUT_CLASS_SINGLE);
+  cards.separateMean.box.classList.add(READOUT_CLASS_SEPARATE);
+  cards.separatePercentile.box.classList.add(READOUT_CLASS_SEPARATE);
   readouts.append(cards.singleMean.box, cards.separateMean.box, cards.singlePercentile.box, cards.separatePercentile.box);
 
   // ── 판정 ──
@@ -837,7 +913,7 @@ export function widget_mount(rootEl) {
   exactNote.className = 'legend-note';
 
   rootEl.append(
-    heading, heroCanvas, heroNote, controls, verdict, readouts,
+    heading, heroTag, heroCanvas, heroNote, controls, verdict, readouts,
     chartCanvas, legend, legendNote, table.scroll, exactNote,
   );
 
@@ -845,6 +921,7 @@ export function widget_mount(rootEl) {
   let recomputeTimer = 0;
   let redrawTimer = 0;
   let animationId = 0;
+  let heroResizeObserver = null;
   let lastFrameMs = 0;
   let lastResult = null;
   let lastPoints = [];
@@ -923,8 +1000,14 @@ export function widget_mount(rootEl) {
     display_show_table(current);
 
     // 창구 수가 바뀌면 애니메이션의 줄 개수 자체가 달라진다 — 상태를 다시 세운다.
-    if (simState.counterCount !== current.counterCount) {
+    // 움직임을 끈 화면은 정지 그림 한 장이 전부라, 슬라이더 넷 중 무엇이 바뀌어도 새로 세워
+    // 지금 값으로 미리 돌린다 — 그래야 "네 슬라이더를 따른다"가 그 화면에서도 참이다.
+    if (reducedMotion || simState.counterCount !== current.counterCount) {
       simState = sim_create_state(state.seed, current.counterCount);
+      // 새 가게도 빈 채로 시작하지 않게 처음과 같이 미리 돌린다(움직임을 끈 화면은 이 한 장이 전부다).
+      sim_advance_state(simState, HERO_WARMUP_MINUTES, {
+        load: current.load, serviceMinutes: current.serviceMinutes, variation: current.variation,
+      });
     }
 
     url_write_state(state);
@@ -962,11 +1045,13 @@ export function widget_mount(rootEl) {
   function hero_redraw() {
     const frame = sim_read_frame(simState);
     hero_render_frame(heroCanvas, frame, simState.counterCount);
-    const caption = hero_describe_frame(frame, simState.counterCount);
-    heroNote.textContent = reducedMotion
-      ? `${caption} Motion is switched off in your system settings, so this is a still snapshot.`
-      : caption;
-    heroCanvas.setAttribute('aria-label', caption);
+    // 캡션은 고정 문장이라 바뀔 때만 쓴다 — 매 프레임 DOM을 건드리지 않는다.
+    const tag = reducedMotion ? HERO_TAG_STILL : HERO_TAG_LIVE;
+    if (heroTag.textContent !== tag) heroTag.textContent = tag;
+    const note = hero_describe_strips(simState.counterCount, reducedMotion);
+    if (heroNote.textContent !== note) heroNote.textContent = note;
+    const canvasLabel = hero_describe_canvas(simState.counterCount, reducedMotion);
+    if (heroCanvas.getAttribute('aria-label') !== canvasLabel) heroCanvas.setAttribute('aria-label', canvasLabel);
   }
 
   function widget_animate(timestampMs) {
@@ -1033,6 +1118,13 @@ export function widget_mount(rootEl) {
       load: state.load, serviceMinutes: state.serviceMinutes, variation: state.variation,
     });
     hero_redraw();
+    // 정지 그림은 한 번만 그린다. 첫 그림 뒤에 레이아웃이 자리를 잡으며 캔버스 폭이 바뀌면
+    // 비트맵이 눌린 채 남는다(390px에서 350 대 300). 폭이 바뀔 때마다 다시 그린다 —
+    // 움직이는 화면은 매 프레임 다시 그려 문제없다.
+    if (typeof window.ResizeObserver === 'function') {
+      heroResizeObserver = new window.ResizeObserver(() => hero_redraw());
+      heroResizeObserver.observe(heroCanvas);
+    }
   }
 
   return function widget_reset() {
@@ -1044,6 +1136,8 @@ export function widget_mount(rootEl) {
       window.cancelAnimationFrame(animationId);
     }
     animationId = 0;
+    if (heroResizeObserver) heroResizeObserver.disconnect();
+    heroResizeObserver = null;
     delete rootEl.dataset.mounted;
     rootEl.textContent = '';
   };
