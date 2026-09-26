@@ -2145,3 +2145,61 @@ html { scroll-padding-top: 6.5rem; }
   .brand { font-size: var(--t-md); gap: 0.35rem; }
   .site-nav { gap: 0.25rem 0.9rem; }
 }
+
+/* --- 위젯 배치: 조작부와 결과를 한 화면에 (src/widgets/_shared/layout.js) ---
+   2026-09-26 점검: 위젯이 화면 2~5장 높이로 한 줄로 쌓여, 슬라이더를 움직여도 바뀌는
+   숫자가 같은 화면에 없었다. layout.js가 자식을 조작부·결과·자세히 세 무리로 감싸고,
+   여기서 자리를 정한다. 무리 안의 순서는 바꾸지 않는다. */
+:root {
+  /* 스티키 머리말(.site-head, 폰 85px·데스크톱 87px) 바로 밑. 머리말보다 1~3px 위로
+     겹치게 둬서 그 틈으로 뒤 글자가 비치지 않게 한다(머리말이 z-index로 위에 온다). */
+  --widget-sticky-top: 5.25rem;
+  /* 넓은 화면에서 위젯이 산문 폭(--measure)을 벗어나 쓰는 폭 */
+  --widget-wide: 72rem;
+}
+
+/* 좁은 화면: 판정 문장을 위에 붙이고(스티키), 조작부 → 나머지 결과 순서 */
+.widget-split { display: flex; flex-direction: column; }
+.widget-split-results { display: contents; }
+.widget-split-controls { order: 1; min-width: 0; }
+.widget-split-results > * { order: 2; min-width: 0; }
+.widget-split-results > .verdict {
+  order: 0;
+  position: sticky;
+  top: var(--widget-sticky-top);
+  z-index: 5;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  max-height: 40vh;
+  overflow-y: auto;
+  box-shadow: 0 2px 0 var(--rule);
+}
+
+/* 넓은 화면: 조작부 왼쪽, 결과 오른쪽. 결과가 화면에 들어가면 붙인다(layout.js가 .is-sticky) */
+@media (min-width: 64rem) {
+  .widget:has(.widget-split) {
+    width: min(var(--widget-wide), calc(100vw - 4rem));
+    margin-left: calc((100% - min(var(--widget-wide), calc(100vw - 4rem))) / 2);
+  }
+  .widget-split {
+    display: grid;
+    grid-template-columns: minmax(18rem, 26rem) minmax(0, 1fr);
+    gap: 0 2.25rem;
+    align-items: start;
+  }
+  .widget-split-results { display: block; }
+  .widget-split-results.is-sticky { position: sticky; top: var(--widget-sticky-top); }
+  .widget-split-controls, .widget-split-results > * { order: initial; }
+  .widget-split-results > .verdict {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    box-shadow: none;
+    margin: 0 0 1rem;
+  }
+  .widget-split-results > :first-child { margin-top: 0; }
+  /* 좁은 왼쪽 칸: 라벨·설명 한 줄, 그 밑에 슬라이더·값 한 줄 */
+  .widget-split-controls .widget-row { flex-wrap: wrap; row-gap: 0.25rem; margin-bottom: 0.9rem; }
+  .widget-split-controls .widget-label { flex: 1 1 100%; }
+  .widget-split-details { margin-top: 1.5rem; }
+}

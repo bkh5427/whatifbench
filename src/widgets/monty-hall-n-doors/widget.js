@@ -30,6 +30,7 @@ import {
 } from './model.js';
 
 import { num_calculate_decimal_digits, num_format_count, num_format_plural } from '../_shared/numbers.js';
+import { layout_split } from '../_shared/layout.js';
 import { ticks_calculate_step, ticks_build_decade } from '../_shared/ticks.js';
 import { canvas_read_css_color, canvas_setup_context } from '../_shared/canvas.js';
 import { urlstate_read_numbers, urlstate_write } from '../_shared/urlstate.js';
@@ -933,6 +934,8 @@ export function widget_mount(rootEl) {
   // 순서가 곧 읽는 순서다. 조작 → 결론 한 줄 → 숫자 → 그림 → 범례 → 표.
   // 판정 배너를 그래프 아래에 두면 결론을 보려고 그림을 지나쳐 내려가야 한다.
   rootEl.append(heading, controls, verdict, readouts, canvas, legend, trialControls, tableScroll);
+  // 조작부·결과·자세히를 나눠 감싼다 — 결과가 조작부 옆(넓은 화면)·위(좁은 화면)에 보인다.
+  layout_split(rootEl);
 
   let recomputeTimer = 0;
 

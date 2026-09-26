@@ -33,6 +33,7 @@ import {
 } from './model.js';
 
 import { num_format_count } from '../_shared/numbers.js';
+import { layout_split } from '../_shared/layout.js';
 import { urlstate_read_numbers, urlstate_write } from '../_shared/urlstate.js';
 import {
   control_build_slider,
@@ -495,6 +496,8 @@ export function widget_mount(rootEl) {
   const table = control_build_table('Rates by group and pooled', TABLE_HEADINGS);
 
   rootEl.append(heading, controls, verdict, chart, stripBlock, table.scroll);
+  // 조작부·결과·자세히를 나눠 감싼다 — 결과가 조작부 옆(넓은 화면)·위(좁은 화면)에 보인다.
+  layout_split(rootEl);
 
   // ── 갱신 ──
   let recomputeTimer = 0;

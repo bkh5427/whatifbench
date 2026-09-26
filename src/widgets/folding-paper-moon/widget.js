@@ -35,6 +35,7 @@ import {
 } from './model.js';
 
 import { num_clamp_value, num_calculate_decimal_digits, num_format_plural } from '../_shared/numbers.js';
+import { layout_split } from '../_shared/layout.js';
 import { ticks_calculate_step, ticks_build_linear, ticks_build_decade, ticks_drop_crowded } from '../_shared/ticks.js';
 import {
   canvas_read_css_color,
@@ -1327,6 +1328,8 @@ export function widget_mount(rootEl) {
     chartLegend,
     tableScroll,
   );
+  // 조작부·결과·자세히를 나눠 감싼다 — 결과가 조작부 옆(넓은 화면)·위(좁은 화면)에 보인다.
+  layout_split(rootEl);
 
   // ── 상태와 렌더 ──
   // `lastSeries`·`lastState`는 **언제나 짝이 맞는다.** 드래그 중 마커만 앞서 나가야
