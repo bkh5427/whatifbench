@@ -490,14 +490,14 @@
    "text": "About",
    "verdict": "OK",
    "checks": "o-------o---o-------o-",
-   "evidence": "CODE: src/layouts/Base.astro:189 <a href=\"/about\">About</a>. CODE: dist/about/index.html:1 — 그 주소에 About 페이지가 실재한다. EDIT: 메뉴 이름이다.",
+   "evidence": "CODE: src/layouts/Base.astro:189 <a href=\"/about\">About</a>. CODE: src/pages/about.astro:1 — 그 주소의 페이지 소스가 실재한다(빌드가 /about을 만든다). EDIT: 메뉴 이름이다.",
    "deps": {
-    "src/layouts/Base.astro": "68d7efa08bf99022",
-    "dist/about/index.html": "863d6183524affa0"
+    "src/layouts/Base.astro": "7ca174202558e105",
+    "src/pages/about.astro": "2764197f1ec70a8a"
    },
    "siteRefs": [],
-   "run": "6a57bfee4d23",
-   "date": "2026-09-25",
+   "run": "dist-deps-0926",
+   "date": "2026-09-26",
    "id": "059a345f48f9"
   },
   "05be56813abc": {
@@ -983,13 +983,14 @@
    "text": "Home → /",
    "verdict": "OK",
    "checks": "o-o--o--o---o------oo-",
-   "evidence": "CODE: src/pages/one-line-or-many/index.astro:89 <a href=\"/\">Home</a>. CODE: dist/index.html:1 홈이 실재한다(<h1>Move the number and see what happens.</h1>). DEF: 링크 글 Home이 사이트 뿌리 / 를 가리킨다.",
+   "evidence": "CODE: src/pages/one-line-or-many/index.astro:89 <a href=\"/\">Home</a>. DEF: 링크 글 Home이 사이트 뿌리 / 를 가리킨다. 홈이 실재하고 그 h1이 SITE: b7190d75fd02",
    "deps": {
-    "src/pages/one-line-or-many/index.astro": "38c06a9a34223676",
-    "dist/index.html": "f2b1b9ae6e227d04"
+    "src/pages/one-line-or-many/index.astro": "38c06a9a34223676"
    },
-   "siteRefs": [],
-   "run": "36902cac284f",
+   "siteRefs": [
+    "b7190d75fd02"
+   ],
+   "run": "dist-deps-0926",
    "date": "2026-09-26"
   },
   "0a8913b18199": {
@@ -8821,15 +8822,13 @@
    "text": "robots.txt: # whatifbench.com User-agent: * Allow: / Sitemap: https://whatifbench.com/sitemap-index.xml",
    "verdict": "OK",
    "checks": "o------oo---o------o--",
-   "evidence": "CODE: public/robots.txt:1 파일 내용이 \"# whatifbench.com / User-agent: * / Allow: / / Sitemap: https://whatifbench.com/sitemap-index.xml\"다. CODE: dist/robots.txt:1 빌드 산출물이 같다. CODE: dist/sitemap-index.xml:1 — 적어 둔 사이트맵 주소가 실재한다. CODE: astro.config.mjs:27 site: https://whatifbench.com — 호스트가 같다.",
+   "evidence": "CODE: public/robots.txt:1 파일 내용이 \"# whatifbench.com / User-agent: * / Allow: / / Sitemap: https://whatifbench.com/sitemap-index.xml\"다 — public/은 빌드에 그대로 복사된다. CODE: astro.config.mjs:28 integrations: [sitemap()] — @astrojs/sitemap이 sitemap-index.xml을 만든다. CODE: astro.config.mjs:27 site: https://whatifbench.com — 호스트가 같다.",
    "deps": {
     "public/robots.txt": "b21e4bc51f620dc0",
-    "dist/robots.txt": "b21e4bc51f620dc0",
-    "dist/sitemap-index.xml": "258e715028088f62",
     "astro.config.mjs": "96cb591d6a524ff6"
    },
    "siteRefs": [],
-   "run": "36902cac284f",
+   "run": "dist-deps-0926",
    "date": "2026-09-26"
   },
   "6e5a8f3ffe27": {
@@ -9877,14 +9876,15 @@
    "text": "whatifbench → /",
    "verdict": "OK",
    "checks": "o-o--o--o---o------oo-",
-   "evidence": "CODE: src/layouts/Base.astro:132 <a class=\"brand\" href=\"/\"> — 링크 글자가 사이트 이름이고 대상 /가 dist/index.html로 실재한다. CODE: dist/index.html:1 <title>whatifbench</title>.",
+   "evidence": "CODE: src/layouts/Base.astro:132 <a class=\"brand\" href=\"/\"> — 링크 글자가 사이트 이름(src/data/site.js SITE_NAME)이고 대상 /에 홈이 실재한다. 홈의 h1: SITE: b7190d75fd02",
    "deps": {
-    "src/layouts/Base.astro": "68d7efa08bf99022",
-    "dist/index.html": "74cc8645086036e9"
+    "src/layouts/Base.astro": "7ca174202558e105"
    },
-   "siteRefs": [],
-   "run": "6a57bfee4d23",
-   "date": "2026-09-25",
+   "siteRefs": [
+    "b7190d75fd02"
+   ],
+   "run": "dist-deps-0926",
+   "date": "2026-09-26",
    "id": "7aa0643ff79b"
   },
   "7aad04f83404": {
@@ -10548,13 +10548,14 @@
    "text": "Home → /",
    "verdict": "OK",
    "checks": "o-o--o--o---o------oo-",
-   "evidence": "CODE: src/pages/simpsons-paradox/index.astro:86 <a href=\"/\">Home</a>. CODE: dist/index.html:1 홈이 실재한다(<h1>Move the number and see what happens.</h1>). DEF: 링크 글 Home이 사이트 뿌리 / 를 가리킨다.",
+   "evidence": "CODE: src/pages/simpsons-paradox/index.astro:86 <a href=\"/\">Home</a>. DEF: 링크 글 Home이 사이트 뿌리 / 를 가리킨다. 홈이 실재하고 그 h1이 SITE: b7190d75fd02",
    "deps": {
-    "src/pages/simpsons-paradox/index.astro": "38b5931031683fc3",
-    "dist/index.html": "f2b1b9ae6e227d04"
+    "src/pages/simpsons-paradox/index.astro": "38b5931031683fc3"
    },
-   "siteRefs": [],
-   "run": "36902cac284f",
+   "siteRefs": [
+    "b7190d75fd02"
+   ],
+   "run": "dist-deps-0926",
    "date": "2026-09-26"
   },
   "8091a1026422": {
@@ -11636,13 +11637,14 @@
    "text": "Home → /",
    "verdict": "OK",
    "checks": "o-o--o--o---o------oo-",
-   "evidence": "CODE: src/pages/monty-hall-n-doors/index.astro:46 <a href=\"/\">Home</a>. CODE: dist/index.html:1 홈이 실재한다(<h1>Move the number and see what happens.</h1>). DEF: 링크 글 Home이 사이트 뿌리 / 를 가리킨다.",
+   "evidence": "CODE: src/pages/monty-hall-n-doors/index.astro:46 <a href=\"/\">Home</a>. DEF: 링크 글 Home이 사이트 뿌리 / 를 가리킨다. 홈이 실재하고 그 h1이 SITE: b7190d75fd02",
    "deps": {
-    "src/pages/monty-hall-n-doors/index.astro": "1b8af964033387f6",
-    "dist/index.html": "f2b1b9ae6e227d04"
+    "src/pages/monty-hall-n-doors/index.astro": "1b8af964033387f6"
    },
-   "siteRefs": [],
-   "run": "36902cac284f",
+   "siteRefs": [
+    "b7190d75fd02"
+   ],
+   "run": "dist-deps-0926",
    "date": "2026-09-26"
   },
   "8b81a5ea1a48": {
@@ -13880,13 +13882,13 @@
    "text": "sitemap-index.xml: https://whatifbench.com/sitemap-0.xml",
    "verdict": "OK",
    "checks": "o--oo--oo---o------o--",
-   "evidence": "CODE: dist/sitemap-index.xml:1 <sitemap><loc>https://whatifbench.com/sitemap-0.xml</loc></sitemap> — 가리키는 sitemap-0.xml이 dist에 실재한다. CALC: 사이트맵 파일 수 1 = 색인이 담은 <loc> 수 1 → 빠진 조각이 없다. CODE: dist/robots.txt:1 robots.txt가 이 색인을 가리킨다.",
+   "evidence": "CODE: astro.config.mjs:28 integrations: [sitemap()] — @astrojs/sitemap이 색인 sitemap-index.xml과 조각 sitemap-0.xml을 만들고 색인이 조각을 <loc>으로 가리킨다(빌드 로그 \"sitemap-index.xml created at dist\"). CALC: 페이지 9개 < 한 조각 상한 45000개 → 조각 1개 = 색인의 <loc> 1개 → 빠진 조각이 없다. CODE: public/robots.txt:1 robots.txt가 이 색인을 가리킨다.",
    "deps": {
-    "dist/sitemap-index.xml": "258e715028088f62",
-    "dist/robots.txt": "b21e4bc51f620dc0"
+    "astro.config.mjs": "96cb591d6a524ff6",
+    "public/robots.txt": "b21e4bc51f620dc0"
    },
    "siteRefs": [],
-   "run": "36902cac284f",
+   "run": "dist-deps-0926",
    "date": "2026-09-26"
   },
   "a2028174e5c9": {
@@ -14799,13 +14801,14 @@
    "text": "Back to the home page → /",
    "verdict": "OK",
    "checks": "o-o--o--o---o------oo-",
-   "evidence": "CODE: src/pages/404.astro:38 <a href=\"/\">. CODE: dist/index.html:1 홈이 실재한다(<h1>Move the number and see what happens.</h1>). DEF: 링크 글 Home이 사이트 뿌리 / 를 가리킨다.",
+   "evidence": "CODE: src/pages/404.astro:38 <a href=\"/\">. DEF: 링크 글이 사이트 뿌리 / 를 가리킨다. 홈이 실재하고 그 h1이 SITE: b7190d75fd02",
    "deps": {
-    "src/pages/404.astro": "2d8bfd9b006cd3dc",
-    "dist/index.html": "f2b1b9ae6e227d04"
+    "src/pages/404.astro": "2d8bfd9b006cd3dc"
    },
-   "siteRefs": [],
-   "run": "36902cac284f",
+   "siteRefs": [
+    "b7190d75fd02"
+   ],
+   "run": "dist-deps-0926",
    "date": "2026-09-26"
   },
   "ac16794b1955": {
@@ -25250,6 +25253,15 @@
    ],
    "units": 3,
    "note": "PC에 쓴 공유 카드 PNG(caBX 청크)로 og-card id가 바뀐 단위를 같은 글자의 판정에서 옮김. 픽셀 동일 확인(PIL 차이 없음)."
+  },
+  {
+   "run": "dist-deps-0926",
+   "date": "2026-09-26",
+   "auditors": [
+    "판정관"
+   ],
+   "units": 8,
+   "note": "빌드 산출물(dist/*)을 근거 파일로 건 판정 8건 — 산출물 바이트가 PC와 클라우드에서 달라 PC 게이트가 막았다. 같은 사실을 소스 파일·SITE 단위로 다시 근거함."
   }
  ]
 }
