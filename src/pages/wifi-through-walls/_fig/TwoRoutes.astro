@@ -1,0 +1,122 @@
+---
+/*
+  ** 이 파일이 `---`로 시작하는 이유 **
+  `<svg`로 시작하는 `.astro`는 전송 중 C2PA 서명이 붙어 파일이 깨진다 (규약 §5).
+
+  도해 3 · **증명**. 독립된 두 경로가 같은 답에서 만나는 그림 (규약 §5).
+    경로 1 — 화면의 **Total path loss** 두 칸을 뺀다.
+    경로 2 — 두 중심주파수의 차에 벽 한 장이 더하는 몫을 더한다.
+  둘 다 같은 수에 닿는다. 그 수가 위젯의 **5 GHz below 2.4 GHz** 카드다.
+
+  **숫자를 손으로 적지 않는다.** 전부 model.js가 지금 내는 값이다 —
+  본문과 이 그림이 갈라질 자리를 아예 없앤다 (규약 §9가 적어 둔 구멍 2번).
+*/
+import {
+  model_calculate_result,
+  WIFI_BAND_24,
+  WIFI_BAND_5,
+} from '@widgets/wifi-through-walls/model.js';
+
+/** 위젯 기본값 = 프리셋 **Through one concrete wall** + 손대지 않은 라디오 슬라이더 둘. */
+const CASE = {
+  distanceM: 10,
+  wallCount: 1,
+  materialKey: 'concrete',
+  thicknessMm: 100,
+  eirpDbm: 20,
+  sensitivityDbm: -82,
+};
+
+/** 표 칸과 격차 카드가 둘 다 소수 두 자리다 — 화면 형식 그대로 쓴다 (규약 §5.5 S4). */
+const digits2 = (value) => value.toFixed(2);
+
+const result = model_calculate_result(CASE);
+const low = result.byKey[WIFI_BAND_24];
+const high = result.byKey[WIFI_BAND_5];
+
+const PATH_LOW = digits2(low.pathLossDb);
+const PATH_HIGH = digits2(high.pathLossDb);
+const GAP_OPEN = digits2(result.bandGapOpenDb);
+const GAP_PER_WALL = digits2(result.bandGapPerWallDb);
+const GAP_TOTAL = digits2(result.bandGapDb);
+
+const W = 420;
+const H = 300;
+
+const COL_W = 184;
+const LEFT_X = 16;
+const RIGHT_X = 220;
+const LEFT_MID = LEFT_X + COL_W / 2;
+const RIGHT_MID = RIGHT_X + COL_W / 2;
+
+const HEAD_Y = 24;
+const BOX_H = 34;
+/** 이름은 상자 **위**에, 값은 상자 **안**에. 한 줄에 같이 두면 폰 폭에서 겹친다. */
+const ROW_ONE_NAME_Y = 48;
+const ROW_ONE_BOX_Y = 56;
+const ROW_TWO_NAME_Y = 108;
+const ROW_TWO_BOX_Y = 116;
+const VALUE_OFFSET_Y = 23;
+
+const OP_Y = 170;
+const JOIN_Y = 190;
+
+const RESULT_X = 100;
+const RESULT_W = 220;
+const RESULT_Y = 210;
+const RESULT_H = 54;
+const RESULT_MID = RESULT_X + RESULT_W / 2;
+
+const FOOT_Y = 292;
+
+/** 두 경로의 네 상자. 이름은 짧게 — 상자 폭 안에서 잘리지 않아야 한다. */
+const ROWS = [
+  { mid: LEFT_MID, x: LEFT_X, nameY: ROW_ONE_NAME_Y, boxY: ROW_ONE_BOX_Y, name: '2.4 GHz path loss', value: `${PATH_LOW} dB` },
+  { mid: LEFT_MID, x: LEFT_X, nameY: ROW_TWO_NAME_Y, boxY: ROW_TWO_BOX_Y, name: '5 GHz path loss', value: `${PATH_HIGH} dB` },
+  { mid: RIGHT_MID, x: RIGHT_X, nameY: ROW_ONE_NAME_Y, boxY: ROW_ONE_BOX_Y, name: 'the two frequencies', value: `${GAP_OPEN} dB` },
+  { mid: RIGHT_MID, x: RIGHT_X, nameY: ROW_TWO_NAME_Y, boxY: ROW_TWO_BOX_Y, name: 'one concrete wall', value: `${GAP_PER_WALL} dB` },
+];
+---
+<svg
+  class="fig-svg"
+  viewBox={`0 0 ${W} ${H}`}
+  role="img"
+  aria-label={`Two routes to the same gap. The left route, labelled route one, takes the two total path loss readings, ${PATH_LOW} decibels for 2.4 gigahertz and ${PATH_HIGH} decibels for 5 gigahertz, and subtracts them. The right route, labelled route two, takes ${GAP_OPEN} decibels from the two centre frequencies, at the same antenna gain in both bands, and adds ${GAP_PER_WALL} decibels contributed by the one concrete wall. A bracket joins the two routes, and one arrow leads to a single box reading ${GAP_TOTAL} decibels, the gap the 5 GHz below 2.4 GHz card prints.`}
+>
+  <text x={LEFT_MID} y={HEAD_Y} class="fig-label-dim" text-anchor="middle">route 1 · two readings</text>
+  <text x={RIGHT_MID} y={HEAD_Y} class="fig-label-dim" text-anchor="middle">route 2 · two causes</text>
+
+  {ROWS.map((row) => (
+    <g>
+      <text x={row.mid} y={row.nameY} class="fig-label-dim" text-anchor="middle">{row.name}</text>
+      <rect
+        x={row.x} y={row.boxY} width={COL_W} height={BOX_H} rx="3"
+        fill="var(--surface)" stroke="var(--graphite)" stroke-width="2"
+      />
+      <text x={row.mid} y={row.boxY + VALUE_OFFSET_Y} class="fig-num" text-anchor="middle">{row.value}</text>
+    </g>
+  ))}
+
+  <text x={LEFT_MID} y={OP_Y} class="fig-label" text-anchor="middle">one minus the other</text>
+  <text x={RIGHT_MID} y={OP_Y} class="fig-label" text-anchor="middle">one plus the other</text>
+
+  <!-- 두 경로가 한 상자로 모인다 -->
+  <path
+    d={`M${LEFT_MID},${JOIN_Y - 8} L${LEFT_MID},${JOIN_Y} L${RIGHT_MID},${JOIN_Y} L${RIGHT_MID},${JOIN_Y - 8}`}
+    fill="none" stroke="var(--graphite-soft)" stroke-width="2"
+  />
+  <line x1={RESULT_MID} y1={JOIN_Y} x2={RESULT_MID} y2={RESULT_Y - 2} stroke="var(--graphite-soft)" stroke-width="2" />
+  <path
+    d={`M${RESULT_MID - 6},${RESULT_Y - 12} L${RESULT_MID},${RESULT_Y - 2} L${RESULT_MID + 6},${RESULT_Y - 12}`}
+    fill="none" stroke="var(--graphite-soft)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+  />
+
+  <rect
+    x={RESULT_X} y={RESULT_Y} width={RESULT_W} height={RESULT_H} rx="3"
+    fill="var(--paper-sunk)" stroke="var(--graphite)" stroke-width="3"
+  />
+  <text x={RESULT_MID} y={RESULT_Y + 26} class="fig-num" text-anchor="middle">{GAP_TOTAL} dB</text>
+  <text x={RESULT_MID} y={RESULT_Y + 45} class="fig-label-dim" text-anchor="middle">same answer, both ways</text>
+
+  <text x={W / 2} y={FOOT_Y} class="fig-label" text-anchor="middle">5 GHz below 2.4 GHz</text>
+</svg>

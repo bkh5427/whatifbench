@@ -1,0 +1,171 @@
+---
+/*
+  ** 이 파일이 `---`로 시작하는 이유 **
+  `<svg`로 시작하는 `.astro`는 전송 중 C2PA 서명이 붙어 파일이 깨진다 (규약 §5).
+
+  도해 2 · **메커니즘**. 왜 재질과 두께가 부호를 정하는가.
+  위젯은 곡선과 표만 그린다 — 벽 **안**은 한 번도 그리지 않는다. 그래서 여기서
+  그린다(규약 §5 "위젯 곡선·표의 재탕 금지").
+
+  논지 한 줄: 두께가 매질 안 반파장이면 두 면의 반사가 상쇄되어 투과가 최대,
+  1/4파장이면 두 반사가 보강되어 투과가 최소다(무손실 슬래브 기준).
+  그래서 아래 두 칸은 **같은 폭의 슬래브** 안에만, 재질 안 파장으로 파를 그린다.
+  낮은 대역은 앞면에서 뒷면까지 1/4파장(0 → 마루), 높은 대역은 반파장(0 → 0)이다.
+  (2026-09-26: 옛 첫 칸은 "반파장이 벽 너머에서 끝나면 보강"이라 적었는데, 반파장보다
+  얇으면 늘 보강되는 것이 아니다 — 아주 얇으면 손실은 0으로 간다. 1/4파장으로 못박았다.)
+
+  색만으로 정보를 주지 않는다 — ✓/✕ 도형과 글자로 이중 부호화한다 (규약 §5).
+*/
+const W = 420;
+const H = 466;
+
+// ── 위 칸: 슬래브 한 장과 그 안의 왕복 ──────────────────────
+const SLAB_X = 170;
+const SLAB_Y = 36;
+const SLAB_W = 80;
+const SLAB_H = 88;
+const RAY_Y = 80;
+
+const IN_FROM = 30;
+const OUT_TO = 392;
+
+const SPAN_Y = 138;
+const SPAN_TICK = 5;
+const DIVIDER_Y = 172;
+
+// ── 아래 두 칸: 같은 슬래브, 파장만 다르다 ──────────────────
+/** 두 칸 모두 슬래브의 앞면·뒷면이 여기 선다 — 눈이 세로로 바로 맞춰 본다. */
+const FACE_FRONT = 150;
+const FACE_BACK = 230;
+const ROW_SLAB_H = 56;
+
+const WAVE_FROM = 20;
+const WAVE_AMPLITUDE = 20;
+const WAVE_STEPS = 120;
+
+const ROW_ONE_TOP = 190;
+const ROW_TWO_TOP = 330;
+
+/** 낮은 대역: 슬래브가 정확히 1/4파장(반파장 = 두께의 두 배). 높은 대역: 반파장이 두께에 딱 맞는다. */
+const QUARTER_WAVES_PER_HALF = 2;
+const HALF_WAVE_LOW = QUARTER_WAVES_PER_HALF * (FACE_BACK - FACE_FRONT);
+const HALF_WAVE_HIGH = FACE_BACK - FACE_FRONT;
+
+/**
+ * 파형 한 줄 — **슬래브 안에서만** 그린다. 재질 안 파장은 공기 중보다 √η′배 짧으므로
+ * 공기와 벽에 같은 파장을 그리면 거짓 그림이 된다(2026-09-26 w1 검사). 앞면(FACE_FRONT)에서
+ * 0을 지나도록 위상을 맞춰, 뒷면에서 파가 어디까지 왔는지가 두 칸을 비교하는 눈금이 된다.
+ */
+function fig_build_wave(midY, halfWave) {
+  let path = '';
+  for (let i = 0; i <= WAVE_STEPS; i += 1) {
+    const x = FACE_FRONT + ((FACE_BACK - FACE_FRONT) * i) / WAVE_STEPS;
+    const y = midY - WAVE_AMPLITUDE * Math.sin((Math.PI * (x - FACE_FRONT)) / halfWave);
+    path += `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)} `;
+  }
+  return path.trim();
+}
+
+const ROWS = [
+  {
+    top: ROW_ONE_TOP,
+    band: 'lower band, wave inside the wall',
+    halfWave: HALF_WAVE_LOW,
+    note: 'a quarter wave fits',
+    verdict: 'the faces add — more is lost',
+    fits: false,
+  },
+  {
+    top: ROW_TWO_TOP,
+    band: 'higher band, wave inside the wall',
+    halfWave: HALF_WAVE_HIGH,
+    note: 'half a wave fits',
+    verdict: 'the faces cancel — less is lost',
+    fits: true,
+  },
+].map((row) => ({
+  ...row,
+  midY: row.top + 8 + ROW_SLAB_H / 2,
+  wave: fig_build_wave(row.top + 8 + ROW_SLAB_H / 2, row.halfWave),
+}));
+
+const MARK_X = 30;
+const MARK_R = 11;
+const VERDICT_TEXT_X = 50;
+---
+<svg
+  class="fig-svg"
+  viewBox={`0 0 ${W} ${H}`}
+  role="img"
+  aria-label="Why the thickness decides the direction. At the top, one wall slab is drawn as a tall rectangle. An arrow arrives from the left and is labelled in. A dashed arrow bounces back off the front face. A dashed line bounces once between the two faces inside the slab, and the back face is labelled. An arrow leaves on the right, labelled out. A bracket under the slab is labelled thickness. Below that, two rows show the same slab with the wave drawn only inside it, at its length in the material, which is shorter than in air. In the first row, for the lower band, a quarter of a wave fits between the faces; the row is marked with a cross and reads the faces add, more is lost. In the second row, for the higher band, half a wave fits between the faces; the row is marked with a tick and reads the faces cancel, less is lost."
+>
+  <!-- 슬래브 한 장 -->
+  <rect
+    x={SLAB_X} y={SLAB_Y} width={SLAB_W} height={SLAB_H}
+    fill="var(--paper-sunk)" stroke="var(--graphite)" stroke-width="2"
+  />
+
+  <!-- 들어오는 파 -->
+  <line x1={IN_FROM} y1={RAY_Y} x2={SLAB_X - 2} y2={RAY_Y} stroke="var(--graphite)" stroke-width="2" />
+  <path
+    d={`M${SLAB_X - 12},${RAY_Y - 6} L${SLAB_X - 2},${RAY_Y} L${SLAB_X - 12},${RAY_Y + 6}`}
+    fill="none" stroke="var(--graphite)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+  />
+  <text x={IN_FROM} y={RAY_Y - 12} class="fig-label">in</text>
+
+  <!-- 앞면에서 되튕기는 몫 -->
+  <line x1={SLAB_X} y1={RAY_Y} x2="120" y2="52" stroke="var(--graphite-soft)" stroke-width="2" stroke-dasharray="5 3" />
+  <path d="M132,54 L120,52 L124,63" fill="none" stroke="var(--graphite-soft)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <text x="114" y="46" class="fig-label-dim" text-anchor="end">front face</text>
+
+  <!-- 슬래브 안의 왕복. 수직 입사라 실제로는 겹치는 경로다 — 보이게 기울여 그린다. -->
+  <path
+    d={`M${SLAB_X},${RAY_Y} L${SLAB_X + SLAB_W},${RAY_Y - 18} L${SLAB_X},${RAY_Y - 36}`}
+    fill="none" stroke="var(--graphite)" stroke-width="2" stroke-dasharray="6 3"
+  />
+  <text x={SLAB_X + SLAB_W + 8} y={RAY_Y - 22} class="fig-label-dim">back face</text>
+
+  <!-- 나가는 파 -->
+  <line x1={SLAB_X + SLAB_W + 2} y1={RAY_Y} x2={OUT_TO} y2={RAY_Y} stroke="var(--graphite)" stroke-width="2" />
+  <path
+    d={`M${OUT_TO - 10},${RAY_Y - 6} L${OUT_TO},${RAY_Y} L${OUT_TO - 10},${RAY_Y + 6}`}
+    fill="none" stroke="var(--graphite)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+  />
+  <text x={OUT_TO} y={RAY_Y + 24} class="fig-label" text-anchor="end">out</text>
+
+  <!-- 두께 괄호 -->
+  <line x1={SLAB_X} y1={SPAN_Y} x2={SLAB_X + SLAB_W} y2={SPAN_Y} stroke="var(--graphite-soft)" stroke-width="1.5" />
+  <line x1={SLAB_X} y1={SPAN_Y - SPAN_TICK} x2={SLAB_X} y2={SPAN_Y + SPAN_TICK} stroke="var(--graphite-soft)" stroke-width="1.5" />
+  <line x1={SLAB_X + SLAB_W} y1={SPAN_Y - SPAN_TICK} x2={SLAB_X + SLAB_W} y2={SPAN_Y + SPAN_TICK} stroke="var(--graphite-soft)" stroke-width="1.5" />
+  <text x={SLAB_X + SLAB_W / 2} y={SPAN_Y + 20} class="fig-label" text-anchor="middle">thickness</text>
+
+  <line x1="14" y1={DIVIDER_Y} x2="406" y2={DIVIDER_Y} stroke="var(--rule)" stroke-width="1" />
+
+  {ROWS.map((row) => (
+    <g>
+      <text x={WAVE_FROM} y={row.top} class="fig-label-dim">{row.band}</text>
+
+      <rect
+        x={FACE_FRONT} y={row.top + 8} width={FACE_BACK - FACE_FRONT} height={ROW_SLAB_H}
+        fill="var(--paper-sunk)" stroke="var(--graphite)" stroke-width="2"
+      />
+      <path d={row.wave} fill="none" stroke="var(--graphite)" stroke-width="2" />
+
+      <text x={(FACE_FRONT + FACE_BACK) / 2} y={row.top + 96} class="fig-label-dim" text-anchor="middle">{row.note}</text>
+
+      <circle cx={MARK_X} cy={row.top + 114} r={MARK_R} fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+      {row.fits ? (
+        <path
+          d={`M${MARK_X - 6},${row.top + 114} L${MARK_X - 1},${row.top + 120} L${MARK_X + 7},${row.top + 107}`}
+          fill="none" stroke="var(--graphite)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+        />
+      ) : (
+        <path
+          d={`M${MARK_X - 5},${row.top + 109} L${MARK_X + 5},${row.top + 119} M${MARK_X - 5},${row.top + 119} L${MARK_X + 5},${row.top + 109}`}
+          stroke="var(--graphite)" stroke-width="2.5" stroke-linecap="round"
+        />
+      )}
+      <text x={VERDICT_TEXT_X} y={row.top + 119} class="fig-label">{row.verdict}</text>
+    </g>
+  ))}
+</svg>

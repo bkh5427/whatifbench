@@ -108,7 +108,9 @@ const CHART_LABEL_FONT = '12px "IBM Plex Sans", system-ui, sans-serif';
 const CHART_LABEL_GAP = 8;
 const CHART_LABEL_MIN_GAP_PX = 10;
 const CHART_CURVE_WIDTH = 2;
-const CHART_CURVE_WIDTH_ALT = 3;
+/** 5 GHz·6 GHz 곡선 굵기. 범례 견본(global.css .legend-mean-2 4px · .legend-tail-2 3px)과 같게 둔다. */
+const CHART_CURVE_WIDTH_BAND5 = 4;
+const CHART_CURVE_WIDTH_BAND6 = 3;
 const CHART_BAND6_DASH = [5, 4];
 const CHART_SENSITIVITY_DASH = [8, 5];
 const CHART_CURSOR_DASH = [2, 3];
@@ -134,6 +136,10 @@ const CHART_TITLE_LINE_HEIGHT_PX = 14;
 const CHART_REACH_ARROW_SIZE_PX = 5;
 /** 도달거리 표시가 여러 대역에서 겹칠 때 세로로 쌓는 간격(px). */
 const CHART_REACH_LABEL_STEP_PX = 13;
+/** 캔버스 글자 둘레 후광(바탕색 테두리)의 선 굵기(px). 글자 획 밖으로 이 굵기의 절반만 덮는다. */
+const CHART_LABEL_HALO_PX = 3;
+/** 벽당 격차가 반올림해 0.00일 때 배지가 쓰는 한계값. 표시 자릿수(GAP_DIGITS=2)의 한 칸이다. */
+const GAP_NEGLIGIBLE_TEXT = '0.01';
 
 // ── 색 토큰 ────────────────────────────────────────────────
 const COLOR_VAR_BAND_24 = '--series-1';
@@ -141,11 +147,14 @@ const COLOR_VAR_BAND_HIGH = '--series-2';
 const COLOR_VAR_GRID = '--rule';
 const COLOR_VAR_TEXT = '--graphite-soft';
 const COLOR_VAR_AXIS = '--graphite';
+/** 위젯 판은 투명(global.css .widget)이라 캔버스 뒤에 실제로 보이는 색은 페이지 바탕 --paper다. */
+const COLOR_VAR_PAPER = '--paper';
 const COLOR_FALLBACK_BAND_24 = '#1f4e79';
 const COLOR_FALLBACK_BAND_HIGH = '#c2570a';
 const COLOR_FALLBACK_GRID = '#d6d8d1';
 const COLOR_FALLBACK_TEXT = '#5f666b';
 const COLOR_FALLBACK_AXIS = '#2b2f33';
+const COLOR_FALLBACK_PAPER = '#f2f2f3';
 
 // ── 문구 ───────────────────────────────────────────────────
 const CHART_TITLE_X = 'Distance from the router, metres (log scale)';
@@ -160,7 +169,7 @@ export function display_describe_legend(showBand6) {
   return (
     'Blue solid = 2.4 GHz. Orange solid = 5 GHz. ' +
     (showBand6 ? 'Orange dashed = 6 GHz. ' : '') +
-    'Grey dashed = the threshold you set. The faint vertical line is where the distance slider sits.'
+    'Dark dashed = the threshold you set. The faint vertical line is where the distance slider sits.'
   );
 }
 
@@ -174,12 +183,16 @@ export function display_format_count_word(count) {
   return COUNT_WORDS[count] ?? String(count);
 }
 
+/** 문턱 견본의 불투명도. 캔버스 문턱선(--graphite, 불투명)과 같게. */
+const LEGEND_THRESHOLD_OPACITY = '1';
+
 /** 범례 네 칸. 색 견본은 CSS가, 뜻은 여기의 글이 맡는다. 라벨은 짧게 — 360px에서 접혀야 한다. */
 const CHART_LEGEND_KEYS = [
   { swatch: 'legend-mean-1', label: '2.4 GHz', bandKey: WIFI_BAND_24 },
   { swatch: 'legend-mean-2', label: '5 GHz', bandKey: WIFI_BAND_5 },
   { swatch: 'legend-tail-2', label: '6 GHz', bandKey: WIFI_BAND_6 },
-  { swatch: 'legend-reference', label: 'Threshold', bandKey: null },
+  // 공용 .legend-reference는 흐리게(opacity 0.55) 그린다 — 이 위젯의 문턱선은 진한 선이라 견본만 불투명으로 되돌린다.
+  { swatch: 'legend-reference', label: 'Threshold', bandKey: null, opacity: LEGEND_THRESHOLD_OPACITY },
 ];
 
 const TABLE_HEADINGS = ['Band', 'Free-space loss', 'One wall', 'All walls', 'Total path loss'];
@@ -228,6 +241,8 @@ export function display_format_db(value, digits = DB_DIGITS) {
 /** 격차처럼 '증가분'인 값은 부호를 앞에 붙여 방향을 읽히게 한다. */
 export function display_format_signed_db(value, digits = GAP_DIGITS) {
   if (!Number.isFinite(value)) return '—';
+  // 반올림하면 0이 되는 값은 부호를 붙이지 않는다 — "+0.00"·"−0.00"은 방향이 없는데 방향처럼 읽힌다.
+  if (Number(Math.abs(value).toFixed(digits)) === 0) return (0).toFixed(digits);
   if (value >= 0) return `+${value.toFixed(digits)}`;
   return `${MINUS}${Math.abs(value).toFixed(digits)}`;
 }
@@ -314,14 +329,29 @@ export function display_describe_band_gap(gapDb) {
  */
 export function display_describe_gap(result) {
   if (result.params.wallCount === 0) {
-    return 'With no walls that gap is just the two centre frequencies, and it does not change with distance.';
+    return 'With no walls that gap is the two centre frequencies alone, at the same antenna gain in both bands, and it does not change with distance.';
   }
-  const direction = result.bandGapPerWallDb >= 0 ? 'widens' : 'narrows';
   const material = result.material.label.toLowerCase();
+  const perWall = display_format_db(Math.abs(result.bandGapPerWallDb), GAP_DIGITS);
+  const open = display_format_db(result.bandGapOpenDb, GAP_DIGITS);
+  // 반올림해 0.00이면 방향어를 쓰지 않는다(나무 16 mm, 벽돌 165 mm 등).
+  if (Number(perWall) === 0) {
+    return (
+      `In this model every ${material} ${result.material.unitNoun} moves the gap by less than ` +
+      `${GAP_NEGLIGIBLE_TEXT} dB. With no walls at all, 2.4 GHz starts ${open} dB ahead.`
+    );
+  }
+  // 벽이 5 GHz 쪽으로 미는 재질(유리 11 mm 등)은 몇 장 뒤 부호가 뒤집힌다 — "좁힌다"라고 쓰면
+  // 뒤집힌 뒤에는 보이는 격차가 오히려 커지므로, 방향(어느 대역 쪽으로)으로 말한다.
+  if (result.bandGapPerWallDb < 0) {
+    return (
+      `In this model every ${material} ${result.material.unitNoun} moves the gap ${perWall} dB toward 5 GHz. ` +
+      `With no walls at all, 2.4 GHz starts ${open} dB ahead.`
+    );
+  }
   return (
-    `In this model every ${material} ${result.material.unitNoun} ${direction} that gap by ` +
-    `${display_format_db(Math.abs(result.bandGapPerWallDb), GAP_DIGITS)} dB, and ` +
-    `${display_format_db(result.bandGapOpenDb, GAP_DIGITS)} dB of it is there with no walls at all.`
+    `In this model every ${material} ${result.material.unitNoun} widens 2.4 GHz’s lead by ${perWall} dB, and ` +
+    `${open} dB of the lead is there with no walls at all.`
   );
 }
 
@@ -335,8 +365,9 @@ export function display_describe_thin_slab(result, showBand6) {
   return (
     ` One ${result.params.thicknessMm} mm ${result.material.label.toLowerCase()} ` +
     `${result.material.unitNoun} comes out under 1 dB here ` +
-    `(${names.join(', ')}): the model has the slab close to a half wavelength inside the material, where the ` +
-    `reflections off its two faces cancel and transmission peaks. That is a property of the thickness, not a measurement.`
+    `(${names.join(', ')}). In this model a slab's loss rises and falls with its thickness, because the ` +
+    `reflections off its two faces add or cancel depending on how much of a wave fits inside. That is a property ` +
+    `of the thickness, not a measurement.`
   );
 }
 
@@ -476,6 +507,23 @@ function chart_calculate_y(receivedDbm, plotHeight, scale) {
   return plotHeight - ((receivedDbm - scale.low) / span) * plotHeight;
 }
 
+/**
+ * 곡선 위에 얹는 캔버스 글자. 바탕색으로 획 둘레를 먼저 긋고(후광) 그 위에 글자를 채운다.
+ * 상자를 깔면 곡선이 글자 폭만큼 통째로 사라지지만, 후광은 획 둘레만 덮는다.
+ * textAlign·textBaseline은 부르는 쪽이 정한다.
+ */
+function chart_draw_haloed_text(context, text, x, y, color, haloColor) {
+  context.save();
+  context.lineJoin = 'round';
+  context.lineWidth = CHART_LABEL_HALO_PX;
+  context.strokeStyle = haloColor;
+  context.setLineDash([]);
+  context.strokeText(text, x, y);
+  context.fillStyle = color;
+  context.fillText(text, x, y);
+  context.restore();
+}
+
 /** 곡선 하나. 좌표를 못 만드는 점에서는 선을 끊는다 — 축 경계에 눌러 붙이지 않는다. */
 function chart_draw_curve(context, points, plotWidth, plotHeight, scale, style) {
   context.save();
@@ -524,6 +572,7 @@ export function chart_render_curves(canvasEl, curves, sensitivityDbm, distanceM,
   const colorGrid = chart_read_color(canvasEl, COLOR_VAR_GRID, COLOR_FALLBACK_GRID);
   const colorText = chart_read_color(canvasEl, COLOR_VAR_TEXT, COLOR_FALLBACK_TEXT);
   const colorAxis = chart_read_color(canvasEl, COLOR_VAR_AXIS, COLOR_FALLBACK_AXIS);
+  const colorPaper = chart_read_color(canvasEl, COLOR_VAR_PAPER, COLOR_FALLBACK_PAPER);
 
   context.save();
   context.translate(padLeft, CHART_PAD_TOP);
@@ -575,11 +624,7 @@ export function chart_render_curves(canvasEl, curves, sensitivityDbm, distanceM,
     context.lineTo(plotWidth, sensitivityY);
     context.stroke();
     context.restore();
-    // 라벨을 캔버스 안쪽으로 민다 — 폭을 재서 오른쪽 끝을 넘지 않게.
-    context.fillStyle = colorText;
-    context.textAlign = 'right';
-    context.textBaseline = 'bottom';
-    context.fillText(SENSITIVITY_RULE_LABEL, plotWidth - CHART_LABEL_GAP / 2, sensitivityY - 2);
+    // "threshold" 글자는 곡선을 그린 뒤에 얹는다(아래 ── 문턱 라벨 ──).
   }
 
   // ── 현재 거리 커서 ──
@@ -601,9 +646,20 @@ export function chart_render_curves(canvasEl, curves, sensitivityDbm, distanceM,
       curve.key === WIFI_BAND_24
         ? { color: colorLow, width: CHART_CURVE_WIDTH }
         : curve.key === WIFI_BAND_5
-          ? { color: colorHigh, width: CHART_CURVE_WIDTH_ALT }
-          : { color: colorHigh, width: CHART_CURVE_WIDTH, dash: CHART_BAND6_DASH };
+          ? { color: colorHigh, width: CHART_CURVE_WIDTH_BAND5 }
+          : { color: colorHigh, width: CHART_CURVE_WIDTH_BAND6, dash: CHART_BAND6_DASH };
     chart_draw_curve(context, curve.points, plotWidth, plotHeight, scale, style);
+  }
+
+  // ── 문턱 라벨 ── 곡선 뒤에, 글자 획 둘레 후광과 함께 그린다(곡선이 글자를 관통하지 않게).
+  if (sensitivityY !== null) {
+    context.save();
+    context.textAlign = 'right';
+    context.textBaseline = 'bottom';
+    chart_draw_haloed_text(
+      context, SENSITIVITY_RULE_LABEL, plotWidth - CHART_LABEL_GAP / 2, sensitivityY - 2, colorText, colorPaper,
+    );
+    context.restore();
   }
 
   // ── 축선 ──
@@ -650,7 +706,14 @@ export function chart_render_curves(canvasEl, curves, sensitivityDbm, distanceM,
     if (!placed || (placed.clipped !== LOGSCALE_BELOW && placed.clipped !== LOGSCALE_ABOVE)) continue;
     const style = curve.key === WIFI_BAND_24 ? colorLow : colorHigh;
     const x = placed.ratio * plotWidth; // 0 또는 plotWidth — 왼쪽/오른쪽 끝
-    const y = (sensitivityY ?? plotHeight / 2) + offChart.length * CHART_REACH_LABEL_STEP_PX;
+    // 문턱선이 글자를 관통하지 않게 한 칸 아래부터 쌓는다. 눈금 숫자 줄에 닿으면 위로 쌓는다.
+    const anchorY = sensitivityY ?? plotHeight / 2;
+    const belowY = anchorY + (offChart.length + 1) * CHART_REACH_LABEL_STEP_PX;
+    // 위로 쌓을 때는 "threshold" 글자 한 줄을 비워 두고 그 위부터 쌓는다.
+    const y =
+      belowY <= plotHeight - CHART_REACH_LABEL_STEP_PX / 2
+        ? belowY
+        : anchorY - (offChart.length + 2) * CHART_REACH_LABEL_STEP_PX;
     const pointsLeft = placed.clipped === LOGSCALE_BELOW;
     context.save();
     context.fillStyle = style;
@@ -668,11 +731,12 @@ export function chart_render_curves(canvasEl, curves, sensitivityDbm, distanceM,
     context.fill();
     context.textAlign = pointsLeft ? 'left' : 'right';
     context.textBaseline = 'middle';
-    context.fillText(
-      `${curve.label} reach ${display_format_distance(reachM)}`,
-      pointsLeft ? x + CHART_REACH_ARROW_SIZE_PX + CHART_LABEL_GAP : x - CHART_REACH_ARROW_SIZE_PX - CHART_LABEL_GAP,
-      y,
-    );
+    const reachText = `${curve.label} reach ${display_format_reach(reachM)}`;
+    const textX = pointsLeft
+      ? x + CHART_REACH_ARROW_SIZE_PX + CHART_LABEL_GAP
+      : x - CHART_REACH_ARROW_SIZE_PX - CHART_LABEL_GAP;
+    // 상자를 깔면 곡선 한 토막이 통째로 지워진다 — 글자 획 둘레에만 바탕색 테두리(후광)를 둘러 읽히게 한다.
+    chart_draw_haloed_text(context, reachText, textX, y, style, colorPaper);
     context.restore();
     offChart.push({ key: curve.key, label: curve.label, reachM, side: placed.clipped });
   }
@@ -753,7 +817,7 @@ export function widget_mount(rootEl) {
     'wifi-distance',
     'How far away the device is',
     `Straight-line distance from the router, ${WIFI_DISTANCE_MIN_M} to ${WIFI_DISTANCE_MAX_M} metres. ` +
-      'The slider steps in round numbers, so the handle always lands on a value you can read off the chart.',
+      'The slider steps in round numbers, and the readout beside it shows the one in use.',
     { min: 0, max: WIFI_DISTANCE_LADDER.length - 1, step: 1, value: model_pick_distance_index(state.distanceM) },
   );
   const wallSlider = control_build_slider(
@@ -799,8 +863,8 @@ export function widget_mount(rootEl) {
   const thicknessSlider = control_build_slider(
     'wifi-thickness',
     'How thick each wall is',
-    'Millimetres of solid material. Thicker is not always lossier here — near a half wavelength inside the ' +
-      'material the two faces of the slab reflect against each other and more gets through.',
+    'Millimetres of solid material. Thicker is not always lossier here — when a whole number of half ' +
+      'wavelengths fits inside the material, the reflections off the slab’s two faces cancel and more gets through.',
     {
       min: WIFI_MATERIALS[state.materialKey].thicknessMinMm,
       max: WIFI_MATERIALS[state.materialKey].thicknessMaxMm,
@@ -812,15 +876,15 @@ export function widget_mount(rootEl) {
   const eirpSlider = control_build_slider(
     'wifi-eirp',
     'How strongly the router transmits',
-    'EIRP — the power it radiates once the antenna gain is folded in, in dBm. Both bands get the same number ' +
-      'here, which is what makes the comparison on this page a fair one.',
+    'EIRP — the power it radiates once the antenna gain is folded in, in dBm. All three bands get the same number ' +
+      'here, and every band is received by an isotropic antenna — the two choices together set the no-wall gaps.',
     { min: WIFI_EIRP_MIN_DBM, max: WIFI_EIRP_MAX_DBM, step: WIFI_EIRP_STEP_DBM, value: state.eirpDbm },
   );
   const sensitivitySlider = control_build_slider(
     'wifi-sensitivity',
     'The weakest signal the device can still use',
     'Your threshold, in dBm. It is the flat rule across the chart: where a curve crosses it is that band’s ' +
-      'reach. No standard sets this number for you — it is yours to choose.',
+      'reach. The page does not take this number from a standard — it is yours to set.',
     {
       min: WIFI_SENSITIVITY_MIN_DBM,
       max: WIFI_SENSITIVITY_MAX_DBM,
@@ -840,7 +904,7 @@ export function widget_mount(rootEl) {
   band6Hint.className = 'widget-hint';
   band6Hint.setAttribute('id', 'wifi-band6-hint');
   band6Hint.textContent =
-    'The newest band. It is drawn as a dashed orange line. It starts below both of the others, and how fast it falls further behind — or catches up — depends on what the walls are made of.';
+    'The newest band. It is drawn as a dashed orange line. It starts below both of the others, and how fast it falls further behind — or catches up — depends on what the walls are made of and how thick they are.';
   band6LabelBox.append(band6Label, band6Hint);
   const band6Input = document.createElement('input');
   band6Input.type = 'checkbox';
@@ -969,6 +1033,7 @@ export function widget_mount(rootEl) {
       item.className = 'legend-item';
       const swatch = document.createElement('span');
       swatch.className = `legend-key ${key.swatch}`;
+      if (key.opacity) swatch.style.opacity = key.opacity;
       item.append(swatch, document.createTextNode(` ${key.label}`));
       legend.appendChild(item);
     }
@@ -1005,7 +1070,10 @@ export function widget_mount(rootEl) {
     gapCard.box.querySelector('.readout-label').textContent =
       result.bandGapDb >= 0 ? GAP_CARD_LABEL_BELOW : GAP_CARD_LABEL_ABOVE;
     gapCard.value.textContent = display_format_db(Math.abs(result.bandGapDb), GAP_DIGITS);
-    perWallCard.value.textContent = display_format_signed_db(result.bandGapPerWallDb);
+    // 격차 카드가 "above"로 뒤집히면 벽당 값도 그 방향 기준으로 읽힌다 — 부호를 카드 방향에 맞춘다.
+    perWallCard.value.textContent = display_format_signed_db(
+      result.bandGapDb >= 0 ? result.bandGapPerWallDb : -result.bandGapPerWallDb,
+    );
     badgeNote.textContent = display_describe_gap(result);
 
     const spoken = display_describe_verdict(result);
@@ -1067,7 +1135,7 @@ export function widget_mount(rootEl) {
           drawn.offChart
             .map(
               (item) =>
-                `${item.label}'s reach (${display_format_distance(item.reachM)}) falls ` +
+                `${item.label}'s reach (${display_format_reach(item.reachM)}) falls ` +
                 `${item.side === LOGSCALE_BELOW ? 'short of the left edge' : 'past the right edge'} of this ` +
                 `chart — the arrow marks it.`,
             )

@@ -63,6 +63,7 @@ import { meta as SIMPSONS_PARADOX } from "../pages/simpsons-paradox/_meta.js";
 import { meta as ONE_LINE_OR_MANY } from "../pages/one-line-or-many/_meta.js";
 import { meta as FOLDING_PAPER_MOON } from "../pages/folding-paper-moon/_meta.js";
 import { meta as SOLAR_SYSTEM_LIGHT_DELAY } from "../pages/solar-system-light-delay/_meta.js";
+import { meta as WIFI_THROUGH_WALLS } from "../pages/wifi-through-walls/_meta.js";
 
 export const CATEGORY_MAX_BEFORE_HEADER_CHANGE = 4;
 /** 카테고리를 열 수 있는 최소 발행 수. 위 주석의 규칙을 기계가 읽는 값으로. */
@@ -79,14 +80,12 @@ export const TOOLS = [
   ONE_LINE_OR_MANY,
   FOLDING_PAPER_MOON,
   SOLAR_SYSTEM_LIGHT_DELAY,
+  WIFI_THROUGH_WALLS,
 
   // 5.00분은 40→60 km/h · 10 km에서만 참이다 — 같은 +20이라도 70→90이면 1.90분이다.
   { slug: "speed-vs-time-saved", category: "motion", name: "How Little Time Speeding Saves", blurb: "Time saved against speed, with the fixed delays held constant on both sides.", grade: "A", since: null, updated: null, changed: "", tags: ["counterintuitive", "rates", "commute"], figure: { value: "5.00 min", label: "the model’s saving from 40 to 60 km/h over 10 km" }, published: false },
   { slug: "shower-vs-bath", category: "energy", name: "Shower vs Bath", blurb: "Water and heating energy plotted together, each with its own crossing minute marked — the model does not put the two in the same place.", grade: "A", since: null, updated: null, changed: "", tags: ["rates", "energy", "home"], figure: { value: "8.4 min", label: "the minute the model has a 9.5 L/min shower pass an 80 L bath" }, published: false },
 
-  // requires: 로그 축을 읽는 법 자체를 다루는 페이지가 folding-paper-moon이다.
-  // 이 페이지의 x축은 로그이고, "거리 두 배마다 6.02 dB"라는 읽기법이 거기에 기댄다.
-  { slug: "wifi-through-walls", category: "scale", name: "Wi-Fi Through Walls", blurb: "Path loss by band and wall material. At equal power the model puts 5 GHz below 2.4 GHz with no walls at all, and the wall material decides how fast the gap widens from there.", grade: "B", since: null, updated: null, changed: "", tags: ["log-axis", "counterintuitive", "waves", "home"], requires: ["folding-paper-moon"], figure: { value: "7.07 dB", label: "the model’s gap between 5 GHz and 2.4 GHz with no walls at all" }, published: false },
   // “6 of 22”는 허용오차 5%에서의 값이다. 중복은 정의마다 갈리므로 라벨에 조건을 넣는다.
   { slug: "bicycle-gear-ratio", category: "motion", name: "Bicycle Gear Ratios", blurb: "Gear inches, gain ratio and speed against cadence, with duplicate gears marked.", grade: "A", since: null, updated: null, changed: "", tags: ["rates", "mechanics", "outdoors"], figure: { value: "6 of 22", label: "the combinations the model can drop at a 5% tolerance, on a 50/34 with 11–28" }, published: false },
   { slug: "projectile-with-drag", category: "motion", name: "Projectiles with Air Drag", blurb: "Trajectory with drag, drawn over the vacuum solution as a ghost line.", grade: "B", since: null, updated: null, changed: "", tags: ["mechanics", "counterintuitive", "outdoors"], figure: { value: "40.1°", label: "the model’s longest-range angle for a 145 g ball at 40 m/s, against 45° in a vacuum" }, published: false },

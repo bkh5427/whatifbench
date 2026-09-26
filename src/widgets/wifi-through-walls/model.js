@@ -6,7 +6,7 @@
  *
  * 세 조각이다.
  *   ① 자유공간 손실 FSPL — Recommendation ITU-R P.525-5, 식 (6)
- *   ② 벽 한 장의 투과손실 L — Recommendation ITU-R P.2040-3, 식 (43b)·(44).
+ *   ② 벽 한 장의 투과손실 L — Recommendation ITU-R P.2040-4, 식 (43b)·(44)(q).
  *      공기 중에 놓인 균질 슬래브 한 겹, 평면파 수직 입사
  *   ③ 링크 버짓 — 그 둘의 뺄셈:  P_rx = EIRP − FSPL(d, f) − Σ Lᵢ
  *
@@ -43,7 +43,7 @@ const FOUR_PI = 4 * Math.PI;
 const TWO_PI = 2 * Math.PI;
 
 /**
- * η″ = 17.98·σ/f_GHz 의 17.98. P.2040-3이 인쇄해 둔 값이지만
+ * η″ = 17.98·σ/f_GHz 의 17.98. P.2040이 인쇄해 둔 값이지만
  * 여기서는 ε₀에서 만든다 — 인쇄값을 베끼면 그것이 어디서 온 수인지가 코드에서 사라진다.
  * 1/(2π·ε₀·10⁹) = 17.9751. 권고문의 17.98과 소수 둘째 자리에서 같다.
  */
@@ -82,7 +82,7 @@ export const FSPL_CONSTANT_KM_GHZ = model_calculate_fspl_constant(METRES_PER_KIL
 
 // ── 재질 계수표 ────────────────────────────────────────────
 /**
- * Recommendation ITU-R P.2040-3 (08/2023), § 3, Table 3 "Material properties".
+ * Recommendation ITU-R P.2040-4 (09/2025), § 3, Table 3 "Examples of material properties" (1–100 GHz 행은 -3과 같다).
  * η′ = a·f^b, σ = c·f^d, f는 GHz. `fitLowGHz`~`fitHighGHz`는 그 표가 밝힌
  * **측정이 맞춰진 주파수 구간**이다 — 밖에서 값을 뽑으면 외삽이고, 이 모델은 던진다.
  *
@@ -99,7 +99,7 @@ export const WIFI_MATERIALS = {
     key: 'concrete',
     label: 'Concrete',
     unitNoun: 'wall',
-    // P.2040-3 Table 3: concrete, 1–100 GHz
+    // P.2040-4 Table 3: concrete, 1–100 GHz
     epsilonFactor: 5.24, epsilonExponent: 0, sigmaFactor: 0.0462, sigmaExponent: 0.7822,
     fitLowGHz: 1, fitHighGHz: 100,
     thicknessMinMm: 50, thicknessMaxMm: 300, thicknessStepMm: 5, thicknessDefaultMm: 100,
@@ -108,7 +108,7 @@ export const WIFI_MATERIALS = {
     key: 'brick',
     label: 'Brick',
     unitNoun: 'wall',
-    // P.2040-3 Table 3: brick, 1–40 GHz — 이 모델의 재질 중 유효구간이 가장 좁다
+    // P.2040-4 Table 3: brick, 1–40 GHz — 이 모델의 재질 중 유효구간이 가장 좁다
     epsilonFactor: 3.91, epsilonExponent: 0, sigmaFactor: 0.0238, sigmaExponent: 0.16,
     fitLowGHz: 1, fitHighGHz: 40,
     thicknessMinMm: 50, thicknessMaxMm: 250, thicknessStepMm: 5, thicknessDefaultMm: 100,
@@ -117,7 +117,7 @@ export const WIFI_MATERIALS = {
     key: 'plasterboard',
     label: 'Plasterboard',
     unitNoun: 'sheet',
-    // P.2040-3 Table 3: plasterboard, 1–100 GHz
+    // P.2040-4 Table 3: plasterboard, 1–100 GHz
     epsilonFactor: 2.73, epsilonExponent: 0, sigmaFactor: 0.0085, sigmaExponent: 0.9395,
     fitLowGHz: 1, fitHighGHz: 100,
     thicknessMinMm: 9, thicknessMaxMm: 25, thicknessStepMm: 0.5, thicknessDefaultMm: 12.5,
@@ -126,7 +126,7 @@ export const WIFI_MATERIALS = {
     key: 'wood',
     label: 'Wood',
     unitNoun: 'panel',
-    // P.2040-3 Table 3: wood, 0.001–100 GHz
+    // P.2040-4 Table 3: wood, 0.001–100 GHz
     epsilonFactor: 1.99, epsilonExponent: 0, sigmaFactor: 0.0047, sigmaExponent: 1.0718,
     fitLowGHz: 0.001, fitHighGHz: 100,
     thicknessMinMm: 15, thicknessMaxMm: 60, thicknessStepMm: 1, thicknessDefaultMm: 40,
@@ -135,7 +135,7 @@ export const WIFI_MATERIALS = {
     key: 'glass',
     label: 'Glass',
     unitNoun: 'pane',
-    // P.2040-3 Table 3: glass, 0.1–100 GHz
+    // P.2040-4 Table 3: glass, 0.1–100 GHz
     epsilonFactor: 6.31, epsilonExponent: 0, sigmaFactor: 0.0036, sigmaExponent: 1.3394,
     fitLowGHz: 0.1, fitHighGHz: 100,
     thicknessMinMm: 3, thicknessMaxMm: 12, thicknessStepMm: 0.5, thicknessDefaultMm: 6,
@@ -285,7 +285,7 @@ export function model_calculate_complex_exponential(value) {
 
 /**
  * 벽 하나의 파라미터가 유효한가.
- * **유효범위 밖에서 조용히 숫자를 뱉지 않는다** — P.2040-3의 계수는
+ * **유효범위 밖에서 조용히 숫자를 뱉지 않는다** — P.2040-4의 계수는
  * 표가 밝힌 구간에 맞춰진 것이고, 밖에서 f^d를 계속 미는 것은 외삽이다.
  */
 export function model_check_wall(materialKey, thicknessMm, frequencyMHz) {
@@ -467,7 +467,7 @@ export function model_calculate_permittivity(materialKey, frequencyGHz) {
 }
 
 /**
- * 슬래브 한 겹의 투과계수 — P.2040-3 식 (43b).
+ * 슬래브 한 겹의 투과계수 — P.2040-4 식 (43b).
  *
  *   T = (1 − R²)·e^(−jq) / (1 − R²·e^(−2jq))
  *   R = (1 − √η)/(1 + √η),   q = (2πt/λ)·√η
@@ -506,7 +506,7 @@ export function model_calculate_slab_phase(refractiveIndex, thicknessMm, frequen
 }
 
 /**
- * 벽 한 장의 투과손실, dB. L = −20·log₁₀|T| — P.2040-3 식 (44).
+ * 벽 한 장의 투과손실, dB. L = −20·log₁₀|T| — 식 (43b)의 T에서(식 (44)는 q의 정의).
  * 유효범위 밖이면 던진다.
  */
 export function model_calculate_wall_loss(materialKey, thicknessMm, frequencyMHz) {

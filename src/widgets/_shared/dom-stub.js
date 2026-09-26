@@ -53,6 +53,8 @@ function fixture_create_canvas_context() {
     translate: noop, scale: noop, beginPath: noop, closePath: noop, moveTo: noop,
     lineTo: noop, arc: noop, rect: noop, clip: noop, fill: noop, stroke: noop,
     fillRect: noop, setLineDash: noop,
+    // 글자 둘레 후광(strokeText)은 그림일 뿐 글자 기록이 아니다 — fillText만 texts에 남긴다.
+    strokeText: noop,
     measureText: (text) => ({ width: String(text).length * 6 }),
     fillText: (text, x, y) => texts.push({ text: String(text), x, y }),
     font: '', textAlign: '', textBaseline: '', fillStyle: '', strokeStyle: '',

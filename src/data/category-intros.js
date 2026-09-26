@@ -50,24 +50,29 @@ export const INTROS = {
     description:
       "Orders of magnitude, and the axis you draw them on. What a number does when the exponent moves.",
     // 2026-09-26: 두 편(folding-paper-moon · solar-system-light-delay)으로 다시 연다.
-    // 예전 셋째 문단(데시벨 · Wi-Fi)은 그 도구가 미발행이라 뺐다 — 발행하는 날 되돌린다.
+    // 같은 날 wifi-through-walls가 셋째로 들어와 첫·셋째·넷째 문단에 그 도구를 넣었다.
     paragraphs: [
       `Arithmetic that adds and arithmetic that multiplies run away from each
        other fast. Start at one: twenty steps of adding one leaves you at 21, and
        twenty steps of doubling at 1,048,576.
        Folding Paper to the Moon lives on the multiplying side of that gap — a
        thickness that doubles with every fold. Talking Across the Solar System
-       deals in a distance so large that light needs real minutes to cross it.`,
+       deals in a distance so large that light needs real minutes to cross it.
+       Wi-Fi Through Walls counts in decibels, where every factor of ten in
+       power is another ten on the scale.`,
       `The recurring device here is the axis. A doubling process on a linear axis
        looks like nothing happening, then a wall. The same process on a
        logarithmic axis is a straight line with no drama in it at all. Neither
        picture is wrong, and the disagreement between them is the whole point —
        when a headline says something grew tenfold, which axis you imagine can change
        whether that sounds alarming or ordinary.`,
-      `Both models are deliberately thin — a doubling is one multiplication, a
-       light delay one division. Keeping the arithmetic trivial makes the result
-       easy to check, and it moves the interesting question from "is this
-       calculated correctly" to "why does the correct answer feel wrong".`,
+      `Two of the models are deliberately thin — a doubling is one
+       multiplication, a light delay one division. Keeping the arithmetic trivial
+       makes the result easy to check, and it moves the interesting question from
+       "is this calculated correctly" to "why does the correct answer feel
+       wrong". The Wi-Fi model is heavier: a published formula for one flat
+       wall, repeated for each wall and added to the free-space loss. Its page
+       works one case through by hand, as the other two do.`,
       `A question belongs here when the answer depends on a setting and how much
        it depends is the interesting part. A single figure quoted for the distance
        to another planet is one moment's value, an average, or one end of a range; the
@@ -78,8 +83,9 @@ export const INTROS = {
        thickness slider moves the Moon answer by only three folds, and that
        narrowness is the finding. Each
        page names what it simplifies — circular orbits on one, perfect layers with
-       no air and no loss at the crease on the other — and what its formula has no
-       term for at all.`,
+       no air and no loss at the crease on another, one straight path through flat,
+       single-material walls on the third — and what its formula has no term for
+       at all.`,
     ],
   },
 

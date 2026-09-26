@@ -131,7 +131,7 @@ export function evidence_resolve(evidence, root, invIds) {
     if (!existsSync(f)) { problems.push(`SRC: 출처 캐시 없음 audit/sources/${m[1]}.md`); continue; }
     const body = readFileSync(f, "utf8");
     if (!quotes.some((q) => body.includes(q))) problems.push(`SRC: ${m[1]} 캐시 안에 인용문("…")이 그대로 없음`);
-    if (!/^verified-by:\s*\S+/m.test(body)) problems.push(`SRC: ${m[1]} 캐시를 두 번째 검사자가 다시 가져와 확인하지 않음(verified-by 줄 없음)`);
+    if (!/^verified-by:[ \t]*\S+/m.test(body)) problems.push(`SRC: ${m[1]} 캐시를 두 번째 검사자가 다시 가져와 확인하지 않음(verified-by 줄 없음)`);
     deps[`audit/sources/${m[1]}.md`] = file_sha(f);
   }
   if (/SITE:/.test(e)) {

@@ -215,6 +215,9 @@ describe('표시 문자열', () => {
     expect(display_format_signed_db(5.9602)).toBe('+5.96');
     expect(display_format_signed_db(-0.0795)).toBe('−0.08');
     expect(display_format_signed_db(Number.NaN)).toBe('—');
+    // 반올림해 0이면 부호를 붙이지 않는다(나무 16 mm의 +0.0017 dB).
+    expect(display_format_signed_db(0.0017)).toBe('0.00');
+    expect(display_format_signed_db(-0.0012)).toBe('0.00');
   });
 
   it('축 라벨 자릿수를 간격의 정밀도로 정한다 — 크기로 정하지 않는다', () => {
@@ -253,13 +256,15 @@ describe('표시 문자열', () => {
     const sentence = display_describe_gap(
       model_calculate_result({ ...DEFAULT_PARAMS, materialKey: 'plasterboard', thicknessMm: 12.5 }),
     );
-    expect(sentence).toContain('narrows');
+    expect(sentence).toContain('toward 5 GHz');
     expect(sentence).toContain('0.08');
   });
 
-  it('투과 최대점 근처면 화면이 그 사실을 말한다 — 조용히 0에 가까운 숫자를 뱉지 않는다', () => {
+  it('벽 한 장이 1 dB 아래면 화면이 그 사실을 말한다 — 조용히 0에 가까운 숫자를 뱉지 않는다', () => {
     const near = model_calculate_result({ ...DEFAULT_PARAMS, materialKey: 'glass', thicknessMm: 11 });
-    expect(display_describe_thin_slab(near, true)).toContain('half wavelength');
+    // 반파장 근처라고 단정하지 않는다 — 얇아서 작은 경우(유리 3 mm @2.4 GHz)도 같은 문장이 나온다.
+    expect(display_describe_thin_slab(near, true)).toContain('add or cancel depending on how much of a wave fits inside');
+    expect(display_describe_thin_slab(near, true)).not.toContain('half wavelength');
     expect(display_describe_thin_slab(near, true)).toContain('0.38');
     // 콘크리트 기본값에서는 아무 말도 하지 않는다.
     expect(display_describe_thin_slab(model_calculate_result(DEFAULT_PARAMS), true)).toBe('');

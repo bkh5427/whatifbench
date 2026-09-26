@@ -1,0 +1,635 @@
+---
+import Base from "@layouts/Base.astro";
+import Byline from "@components/Byline.astro";
+import RelatedTools from "@components/RelatedTools.astro";
+import Figure from "@components/Figure.astro";
+// 도해 셋. 규약 §5의 역할 순서다 — 설정(위젯 앞) · 메커니즘(반전) · 증명(손계산).
+import LinkBudget from "./_fig/LinkBudget.astro";
+import InsideTheSlab from "./_fig/InsideTheSlab.astro";
+import TwoRoutes from "./_fig/TwoRoutes.astro";
+import { tools_read_category } from "@data/tools.js";
+import {
+  model_calculate_result,
+  model_calculate_permittivity,
+  model_calculate_wall_loss,
+  FSPL_CONSTANT_KM_MHZ,
+  FSPL_CONSTANT_M_HZ,
+  WIFI_BAND_24,
+  WIFI_BAND_5,
+  WIFI_BANDS,
+  WIFI_MATERIALS,
+} from "@widgets/wifi-through-walls/model.js";
+
+// 등급·검수일은 Byline이 tools.js에서 읽는다. 페이지가 다시 말하지 않는다.
+const SLUG = "wifi-through-walls";
+const CATEGORY = "scale";
+const cat = tools_read_category(CATEGORY);
+
+// 브레드크럼 이름. 화면과 구조화 데이터가 **같은 상수 하나**를 읽는다.
+const CRUMB = "Wi-Fi Through Walls";
+// 숫자와 단위 사이는 줄바꿈 없는 공백 — "5 / GHz"로 갈리지 않게.
+const TITLE = "Wi-Fi through walls: does 5\u00a0GHz really lose to 2.4\u00a0GHz?";
+
+// ── 본문의 숫자 ────────────────────────────────────────────
+// **하나도 손으로 적지 않는다.** 전부 model.js가 지금 내는 값이다.
+// 자릿수는 화면 형식을 따른다 — 표 칸과 격차 카드는 소수 두 자리, 수신전력·여유 카드는 한 자리.
+const MINUS = "−";
+const db2 = (value) => value.toFixed(2).replace("-", MINUS);
+const db1 = (value) => value.toFixed(1).replace("-", MINUS);
+/** 손계산 절의 중간값 자릿수. 두 자리로 적으면 세 항의 합이 화면 값과 0.01 어긋난다. */
+const HAND_DIGITS = 4;
+const hand = (value) => value.toFixed(HAND_DIGITS).replace("-", MINUS);
+
+/** 프리셋 **Through one concrete wall** + 손대지 않은 전력·문턱 슬라이더 둘. */
+const CASE_CONCRETE = {
+  distanceM: 10,
+  wallCount: 1,
+  materialKey: "concrete",
+  thicknessMm: 100,
+  eirpDbm: 20,
+  sensitivityDbm: -82,
+};
+
+const concrete = model_calculate_result(CASE_CONCRETE);
+const low = concrete.byKey[WIFI_BAND_24];
+const high = concrete.byKey[WIFI_BAND_5];
+
+const GAP_OPEN = db2(concrete.bandGapOpenDb);
+const GAP_HERE = db2(concrete.bandGapDb);
+const GAP_PER_CONCRETE = db2(concrete.bandGapPerWallDb);
+const WALL_24 = db2(low.wallLossDb);
+const WALL_5 = db2(high.wallLossDb);
+const FSPL_24 = db2(low.freeSpaceLossDb);
+const FSPL_5 = db2(high.freeSpaceLossDb);
+const PATH_24 = db2(low.pathLossDb);
+const PATH_5 = db2(high.pathLossDb);
+const RX_24 = db1(low.receivedDbm);
+const RX_5 = db1(high.receivedDbm);
+const MARGIN_24 = db1(low.marginDb);
+/** 반올림한 두 조각을 더한 값. 화면의 총계와 0.01 다르다 — 본문이 그 사실을 말한다. */
+const PARTS_SUM = db2(Number(FSPL_24) + Number(WALL_24));
+
+// 손계산 절 — 거리 항을 세 조각으로
+const KM_PER_M = 1 / 1000;
+const DISTANCE_KM = CASE_CONCRETE.distanceM * KM_PER_M;
+const F24_MHZ = WIFI_BANDS[0].frequencyMHz;
+const F5_MHZ = WIFI_BANDS[1].frequencyMHz;
+const F6_MHZ = WIFI_BANDS[2].frequencyMHz;
+const LOG_DISTANCE = hand(20 * Math.log10(DISTANCE_KM));
+const LOG_F24 = hand(20 * Math.log10(F24_MHZ));
+const K_KM_MHZ = FSPL_CONSTANT_KM_MHZ.toFixed(HAND_DIGITS);
+const K_M_HZ = db2(FSPL_CONSTANT_M_HZ);
+/** km 상수에 미터를 그대로 넣으면 몇 dB 틀리는가 — 20·log₁₀(1000). */
+const METRE_MISTAKE_DB = Math.round(20 * Math.log10(1 / KM_PER_M));
+
+/** 손계산에 쓰는 콘크리트의 유전율. 표의 계수에서 나온 값이다. */
+const F24_GHZ = F24_MHZ / 1000;
+const permittivity = model_calculate_permittivity("concrete", F24_GHZ);
+const SIGMA_24 = permittivity.conductivity.toFixed(4);
+const ETA_IMAG = Math.abs(permittivity.im).toFixed(3);
+const ETA_REAL = permittivity.re.toFixed(2);
+const CONCRETE_A = WIFI_MATERIALS.concrete.epsilonFactor;
+const CONCRETE_C = WIFI_MATERIALS.concrete.sigmaFactor;
+const CONCRETE_D = WIFI_MATERIALS.concrete.sigmaExponent;
+
+/** 유리 11 mm — 격차가 **좁아지는** 쪽. 세 장이면 부호가 뒤집힌다. */
+const GLASS_THICKNESS_MM = 11;
+const GLASS_THIN_MM = 5.5;
+const GLASS_PANES = 3;
+const glass = model_calculate_result({
+  ...CASE_CONCRETE,
+  materialKey: "glass",
+  thicknessMm: GLASS_THICKNESS_MM,
+  wallCount: GLASS_PANES,
+});
+const GLASS_24 = db2(glass.byKey[WIFI_BAND_24].wallLossDb);
+const GLASS_5 = db2(glass.byKey[WIFI_BAND_5].wallLossDb);
+const GLASS_PER_PANE = db2(Math.abs(glass.bandGapPerWallDb));
+const GLASS_AFTER_THREE = db2(Math.abs(glass.bandGapDb));
+const GLASS_THIN_5 = db2(model_calculate_wall_loss("glass", GLASS_THIN_MM, F5_MHZ));
+
+/** 석고보드 12.5 mm — 좁아지되 거의 움직이지 않는 쪽. */
+const PLASTER_THICKNESS_MM = 12.5;
+const PLASTER_SHEETS = 8;
+const plaster = model_calculate_result({
+  ...CASE_CONCRETE,
+  materialKey: "plasterboard",
+  thicknessMm: PLASTER_THICKNESS_MM,
+  wallCount: PLASTER_SHEETS,
+});
+const PLASTER_PER_SHEET = db2(Math.abs(plaster.bandGapPerWallDb));
+const PLASTER_24 = db2(plaster.byKey[WIFI_BAND_24].wallLossDb);
+const PLASTER_5 = db2(plaster.byKey[WIFI_BAND_5].wallLossDb);
+const PLASTER_AFTER_EIGHT = db2(plaster.bandGapDb);
+
+/** 벽돌 100 mm — 넓어지되 콘크리트보다 훨씬 느린 쪽. */
+const brick = model_calculate_result({ ...CASE_CONCRETE, materialKey: "brick" });
+const BRICK_PER_WALL = db2(brick.bandGapPerWallDb);
+
+/** 두 콘크리트 벽 뒤에서 5 GHz가 겨우 나란해지려면 얼마나 더 세게 쏴야 하는가. */
+const LEVEL_WALLS = 2;
+const HEAD_START_DB = concrete.bandGapOpenDb + LEVEL_WALLS * concrete.bandGapPerWallDb;
+const HEAD_START = db2(HEAD_START_DB);
+/** 배수는 10 단위로 반올림해 "about"과 함께 쓴다. */
+const HEAD_START_ROUND_TO = 10;
+const HEAD_START_TIMES =
+  Math.round(Math.pow(10, HEAD_START_DB / 10) / HEAD_START_ROUND_TO) * HEAD_START_ROUND_TO;
+
+/** 다른 모델과의 대조. About 절이 인용한다. 남의 식은 남의 식대로 여기서 만든다. */
+const TR_38901_INTERCEPT_DB = 5;
+const TR_38901_SLOPE_DB_PER_GHZ = 4;
+const tr38901 = (frequencyMHz) =>
+  db2(TR_38901_INTERCEPT_DB + TR_38901_SLOPE_DB_PER_GHZ * (frequencyMHz / 1000));
+const TR_38901_24 = tr38901(F24_MHZ);
+const TR_38901_5 = tr38901(F5_MHZ);
+const CHECK_3GPP_MM = 200;
+const CHECK_3GPP_24 = db2(model_calculate_wall_loss("concrete", CHECK_3GPP_MM, F24_MHZ));
+const CHECK_3GPP_5 = db2(model_calculate_wall_loss("concrete", CHECK_3GPP_MM, F5_MHZ));
+const ITU_1238_LOW_MHZ = 2400;
+const ITU_1238_HIGH_MHZ = 5200;
+const CHECK_ITU_LOW_MM = 130;
+const CHECK_ITU_HIGH_MM = 100;
+const CHECK_ITU_24 = db2(model_calculate_wall_loss("concrete", CHECK_ITU_LOW_MM, ITU_1238_LOW_MHZ));
+const CHECK_ITU_5 = db2(model_calculate_wall_loss("concrete", CHECK_ITU_HIGH_MM, ITU_1238_HIGH_MHZ));
+---
+
+<Base
+  title={TITLE}
+  description="A link budget for 2.4, 5 and 6 GHz through walls you choose. With the same power and the same antenna gain in every band, the model puts 5 GHz below 2.4 GHz with no walls at all, and the wall decides which way the gap moves."
+  category={CATEGORY}
+  crumbTool={true}
+  crumbLabel={CRUMB}
+>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span aria-hidden="true">›</span>{" "}
+    <a href={cat.href}>{cat.name}</a> <span aria-hidden="true">›</span>{" "}
+    {CRUMB}
+  </nav>
+
+  <h1>{TITLE}</h1>
+
+  <p class="deck">
+    Three bands, the same power out, antennas of the same gain at both ends. Add
+    walls and change what they are made of. In this model 5 GHz starts below
+    2.4 GHz before any wall is in the way.
+  </p>
+
+  <Byline slug={SLUG} />
+
+  <p class="lead">
+    A 2020 home-network tip sheet from the US Federal Communications Commission
+    gives the usual advice in two halves. The 5 GHz band is the faster one. The
+    2.4 GHz band generally covers more ground.
+  </p>
+
+  <p class="lead">
+    The second half is about reach, and reach is a subtraction. Power out, minus
+    what distance takes, minus what each wall takes. The tip sheet does not say
+    how many decibels each of those is.
+  </p>
+
+  <p class="lead">
+    <span class="lead-turn">This page does that subtraction.</span> The controls
+    below carry distance, wall count and wall material into one equation, worked
+    for every band at once. Which band comes out on top is an output here, not an
+    assumption.
+  </p>
+
+  <Figure caption="In this model, the path is one straight line, and nothing else reaches the device.">
+    <LinkBudget />
+  </Figure>
+
+  <div id="sliders" data-widget="wifi-through-walls">
+    <noscript>
+      <p>
+        The presets, sliders, cards, chart and table need JavaScript. The
+        one-concrete-wall case below is worked by hand with the same figures.
+      </p>
+    </noscript>
+  </div>
+
+  <h2 data-block="reversal">The wall decides the direction, the count only how far</h2>
+
+  <p>
+    <strong>How many walls are in the way</strong> counts the walls. <strong>What the walls are made of</strong> picks one of five
+    rows from a published table of building materials.
+  </p>
+
+  <p>
+    Start with no walls at all. The model already puts 5 GHz {GAP_OPEN} dB
+    below 2.4 GHz. That gap comes from the two centre frequencies under one rule
+    of this model: every antenna has the same gain in both bands. The gap does not
+    move with distance. So 5 GHz does not fall behind at some wall count. It
+    starts behind.
+  </p>
+
+  <p>
+    Now add concrete. The model puts one 100 mm wall at {WALL_24} dB for
+    2.4 GHz. For 5 GHz it puts the same wall at {WALL_5} dB. Each wall then
+    widens the gap by a further {GAP_PER_CONCRETE} dB. At every concrete thickness
+    the slider allows, the two bands only move apart.
+  </p>
+
+  <Figure caption="In this model, the same slab can be a wall to one band and nearly a window to the other.">
+    <InsideTheSlab />
+  </Figure>
+
+  <p>
+    That is also why thicker is not always lossier. At 5 GHz the model puts a
+    {" "}{GLASS_THIN_MM} mm pane of glass at {GLASS_THIN_5} dB. An
+    {" "}{GLASS_THICKNESS_MM} mm pane comes out at {GLASS_5} dB.
+  </p>
+
+  <p>
+    So glass can run the other way. At {GLASS_THICKNESS_MM} mm the model puts
+    each pane at {GLASS_24} dB for 2.4 GHz and {GLASS_5} dB for 5 GHz. Every pane
+    closes the gap by {GLASS_PER_PANE} dB. After three panes the gap card flips
+    to <strong>5 GHz above 2.4 GHz</strong> and reads {GLASS_AFTER_THREE} dB.
+  </p>
+
+  <p>
+    At {PLASTER_THICKNESS_MM} mm, plasterboard closes it too, and barely. One sheet
+    costs {PLASTER_24} dB at 2.4 GHz and {PLASTER_5} dB at 5 GHz, so each sheet
+    narrows the gap by {PLASTER_PER_SHEET} dB. Eight sheets leave it at
+    {" "}{PLASTER_AFTER_EIGHT} dB, within a decibel of the empty room. A 100 mm
+    brick wall widens it by {BRICK_PER_WALL} dB.
+  </p>
+
+  <p>
+    In this model the material and its thickness
+    decide which way the gap moves, and the count decides how far. The chart above
+    shows it. Here is how to read it.
+  </p>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 data-block="howto" id="howto-title">How to read what you are looking at</h2>
+
+    <p>
+      Three curves, one for each band. The dashed one is 6 GHz; untick
+      {" "}<strong>Draw the 6 GHz curve too</strong> to hide it.
+    </p>
+
+    <p>
+      The up-and-down axis is <strong>Signal at the device, dBm (linear)</strong>.
+      A dBm counts decibels relative to one milliwatt, so a signal weaker than a
+      milliwatt reads negative.
+      Every 10 dB is a factor of ten in power: −40 dBm is ten thousand times
+      −80 dBm. Higher on the chart means more signal. The axis rescales itself to
+      fit, so read its labels before comparing two settings.
+    </p>
+
+    <p>
+      The side-to-side axis is <strong>Distance from the router, metres (log
+      scale)</strong>. That log scale is what makes each curve a straight line.
+      Every doubling of distance costs the same 6.02 dB.
+    </p>
+
+    <p>
+      The flat dark dashed line labelled threshold is the one you set with
+      {" "}<strong>The weakest signal the device can still use</strong>. Where a
+      curve crosses it is that band's reach, and the cards print that distance.
+      Past the crossing the model still returns numbers, but they are below what
+      you said the device can use.
+    </p>
+
+    <p>
+      Walls do not bend the curves. Each one subtracts the same amount from every
+      point of a curve. The whole line drops, and its crossing slides left. The
+      gap card — <strong>5 GHz below 2.4 GHz</strong>, or above once 5 GHz passes —
+      is where that shows. The curves keep their shape. The equation behind that
+      card is short.
+    </p>
+  </section>
+
+  <section class="math" aria-labelledby="math-title">
+    <h2 data-block="math" class="math-title" id="math-title">Why the gap does not depend on distance</h2>
+
+    <div class="math-eq">
+      <span>P<sub>rx</sub></span><span class="op">=</span>
+      <span>EIRP</span><span class="op">−</span>
+      <span>FSPL(d, f)</span><span class="op">−</span>
+      <span>Σ L<sub>i</sub></span>
+    </div>
+
+    <div class="math-eq">
+      <span>FSPL(dB)</span><span class="op">=</span>
+      <span>20·log₁₀(d<sub>km</sub>)</span><span class="op">+</span>
+      <span>20·log₁₀(f<sub>MHz</sub>)</span><span class="op">+</span>
+      <span>{K_KM_MHZ}</span>
+    </div>
+
+    <dl class="math-where">
+      <dt>EIRP</dt><dd>the power the router radiates, dBm</dd>
+      <dt>d</dt><dd>router-to-device distance</dd>
+      <dt>f</dt><dd>centre frequency of the band</dd>
+      <dt>L<sub>i</sub></dt><dd>loss through the i-th wall, dB</dd>
+      <dt>P<sub>rx</sub></dt><dd>signal at the device, dBm</dd>
+    </dl>
+
+    <p>
+      Subtract one band from the other at the same distance. The distance term
+      is identical in both, so it cancels. With no walls, what survives is
+      20·log₁₀(f₅ ÷ f₂.₄) = {GAP_OPEN} dB, the same at 1 m and at 50 m. Each wall
+      adds the difference between its two losses, which has no distance in it
+      either.
+    </p>
+
+    <p>
+      FSPL is the loss between two
+      isotropic antennas, which collect power over an area of λ²/4π, so a shorter
+      wave is collected over a smaller area. With a fixed receiving area and the
+      same power radiated, the gap is gone.
+    </p>
+
+    <p>
+      The constant {K_KM_MHZ} is 20·log₁₀(4π ÷ c) carried into one pair of units,
+      kilometres and megahertz. It moves with them. In metres and hertz the same
+      equation reads {K_M_HZ}. ITU-R P.525-5 prints the km/MHz form as its equation (6), rounded to 32.4.
+    </p>
+
+    <p>
+      Each wall is one flat slab of a single material in air, met square on:
+    </p>
+
+    <div class="math-eq">
+      <span>L</span><span class="op">=</span>
+      <span>−20·log₁₀|T|</span><span class="op">,</span>
+      <span>T</span><span class="op">=</span>
+      <span class="frac">
+        <span class="frac-num">(1 − R²)·e<sup>−jq</sup></span>
+        <span class="frac-den">1 − R²·e<sup>−2jq</sup></span>
+      </span>
+    </div>
+
+    <div class="math-eq">
+      <span>q</span><span class="op">=</span>
+      <span>(2πt/λ)·√η</span><span class="op">,</span>
+      <span>R</span><span class="op">=</span>
+      <span class="frac">
+        <span class="frac-num">1 − √η</span>
+        <span class="frac-den">1 + √η</span>
+      </span>
+    </div>
+
+    <dl class="math-where">
+      <dt>t</dt><dd>slab thickness</dd>
+      <dt>λ</dt><dd>wavelength in free space</dd>
+      <dt>η</dt><dd>complex relative permittivity, η′ − j·17.98·σ/f<sub>GHz</sub></dd>
+    </dl>
+
+    <p>
+      η′ = a·f<sup>b</sup> and σ = c·f<sup>d</sup>. Those four coefficients are
+      what the published table supplies. The e<sup>−2jq</sup> term in the
+      denominator adds up the reflections bouncing inside the slab. That term is
+      why a thin slab's loss does not rise smoothly with thickness.
+    </p>
+
+    <p class="math-check">
+      <strong>17.98 is a unit as well</strong> — 1/(2π·ε₀·10⁹), built here from ε₀.
+      The printed figure would shift no wall on this page by 0.02 dB or more. One
+      case, counted by hand, comes next.
+    </p>
+  </section>
+
+  <h2 data-block="byhand">One concrete wall, counted by hand</h2>
+
+  <p>
+    Load the <strong>Through one concrete wall</strong> preset. Leave the power and
+    threshold sliders where they start: 20 dBm out, −82 dBm threshold. Then follow
+    2.4 GHz to the end.
+  </p>
+
+  <p>
+    Distance first. Ten metres is {DISTANCE_KM} km, so 20·log₁₀({DISTANCE_KM}) =
+    {" "}{LOG_DISTANCE}, and 20·log₁₀({F24_MHZ}) = {LOG_F24}. Add {K_KM_MHZ} and the
+    path gives {FSPL_24} dB. Leave the distance in metres with this constant and the
+    answer comes out {METRE_MISTAKE_DB} dB too large. It still looks plausible.
+  </p>
+
+  <p>
+    The wall next. At {F24_MHZ} MHz the table gives η′ = {ETA_REAL}. And
+    σ = {CONCRETE_C} × {F24_GHZ}<sup>{CONCRETE_D}</sup> = {SIGMA_24} S/m. So
+    η = {ETA_REAL} − j·{ETA_IMAG}. The slab formula returns {WALL_24} dB at 100 mm.
+  </p>
+
+  <p>
+    Add the two and <strong>Total path loss</strong> reads {PATH_24} dB. The two
+    rounded parts add to {PARTS_SUM}; the model rounds once, at the end. Take
+    {" "}{PATH_24} dB from 20 dBm and the signal card reads {RX_24} dBm. That is
+    {" "}{MARGIN_24} dB above the threshold.
+  </p>
+
+  <p>
+    Now read the 5 GHz row, with nothing else changed. At {F5_MHZ} MHz the free-space loss
+    rises to {FSPL_5} dB. The same wall rises to {WALL_5} dB. That is
+    {" "}{PATH_5} dB in total, and the card reads {RX_5} dBm.
+  </p>
+
+  <Figure caption="In this model, the gap can be reached two ways, one through the distance and one without it, and they land on the same figure.">
+    <TwoRoutes />
+  </Figure>
+
+  <p>
+    The two readings differ by {GAP_HERE} dB. The figure above reaches the same
+    number a second way, from the two frequencies plus the one wall. Two routes,
+    one answer. Both of them rest on five rules.
+  </p>
+
+  <h2 data-block="assumptions">Five rules, and the first is about antennas</h2>
+
+  <p>
+    Every figure the model produces follows these five. Drop any one and those
+    figures stop meaning what they say.
+  </p>
+
+  <ol>
+    <li>Every band leaves the router with the same radiated power, and every antenna is isotropic, with the same gain in every band.</li>
+    <li>One straight path through empty space. No other path reaches the device, bounced or bent.</li>
+    <li>Each wall is one flat slab of a single material. The wave arrives square on.</li>
+    <li>Wall losses add. Two walls cost twice what one wall costs.</li>
+    <li>This is signal, never signal against noise.</li>
+  </ol>
+
+  <p>
+    <strong>No simulation stands behind the model's figures.</strong> Each one is
+    a closed form, evaluated directly.
+  </p>
+
+  <p>
+    <strong>The material coefficients.</strong> ITU-R P.2040-4 (September 2025),
+    § 3, Table 3, f in GHz. The fitted range sits beside each row.
+  </p>
+
+  <div class="math-steps-scroll" tabindex="0" role="region" aria-label="Material coefficients">
+    <table class="math-steps">
+      <thead>
+        <tr>
+          <th scope="col">Material</th>
+          <th scope="col">a, b (η′ = a·f<sup>b</sup>)</th>
+          <th scope="col">c, d (σ = c·f<sup>d</sup>)</th>
+          <th scope="col">Fitted over</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Concrete</td><td>{CONCRETE_A}, 0</td><td>{CONCRETE_C}, {CONCRETE_D}</td><td>1–100 GHz</td></tr>
+        <tr><td>Brick</td><td>3.91, 0</td><td>0.0238, 0.16</td><td>1–40 GHz</td></tr>
+        <tr><td>Plasterboard</td><td>2.73, 0</td><td>0.0085, 0.9395</td><td>1–100 GHz</td></tr>
+        <tr><td>Wood</td><td>1.99, 0</td><td>0.0047, 1.0718</td><td>0.001–100 GHz</td></tr>
+        <tr><td>Glass</td><td>6.31, 0</td><td>0.0036, 1.3394</td><td>0.1–100 GHz</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    Every b in these five rows is zero, so the rows report no trend in η′ with
+    frequency. The band dependence sits in σ and in the wavelength alone. The
+    model refuses a band outside a material's fitted range rather than stretch the
+    fit.
+  </p>
+
+  <p>
+    <strong>The slab.</strong> Equations (43b) and (44) of the same recommendation,
+    one layer, square-on arrival. To stand in for a stud partition, count its two
+    sheets as two slabs; the cavity between them is not modelled. The default
+    thicknesses are slider settings, not citations. Rule one is the one the next
+    section takes apart.
+  </p>
+
+  <h2 data-block="limits">A real router need not keep the first rule</h2>
+
+  <p>
+    <strong>Equal power and equal gain are rules here, not facts.</strong> A real
+    router need not drive the two bands with the same power, or through antennas
+    with the same gain. In the United States even the power limits differ between
+    parts of the 5 GHz band. Say 5 GHz had
+    to draw level through two 100 mm concrete walls. The model needs
+    {" "}{HEAD_START} dB more in the higher band, about {HEAD_START_TIMES} times the
+    power.
+  </p>
+
+  <p>
+    <strong>Everything that makes an indoor signal indoor.</strong> The distance
+    term assumes one clear path through empty space. Indoors, floors, ceilings and
+    metal reflect, and the equation has no term for that. Antennas are isotropic, so pattern,
+    orientation and the hand holding the phone are absent. So is interference. A
+    crowded band looks the same here as an empty one, at 2.4 GHz and at 5 GHz alike.
+  </p>
+
+  <p>
+    <strong>The walls.</strong> Adding decibels per wall treats the walls as
+    independent; the reflections bouncing between two walls are left out. Steel, foil-backed insulation, pipes and
+    metal studs are not among this page's five materials. A slanted path crosses
+    more material than a square-on one.
+  </p>
+
+  <p>
+    <strong>The spread inside each row.</strong> The table's rows are curve fits to
+    more than ninety published material characteristics, gathered from eight
+    sources, and the recommendation calls them examples. The About section below
+    sets this slab beside two other published models, and for a concrete wall
+    those two differ by almost 5 dB at 2.4 GHz and by more than 12 dB near 5 GHz.
+    The formula under the distance term is older than Wi-Fi.
+  </p>
+
+  <h2 data-block="closing">The formula underneath, written down in 1946</h2>
+
+  <p>
+    Harald Friis set out the formula under the distance term in 1946, in three
+    pages of the
+    {" "}<em>Proceedings of the IRE</em>. The first IEEE 802.11 wireless LAN
+    standard followed in 1997, half a century later.
+  </p>
+
+  <p>
+    Friis wrote it with areas, not decibels. The received power is the transmitted
+    power times the two antennas' effective areas, divided by the wavelength
+    squared and the distance squared. Give both antennas the area of an isotropic
+    antenna, λ²/4π, then take logarithms, and the distance term on this page falls
+    out.
+  </p>
+
+  <p>
+    That substitution is where this page's {GAP_OPEN} dB comes from. Hold both
+    antennas' areas fixed instead and the same formula puts the higher band
+    {" "}{GAP_OPEN} dB above the lower one. So the answer to the title question
+    depends on the antennas before it depends on any wall.
+  </p>
+
+  <h2 data-block="about">About this page</h2>
+
+  <p class="note">
+    The test file computes the distance loss two ways: once from the unit constant,
+    once from the wavelength. It computes the slab transmission three ways: the
+    closed form, the first four thousand terms of the internal-reflection series
+    summed directly, and an optical characteristic matrix. They agree to eight decimal places in every case the
+    file runs. <a href="/about">How I check things</a>.
+  </p>
+
+  <p>
+    <strong>Checked against two other published models.</strong> 3GPP TR 38.901,
+    Table 7.4.3-1, models concrete as 5 + 4f dB, with f in GHz. At {F24_MHZ} MHz
+    that gives {TR_38901_24} dB, and this slab reaches {CHECK_3GPP_24} dB at
+    {" "}{CHECK_3GPP_MM} mm. At {F5_MHZ} MHz the same two come out at {TR_38901_5} dB
+    against {CHECK_3GPP_5} dB. ITU-R P.1238-13 has a table of floor penetration
+    factors, Table 5, whose apartment entries are footnoted "per concrete wall":
+    10 dB at 2.4 GHz and 13 dB at 5.2 GHz. This slab reaches {CHECK_ITU_24} dB at
+    {" "}{CHECK_ITU_LOW_MM} mm and 2.4 GHz, and {CHECK_ITU_5} dB at
+    {" "}{CHECK_ITU_HIGH_MM} mm and 5.2 GHz. The three sources give different
+    losses for a concrete wall, and none of them names one thickness for it.
+  </p>
+
+  <p>
+    <strong>Centre frequencies.</strong> {F24_MHZ}, {F5_MHZ} and {F6_MHZ} MHz,
+    picked rather than derived. Another channel in the same band shifts the
+    distance term by 20·log₁₀ of the ratio of the two frequencies.
+  </p>
+
+  <p><strong>Sources.</strong></p>
+
+  <ul class="sources">
+    <li>
+      Harald T. Friis, "A Note on a Simple Transmission Formula,"
+      {" "}<em>Proceedings of the IRE</em> 34(5), 1946, pp. 254–256,
+      {" "}<a href="https://doi.org/10.1109/JRPROC.1946.234568">doi:10.1109/JRPROC.1946.234568</a>.
+    </li>
+    <li>
+      Recommendation ITU-R P.2040-4 (09/2025), § 3 and Table 3; equations (43b)
+      and (44),
+      {" "}<a href="https://www.itu.int/rec/R-REC-P.2040">itu.int/rec/R-REC-P.2040</a>.
+    </li>
+    <li>
+      Recommendation ITU-R P.525-5 (11/2024), equation (6),
+      {" "}<a href="https://www.itu.int/rec/R-REC-P.525">itu.int/rec/R-REC-P.525</a>.
+    </li>
+    <li>
+      Recommendation ITU-R P.1238-13 (09/2025), Table 5,
+      {" "}<a href="https://www.itu.int/rec/R-REC-P.1238">itu.int/rec/R-REC-P.1238</a>.
+    </li>
+    <li>
+      3GPP TR 38.901 version 16.1.0 (Release 16), § 7.4.3.1 and Table 7.4.3-1,
+      published by ETSI as TR 138 901 V16.1.0 (2020-11),
+      {" "}<a href="https://www.etsi.org/deliver/etsi_tr/138900_138999/138901/16.01.00_60/tr_138901v160100p.pdf">etsi.org</a>.
+    </li>
+    <li>
+      Federal Communications Commission, "Home Network Tips for the Coronavirus
+      Pandemic," 26 March 2020,
+      {" "}<a href="https://docs.fcc.gov/public/attachments/DOC-363362A1.pdf">docs.fcc.gov</a>.
+    </li>
+    <li>
+      Power limits by part of the 5 GHz band in the United States: 47 CFR § 15.407(a),
+      {" "}<a href="https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-15/subpart-E/section-15.407">ecfr.gov</a>.
+    </li>
+    <li>
+      "IEEE Standard for Wireless LAN Medium Access Control (MAC) and Physical
+      Layer (PHY) specifications," IEEE 802.11-1997,
+      {" "}<a href="https://doi.org/10.1109/IEEESTD.1997.85951">doi:10.1109/IEEESTD.1997.85951</a>.
+    </li>
+    <li>The threshold slider has no source and claims none — it is a line you place.</li>
+  </ul>
+
+  <RelatedTools slug={SLUG} />
+
+  <script>
+    import "@widgets/wifi-through-walls/widget.js";
+  </script>
+</Base>
