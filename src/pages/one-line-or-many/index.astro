@@ -336,8 +336,9 @@ const HAND_TAIL_SAVED = display_format_minutes(HAND.percentileSavedMinutes);
     <strong>Service is exponential, at CV = 1.</strong> Every counter draws from the
     same distribution. How long a transaction has already run says nothing about
     what is left of it. The CV slider moves off that rule through a two-moment
-    approximation. Its mean wait is exact at one counter, an approximation above
-    it; its 95th percentile is fitted at any counter count.
+    approximation. For the single line its mean wait is exact at one counter and
+    an approximation above it; a line per counter stays exact, because each of those
+    lines is a one-counter queue. The 95th percentile is fitted at any counter count.
   </p>
 
   <p>

@@ -95,8 +95,26 @@ function fonts_build_css() {
   }).join("");
 }
 
+/** 글 폴더의 썸네일 원문. 사이트 카드와 **같은 파일**이다. 없으면 null. */
+const THUMB_FILE_NAME = "_thumb.svg";
+function thumb_read_svg(slug) {
+  const path = join(ROOT, "src", "pages", slug, THUMB_FILE_NAME);
+  return existsSync(path) ? readFileSync(path, "utf8").replace(/<!--[\s\S]*?-->/g, "") : null;
+}
+
+/**
+ * 썸네일 SVG가 읽는 색 토큰. `global.css`의 `:root` 블록을 **그대로** 옮긴다 —
+ * 그림의 색이 사이트와 카드에서 같아야 하고, 값을 여기 다시 적으면 둘이 갈라진다.
+ */
+const GLOBAL_CSS_PATH = join(ROOT, "src", "styles", "global.css");
+function tokens_read_root_css() {
+  const match = readFileSync(GLOBAL_CSS_PATH, "utf8").match(/:root\s*\{[\s\S]*?\n\}/);
+  if (!match) throw new Error("global.css에서 :root 블록을 찾지 못했다");
+  return match[0];
+}
+
 /** 카드 한 장의 HTML. 값은 전부 인자로 받는다 — 이 함수는 아무것도 알지 않는다. */
-function card_build_html({ fontCss, eyebrow, headline, figureValue, figureLabel }) {
+function card_build_html({ fontCss, rootCss, eyebrow, headline, figureValue, figureLabel, thumbSvg }) {
   const figureBlock = figureValue
     ? `<div class="fig">
          <div class="fig-value">${card_escape_text(figureValue)}</div>
@@ -106,6 +124,7 @@ function card_build_html({ fontCss, eyebrow, headline, figureValue, figureLabel 
 
   return `<!doctype html><html><head><meta charset="utf-8"><style>
 ${fontCss}
+${rootCss}
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:${OG_WIDTH_PX / OG_SCALE}px;height:${OG_HEIGHT_PX / OG_SCALE}px;overflow:hidden}
 body{background:${TOKENS.paper};color:${TOKENS.graphite};
@@ -130,12 +149,22 @@ h1{font-family:"Barlow Condensed","Barlow",system-ui,sans-serif;font-weight:600;
   border-left:3px solid ${TOKENS.link};padding:14px 16px}
 .fig-value{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:500;font-size:30px;
   letter-spacing:-0.02em;line-height:1.1}
+/* 썸네일이 있는 카드: 글은 왼쪽, 그림은 오른쪽. 숫자 블록은 제목 아래로 내린다 */
+.has-thumb .mid{align-items:center;gap:22px}
+.has-thumb h1{font-size:33px;line-height:1.04}
+.has-thumb .eyebrow{margin-bottom:8px}
+.has-thumb .body{padding:30px 44px 26px}
+.has-thumb .fig{max-width:none;margin-top:12px;padding:8px 12px}
+.has-thumb .fig-value{font-size:21px}
+.has-thumb .fig-label{margin-top:4px}
+.thumb{flex:0 0 216px;height:135px;border:1px solid ${TOKENS.rule};background:var(--steel-100)}
+.thumb svg{display:block;width:100%;height:100%}
 .fig-label{font-size:11px;line-height:1.35;color:${TOKENS.graphiteSoft};margin-top:7px}
 .foot{display:flex;justify-content:space-between;align-items:baseline;
   border-top:1px solid ${TOKENS.rule};padding-top:12px;
   font-size:12px;color:${TOKENS.graphiteSoft}}
 .foot b{font-weight:600;color:${TOKENS.graphite}}
-</style></head><body>
+</style></head><body class="${thumbSvg ? "has-thumb" : ""}">
 <div class="band"><i></i><i></i><i></i></div>
 <div class="body">
   <div class="brand">
@@ -147,13 +176,20 @@ h1{font-family:"Barlow Condensed","Barlow",system-ui,sans-serif;font-weight:600;
     </svg>
     ${SITE_NAME}
   </div>
-  <div class="mid">
+  ${thumbSvg ? `<div class="mid">
+    <div class="text">
+      <div class="eyebrow">${card_escape_text(eyebrow)}</div>
+      <h1>${card_escape_text(headline)}</h1>
+      ${figureBlock}
+    </div>
+    <div class="thumb">${thumbSvg.replace(/\s(width|height)="\d+"/, "").replace(/\s(width|height)="\d+"/, "")}</div>
+  </div>` : `<div class="mid">
     <div class="text">
       <div class="eyebrow">${card_escape_text(eyebrow)}</div>
       <h1>${card_escape_text(headline)}</h1>
     </div>
     ${figureBlock}
-  </div>
+  </div>`}
   <div class="foot">
     <span>${card_escape_text(SITE_NAME)}</span>
     <span><b>${SITE_DOMAIN}</b></span>
@@ -188,6 +224,7 @@ function cards_read_list() {
       headline: tool.name,
       figureValue: tool.figure?.value ?? null,
       figureLabel: tool.figure?.label ?? null,
+      thumbSvg: thumb_read_svg(tool.slug),
     };
   });
   list.push({
@@ -196,12 +233,14 @@ function cards_read_list() {
     headline: DEFAULT_HEADLINE,
     figureValue: null,
     figureLabel: null,
+    thumbSvg: null,
   });
   return list;
 }
 
 async function og_build_all() {
   const fontCss = fonts_build_css();
+  const rootCss = tokens_read_root_css();
   mkdirSync(OG_DIR, { recursive: true });
 
   const browser = await chromium.launch(CHROMIUM_PATH ? { executablePath: CHROMIUM_PATH } : {});
@@ -213,7 +252,7 @@ async function og_build_all() {
   const written = [];
   const manifest = {};
   for (const card of cards_read_list()) {
-    await page.setContent(card_build_html({ fontCss, ...card }), { waitUntil: "load" });
+    await page.setContent(card_build_html({ fontCss, rootCss, ...card }), { waitUntil: "load" });
     await page.evaluate(() => document.fonts.ready);
     const target = join(OG_DIR, `${card.name}.png`);
     const png = await page.screenshot({ type: "png" });

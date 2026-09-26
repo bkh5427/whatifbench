@@ -4,21 +4,21 @@
     "headline": "Monty Hall with N doors",
     "figureValue": "0.667",
     "figureLabel": "the model's switch win rate at three doors",
-    "sha256": "9c1a9809cb8f02c25d93bad40c75ae0b9cbbf99f6e081e2f7a6feeda406544f0"
+    "sha256": "9aaa7901982e6a6c889e3cfe545c299c7546de52fae19bf1c338914fde5cf50a"
   },
   "simpsons-paradox": {
     "eyebrow": "Chance",
     "headline": "Simpson's Paradox Mixer",
     "figureValue": "19.4 pp",
     "figureLabel": "the model's pooled gap in the Berkeley preset, against a lead in both departments",
-    "sha256": "c4b1c557fae3db32d05b468f67d26c8ca88f4f9cf912df24ada65a616ef8a38f"
+    "sha256": "047c0181c7e08901c0863ab4398ae8780530ba4c3892f492b00b067c25d64ec2"
   },
   "one-line-or-many": {
     "eyebrow": "Chance",
     "headline": "One Line or Many?",
     "figureValue": "5.4×",
     "figureLabel": "the model's cut in mean wait from one line, at four counters 80% busy",
-    "sha256": "06ae0c0345d2d23179e5cbb37ffd7adb629b39e44f07d7e3abf32649afe62c35"
+    "sha256": "c2ba95c5f7012eea74604ac10891553acb96cf936daed46d6be3544bfa86404e"
   },
   "default": {
     "eyebrow": "Interactive calculators",

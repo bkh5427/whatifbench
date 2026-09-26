@@ -22,3 +22,6 @@ export const SITE_SUBLINE =
 
 export const SITE_NAME = "whatifbench";
 export const SITE_DOMAIN = "whatifbench.com";
+
+/** 머리말 워드마크 아래 작은 한 줄. 모든 도구가 움직일 수 있는 모델이라는 것만 말한다. */
+export const SITE_TAGLINE = "Models you can move";

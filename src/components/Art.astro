@@ -1,0 +1,9 @@
+---
+// 첫 화면 삽화 한 장. 장식이다(aria-hidden) — 옆의 제목과 글이 같은 것을 말한다.
+import { art_read_markup } from "./art.js";
+
+const { name } = Astro.props;
+const markup = art_read_markup(name);
+---
+
+{markup && <div class="hero-art" set:html={markup} />}

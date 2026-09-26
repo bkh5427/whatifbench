@@ -75,6 +75,10 @@
      차트 플롯은 782 → 558px로 좁아지지만 로그 눈금 다섯 개는 그대로 들어간다
      (필요 간격 44px, 실제 140px). 잃는 것은 도구 격자가 3열에서 2열이 되는 것뿐이다. */
   --measure: 46rem;
+  /* 머리말·꼬리말·홈·카테고리 인덱스의 폭. 산문(--measure)보다 넓다 —
+     카드 격자가 3열로 서고 대표 카드가 그림과 글을 나란히 놓을 자리다.
+     글 페이지의 본문은 그대로 --measure로 가운데 선다. */
+  --shell: 72rem;
   --gap: 1.5rem;
 
   --sans: "Barlow", system-ui, sans-serif;
@@ -107,10 +111,9 @@ body {
   padding: 0 1.25rem;
 }
 
-/* 머리말·꼬리말. 본문과 같은 폭을 써야 세로 줄이 맞는다. 60rem을 여기에 한 번 더
-   적어두면 --measure를 줄일 때 이쪽만 남아 어긋난다 — 같은 변수를 읽는다. */
+/* 머리말·꼬리말·홈·카테고리 인덱스. 폭은 --shell 하나에서 읽는다. */
 .wrap-wide {
-  max-width: var(--measure);
+  max-width: var(--shell);
   margin: 0 auto;
   padding: 0 1.25rem;
 }
@@ -683,7 +686,8 @@ code {
   display: grid;
   /* auto-fit이 아니라 **auto-fill**이다. auto-fit은 카드가 하나일 때 60rem 전폭으로
      늘려 거대한 빈 상자를 만든다. 발행 1개는 실제로 일어나는 상태다. */
-  grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
+  /* 18rem: --shell 폭에서 3열, 글 페이지(--measure)에서 2열, 폰에서 1열. */
+  grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
   gap: 1px;
   background: var(--rule);
   border: 1px solid var(--rule);
@@ -1161,6 +1165,9 @@ code {
 /* 좁은 화면에서는 등급 설명을 줄로 내린다. 한 줄에 밀어 넣으면 3줄로 흐른다. */
 @media (max-width: 30rem) {
   .byline-sep { display: none; }
+  /* 구분자만 숨기면 "Model grade A"와 설명이 붙어 "Aarithmetic"으로 읽힌다(3차 검사) —
+     설명을 제 줄로 내린다. */
+  .byline-grade-detail { display: block; }
 }
 
 /* ── 페이지 끝 "Read next" ──────────────────────────────────
@@ -1572,6 +1579,7 @@ figure.fig,
    십자를 직접 그린다. 상자 하나에 마크 넷, 마크 하나에 선 둘, 총 여덟 겹.
    덧붙이는 마크업이 없으므로 카드·도해·위젯 어디에나 규칙만 얹으면 된다. */
 .tool-card,
+.feature,
 figure.fig,
 .widget {
   --mark-size: 11px;   /* 십자 한 획의 길이 */
@@ -1580,6 +1588,7 @@ figure.fig,
   --mark-ink: var(--steel-500);
 }
 .tool-card::before,
+.feature::before,
 figure.fig::before,
 .widget::before {
   content: "";
@@ -1716,7 +1725,7 @@ figure.fig .fig-cap { padding: 0 1rem 0.9rem; }
    윤곽선은 강제 색 모드에서도 살아남는 유일한 표식이다. */
 @media (forced-colors: active) {
   .widget-preset[aria-pressed="true"] { outline: 3px solid ButtonText; outline-offset: -3px; }
-  .tool-card::before, figure.fig::before, .widget::before { forced-color-adjust: none; }
+  .tool-card::before, .feature::before, figure.fig::before, .widget::before { forced-color-adjust: none; }
   /* 범례 견본은 배경색 하나로만 그려진다. 강제 색 모드가 그 배경을 치환하면
      견본이 통째로 사라져 "Switch  Stay" 글자만 남는다 — 캔버스의 곡선은
      치환되지 않으므로 견본만 제 색을 지키게 둔다. 선으로 그린 견본
@@ -1765,8 +1774,360 @@ figure.fig .fig-cap { padding: 0 1rem 0.9rem; }
 @media (max-width: 30rem) {
   /* 폰에서 바이라인이 세 줄을 먹어 첫 화면을 밀어낸다. 등급 설명은 접고
      이름·등급·검수일만 남긴다 — 애드센스 심사가 실제로 읽는 항목이라 지우지 않는다. */
-  .byline-grade-detail { display: none; }
+  /* 등급 설명은 폰에서도 보인다 — 도구마다 좁힌 설명(gradeNote)이 있는데 폰에서 숨기면
+     그 단서가 폰 독자에게만 빠진다(2차 검사). */
   /* 도입 삽화의 틀·캡션이 그림(88px)보다 자리를 더 먹었다. 여백만 줄인다. */
   .fig-lede .fig-svg { padding: 0.35rem 0; }
   .fig-lede .fig-cap { padding: 0 0.75rem 0.6rem; }
+}
+
+
+/* ══ 썸네일 · 홈 배치 (2026-09-25) ═══════════════════════════════
+   글마다 한 장의 선 그림(`src/pages/<slug>/_thumb.svg`)을 카드 머리에 얹고,
+   홈을 첫 화면 → 분류 칩 → 가장 최근 글 → 전체 격자 → 방법 순으로 편다.
+   색·서체·직각·등록 마크는 그대로다. 바뀌는 것은 배치뿐이다. */
+
+/* --- 썸네일 --- */
+.thumb {
+  aspect-ratio: 16 / 10;
+  background: var(--steel-100);
+  overflow: hidden;
+}
+.thumb-svg { display: block; width: 100%; height: 100%; }
+
+/* 카드 머리: 카드의 안쪽 여백을 거슬러 테두리까지 채운다. */
+.tool-card > .thumb {
+  margin: -1.15rem -1.15rem 0.35rem;
+  border-bottom: 1px solid var(--rule);
+}
+.tool-card .tool-chip {
+  margin: 0 0 0.3rem;
+  font-family: var(--serif);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--steel-700);
+}
+/* 한 장뿐인 가로 카드: 그림이 왼쪽에 선다. */
+.tool-card:only-child > .thumb {
+  flex: 0 0 15rem;
+  margin: -1.15rem 0 -1.15rem -1.15rem;
+  border-bottom: 0;
+  border-right: 1px solid var(--rule);
+  aspect-ratio: auto;
+  min-height: 9.4rem;
+}
+@media (max-width: 34rem) {
+  .tool-card:only-child > .thumb {
+    flex: 0 0 auto;
+    margin: -1.15rem -1.15rem 0.35rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+    aspect-ratio: 16 / 10;
+    min-height: 0;
+  }
+}
+
+/* --- 머리말: 워드마크 + 작은 표어 --- */
+.site-head-inner { align-items: center; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+.brand-tagline {
+  margin-top: 0.2rem;
+  font-family: var(--serif);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--graphite-soft);
+}
+
+/* --- Tools 패널: 머리말 오른쪽 끝에 매달린 카드 ---
+   열 수(--nav-cols)는 열린 카테고리 수다. 하나면 좁은 드롭다운, 넷이면 머리말 폭 전체. */
+.nav-panel {
+  inset-inline: auto;
+  top: calc(100% + 0.5rem);
+  right: max(1.25rem, calc((100% - var(--shell)) / 2 + 1.25rem));
+  width: min(calc(100% - 2.5rem), calc(var(--nav-cols, 1) * 16rem + 3rem));
+  border: 1px solid var(--rule-strong);
+}
+.nav-panel-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.5rem 0.9rem;
+  border-bottom: 1px solid var(--rule);
+}
+.nav-panel-eyebrow { margin: 0 0 0.2rem; }
+.nav-panel-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: var(--t-md);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--graphite);
+}
+.site-nav .nav-panel-all {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--link);
+}
+.nav-panel-inner {
+  grid-template-columns: repeat(var(--nav-cols, 1), minmax(0, 1fr));
+  padding: 0.5rem 1.5rem 1rem;
+}
+.nav-panel-note {
+  margin: 0;
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid var(--rule);
+  background: var(--paper-sunk);
+  font-size: var(--t-xs);
+  color: var(--graphite-soft);
+}
+@media (max-width: 40rem) {
+  .nav-panel-inner { grid-template-columns: 1fr; }
+}
+/* 폰: 머리말이 한 줄에 서도록 표어와 Latest를 접는다. Latest는 홈 격자로 가는
+   지름길일 뿐이라 Tools 패널의 "All tools →"가 같은 곳으로 간다. */
+@media (max-width: 30rem) {
+  .brand-tagline, .site-nav .nav-latest { display: none; }
+}
+
+/* --- 꼬리말 --- */
+.foot-name {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--t-md);
+  color: var(--paper);
+}
+.foot-tagline {
+  margin: 0.25rem 0 0;
+  font-family: var(--serif);
+  font-size: var(--t-xs);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--steel-300);
+}
+.foot-note {
+  margin: 0;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--steel-200) 20%, transparent);
+}
+
+/* --- 첫 화면 판: 홈·카테고리 인덱스 맨 위 ---
+   글 벽으로 시작하면 아무것도 읽히지 않는다. 강철 판 위에 청사진 삽화 한 장과
+   제목·한 줄을 나란히 세운다. 삽화는 `src/art/*.svg`(scripts/build-art.mjs). */
+.hero-panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 1.5rem 2.5rem;
+  margin-top: 1.5rem;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background: var(--steel-900);
+  color: var(--steel-100);
+}
+.hero-panel .kicker { margin: 0 0 0.6rem; color: var(--steel-300); }
+.hero-panel h1 { margin: 0 0 1rem; color: var(--paper); }
+.hero-panel-sub {
+  margin: 0;
+  font-size: var(--t-md);
+  line-height: 1.5;
+  color: var(--steel-200);
+  text-wrap: pretty;
+}
+.hero-panel .crumbs { color: var(--steel-300); margin-bottom: 1rem; }
+.hero-panel .crumbs a { color: var(--steel-200); }
+.hero-count {
+  display: inline-block;
+  margin: 1.25rem 0 0;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--steel-600);
+  font-size: var(--t-sm);
+  color: var(--steel-100);
+}
+.hero-art {
+  aspect-ratio: 14 / 9;
+  border: 1px solid var(--steel-700);
+}
+.hero-art svg { display: block; width: 100%; height: 100%; }
+.home-steps {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  counter-reset: step;
+}
+.home-steps li {
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--steel-600);
+  font-size: var(--t-sm);
+  color: var(--steel-100);
+  counter-increment: step;
+}
+.home-steps li::before {
+  content: counter(step) "\00a0\00a0";
+  font-family: var(--mono);
+  color: var(--steel-300);
+}
+@media (max-width: 52rem) {
+  .hero-panel { grid-template-columns: 1fr; }
+  .hero-art { order: -1; }
+}
+@media (max-width: 34rem) {
+  /* 폰: 판을 지면 가장자리까지 넓힌다 — 좁은 화면에서 안쪽 여백 두 겹은 그림을 너무 줄인다. */
+  .hero-panel { margin-inline: -1.25rem; }
+}
+
+/* --- 홈: 분류 칩 --- */
+.home-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.5rem 0 0.5rem;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1.1rem;
+  border: 1px solid var(--rule-strong);
+  font-size: var(--t-sm);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--graphite);
+  text-decoration: none;
+}
+.chip:hover { background: var(--steel-100); }
+.chip-current {
+  background: var(--steel-900);
+  border-color: var(--steel-900);
+  color: var(--paper);
+}
+.chip-current:hover { background: var(--steel-700); }
+
+/* --- 홈: 절 머리 --- */
+.home-block { margin-top: 3rem; }
+.section-head {
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--rule);
+}
+.section-head .kicker { margin: 0 0 0.35rem; }
+.section-head h2 { margin: 0; font-size: var(--t-xl); }
+.home-block .tool-grid {
+  margin-top: 0;
+  /* 여기서는 auto-fit: 카드가 둘이면 둘이 폭을 나눠 갖는다(빈 열을 남기지 않는다).
+     하나면 `:only-child` 가로 카드가 된다. */
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+}
+
+/* --- 홈: 가장 최근 글 --- */
+.feature {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  border: 1px solid var(--rule);
+}
+.feature:hover { background: var(--steel-100); }
+/* 그림 칸과 글 칸은 **서로 넘지 않는다.** 예전에는 `.thumb`에 height:100%를 줬는데,
+   글이 길어 행이 높아지면 16:10 비율이 폭을 역산해 그림이 글 칸 위로 넘쳤다.
+   이제 그림은 칸 폭을 기준으로만 크기를 잡고(비율 유지), 남는 세로는 칸의 바탕색이 채운다.
+   두 칸 모두 min-width:0 + overflow:hidden — 어떤 폭에서도 옆 칸을 침범할 수 없다. */
+.feature-thumb {
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  background: var(--steel-100);
+  border-right: 1px solid var(--rule);
+}
+.feature-thumb .thumb { width: 100%; }
+.feature-copy { min-width: 0; overflow-wrap: anywhere; }
+.feature-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 2rem 2.25rem;
+}
+.feature-copy .kicker { margin: 0; }
+.feature h3 { margin: 0; font-size: var(--t-xl); }
+.feature h3 a { color: var(--graphite); text-decoration: none; }
+/* 카드 전체가 클릭 영역이다 — 링크는 제목 하나뿐이다 (.tool-card와 같은 방법). */
+.feature h3 a::after { content: ""; position: absolute; inset: 0; }
+.feature h3 a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.feature:has(a:focus-visible) { outline: 2px solid var(--link); outline-offset: -3px; }
+.feature a:focus-visible { outline: none; }
+.feature-blurb { margin: 0; color: var(--graphite-soft); }
+.feature .tool-figure { margin-top: 0; }
+.feature:hover .tool-figure { background: var(--paper); }
+.feature-button {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1.2rem;
+  background: var(--steel-900);
+  color: var(--paper);
+  font-size: var(--t-sm);
+  font-weight: 600;
+}
+.feature:hover .feature-button { background: var(--steel-700); }
+@media (max-width: 60rem) {
+  .feature { grid-template-columns: 1fr; }
+  .feature-thumb { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .feature-copy { padding: 1.25rem; }
+  .feature h3 { font-size: var(--t-lg); }
+}
+
+/* --- 홈: 방법 --- */
+.home-method {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 0.5rem 3rem;
+  margin-top: 3.5rem;
+  padding: 2.5rem clamp(1.25rem, 4vw, 3rem);
+  background: var(--steel-900);
+  color: var(--steel-100);
+}
+.home-method-head .kicker { margin: 0 0 0.4rem; color: var(--steel-300); }
+.home-method-head h2 { margin: 0; color: var(--paper); }
+.home-method-body > :last-child { margin-bottom: 0; }
+.home-method p { margin: 0 0 1rem; }
+.home-method .note { color: var(--steel-200); }
+.home-method a { color: var(--steel-300); }
+.home-method-link { font-weight: 600; }
+@media (max-width: 48rem) {
+  .home-method { grid-template-columns: 1fr; }
+  .home-method-head { margin-bottom: 1rem; }
+}
+
+/* --- 카테고리 인덱스: 넓은 판 위의 산문 --- */
+.prose-col { max-width: var(--measure); }
+
+/* 앵커(#latest)·스킵 링크로 이동한 자리가 스티키 머리말 밑에 가리지 않게 한다.
+   머리말 높이(폰 약 85px, 데스크톱 약 87px)보다 넉넉히 둔다. */
+html { scroll-padding-top: 6.5rem; }
+/* 바이라인 날짜가 폰에서 하이픈 자리에서 끊겨 "2026-" / "09-25"로 갈라지던 것.
+   날짜 글자만 묶는다 — ".byline-dim" 전체를 묶으면 앞의 줄바꿈 없는 공백과 이어져
+   "Model grade" / "A · Reviewed …"로 등급 글자가 갈라진다(2차 검사). */
+.byline-date { white-space: nowrap; }
+/* 첫 화면 판의 세 단계 목록 제목 — 목록의 범위(모든 도구 페이지)를 화면에 보인다 */
+.hero-panel .home-steps-title { margin: 1.5rem 0 0; }
+.hero-panel .home-steps-title + .home-steps { margin-top: 0.6rem; }
+/* 같은 날 발행된 대표 카드가 여럿이면 위아래로 쌓는다 */
+.feature-stack { display: grid; gap: 1.75rem; }
+/* 360px 이하에서 머리말이 두 줄(129px)로 접혀 스티키 머리말이 앵커 착지를 가렸다.
+   워드마크와 메뉴 간격만 줄여 한 줄로 세운다 — 한 줄이면 scroll-padding 6.5rem이 맞는다. */
+@media (max-width: 24rem) {
+  .site-head-inner { gap: 0.5rem 0.75rem; }
+  .brand { font-size: var(--t-md); gap: 0.35rem; }
+  .site-nav { gap: 0.25rem 0.9rem; }
 }

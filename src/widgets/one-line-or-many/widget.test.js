@@ -188,6 +188,26 @@ describe('표시 문자열', () => {
     expect(display_describe_exactness(model_calculate_result(4, 0.8, 3, 1.5))).toContain('approximation');
   });
 
+  it("CV≠1 문구는 근사를 한 줄 배치의 창구 둘 이상으로만 좁히고, 창구 수와 상관없이 같은 문장이다", () => {
+    const many = display_describe_exactness(model_calculate_result(4, 0.8, 3, 1.5));
+    expect(many).toContain('the one-line mean is exact at one counter and a two-moment approximation at two or more');
+    expect(many).toContain('a line per counter keeps an exact mean at every counter count');
+    expect(many).toContain("fitted to its layout's mean");
+    expect(display_describe_exactness(model_calculate_result(1, 0.8, 3, 1.5))).toBe(many);
+  });
+
+  it("로그 축 라벨은 자릿수 상한에서 0으로 뭉개지지 않는다", () => {
+    expect(display_format_axis_minutes(0.0001)).toBe('0.00010');
+    expect(display_format_axis_minutes(0.00001)).toBe('10⁻⁵');
+    expect(display_format_axis_minutes(0.000001)).toBe('10⁻⁶');
+    expect(display_format_axis_minutes(6.3747e-8)).toBe('6.4×10⁻⁸');
+    expect(display_format_axis_minutes(9.18e-5)).toBe('9.2×10⁻⁵');
+    expect(display_format_axis_minutes(9.96e-6)).toBe('10⁻⁵');
+    // 한 축의 서로 다른 값은 서로 다른 글자다
+    const labels = [1e-4, 1e-5, 1e-6, 6.3747e-8].map(display_format_axis_minutes);
+    expect(new Set(labels).size).toBe(labels.length);
+  });
+
   // 감사에서 확인된 결함: c=8·ρ=0.1에서 단일 대기열의 평균 대기가 0에 아주 가까운데도
   // 옛 표기는 "0.00분"으로 찍었고, 그 값을 분모로 삼은 비율은 "385095.7×"였다 —
   // 화면의 분모는 0인데 배수는 38만 배라는 앞뒤가 안 맞는 문구였다.

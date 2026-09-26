@@ -11,6 +11,8 @@ const GRADE_MEANING = {
   A: "arithmetic and probability — this one is either right or wrong",
   B: "a standard formula with published coefficients",
 };
+// gradeNote: 등급의 일반 뜻이 그 도구에 조건 없이 참이 아닐 때 _meta.js가 좁혀 쓰는 한 줄.
+// (예: 대기행렬 도구는 CV = 1에서만 정확하고 CV 슬라이더를 움직이면 근사로 바뀐다)
 const AVATAR_SIZE_BYLINE = 34;
 
 const { slug } = Astro.props;
@@ -28,7 +30,7 @@ const reviewed = tool.updated ?? null;
   <p class="byline-text">
     <a href="/about">Planimeter</a> · Model grade {tool.grade}<span
       class="byline-grade-detail"><span class="byline-sep">{" — "}</span>
-      <span class="byline-grade">{GRADE_MEANING[tool.grade]}</span></span>
-    {reviewed && (<span class="byline-dim">{"\u00a0· Reviewed "}{reviewed}</span>)}
+      <span class="byline-grade">{tool.gradeNote ?? GRADE_MEANING[tool.grade]}</span></span>
+    {reviewed && (<span class="byline-dim">{"\u00a0· Reviewed "}<span class="byline-date">{reviewed}</span></span>)}
   </p>
 </div>

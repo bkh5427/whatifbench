@@ -1,64 +1,99 @@
 ---
 import Base from "@layouts/Base.astro";
+import Art from "@components/Art.astro";
+import FeatureCard from "@components/FeatureCard.astro";
+import ToolCard from "@components/ToolCard.astro";
 import { SITE_HEADLINE, SITE_SUBLINE } from "@data/site.js";
-import { layout_read_sections } from "@data/layout.js";
+import { CATEGORIES, tools_read_latest, tools_read_latest_day } from "@data/tools.js";
 
-// 무엇을 어떻게 묶을지는 이 페이지가 정하지 않는다 — `src/data/layout.js`가 정한다.
-// 재배치는 그 파일 하나를 고치는 일이고, 글도 이 페이지도 건드리지 않는다.
-const sections = layout_read_sections();
+// 홈의 배치: 그림 있는 첫 화면 → 가장 최근 글 크게 → 나머지 격자 → 이 사이트의 방법.
+// 대표 글은 **고르지 않는다** — 가장 최근 발행일에 나온 글이 전부 선다(같은 날 둘이면 둘 다).
+const latest = tools_read_latest();
+const { date: newestDate, newest, earlier } = tools_read_latest_day();
+
+/** 최신 글 목록이 시작하는 자리(대표 카드). 머리말 "Latest"·"All" 칩·Tools 패널이 여기로 온다. */
+const LATEST_ID = "latest";
+
+/** 모든 도구 페이지가 가진 세 부분. 첫 화면 칩. */
+const HOME_STEPS = ["Move the slider", "Read the model", "See what it leaves out"];
+
+const category_chips = CATEGORIES.map((c) => ({
+  ...c,
+  count: latest.filter((t) => t.category === c.key).length,
+})).filter((c) => c.count > 0);
 ---
 
 <Base
   title={null}
   description="Small interactive tools for questions where the arithmetic is easy and the answer still feels wrong."
+  wide
 >
-  <section class="hero">
-    <p class="kicker hero-kicker">Interactive workbench</p>
-    <h1>{SITE_HEADLINE}</h1>
-    <p>{SITE_SUBLINE}</p>
+  <section class="hero-panel">
+    <div class="hero-panel-text">
+      <p class="kicker">Interactive workbench</p>
+      <h1>{SITE_HEADLINE}</h1>
+      <p class="hero-panel-sub">{SITE_SUBLINE}</p>
+      <p class="kicker home-steps-title" id="steps-title">On every tool page</p>
+      <ol class="home-steps" aria-labelledby="steps-title">
+        {HOME_STEPS.map((step) => <li>{step}</li>)}
+      </ol>
+    </div>
+    <Art name="home" />
   </section>
 
-  <p>
-    I make small tools for questions where the arithmetic is short and the answer
-    still feels wrong. You drag a slider, a chart moves, and you can watch the
-    point where your intuition gives out.
-  </p>
-
-  <p>
-    In 1990 a magazine column said switching doors wins two games in three.
-    Thousands of letters told the columnist she was wrong. Watching ten thousand simulated games close in on 0.667 is a
-    different experience. That is the whole idea.
-  </p>
+  <nav class="home-chips" aria-label="Sections">
+    <a class="chip chip-current" href={`#${LATEST_ID}`}>All · {latest.length}</a>
+    {category_chips.map((c) => <a class="chip" href={c.href}>{c.name} · {c.count}</a>)}
+  </nav>
 
   {
-    sections.map((section) => (
-      <section class="home-cat">
-        <h2><a href={section.href}>{section.name}</a></h2>
-        <p class="section-lede">{section.lede}</p>
-        {section.tools.length > 0 && (
-          <div class="tool-grid">
-            {section.tools.map((tool) => (
-              <article class="tool-card">
-                <div class="tool-body">
-                  <h3><a href={`/${tool.slug}`}>{tool.name}</a></h3>
-                  <p>{tool.blurb}</p>
-                </div>
-                {tool.figure && (
-                  <p class="tool-figure">
-                    <span class="tool-figure-value">{tool.figure.value}</span>{" "}
-                    <span class="tool-figure-label">{tool.figure.label}</span>
-                  </p>
-                )}
-              </article>
-            ))}
-          </div>
-        )}
+    newest.length > 0 && (
+      <section class="home-block" id={LATEST_ID} aria-labelledby="newest-title">
+        <div class="section-head">
+          <p class="kicker">Newest</p>
+          <h2 id="newest-title">Published {newestDate}</h2>
+        </div>
+        <div class="feature-stack">
+          {newest.map((tool) => <FeatureCard tool={tool} />)}
+        </div>
       </section>
-    ))
+    )
   }
 
-  <p class="note">
-    Every tool has a written page under it: what the model assumes, and what it
-    leaves out. I add them when they are finished, not on a schedule.
-  </p>
+  {
+    earlier.length > 0 && (
+      <section class="home-block" aria-labelledby="earlier-title">
+        <div class="section-head">
+          <h2 id="earlier-title">Earlier</h2>
+        </div>
+        <div class="tool-grid">
+          {earlier.map((tool) => <ToolCard tool={tool} heading="h3" />)}
+        </div>
+      </section>
+    )
+  }
+
+  <aside class="home-method" aria-labelledby="method-title">
+    <div class="home-method-head">
+      <p class="kicker">How it works</p>
+      <h2 id="method-title">Why a slider</h2>
+    </div>
+    <div class="home-method-body">
+      <p>
+        I make small tools for questions where the arithmetic is short and the answer
+        still feels wrong. You drag a slider, a chart moves, and you can watch the
+        point where your intuition gives out.
+      </p>
+      <p>
+        In 1990 a magazine column said switching doors wins two games in three.
+        Thousands of letters told the columnist she was wrong. Watching ten thousand simulated games close in on 0.667 is a
+        different experience. That is the whole idea.
+      </p>
+      <p class="note">
+        Every tool has a written page under it: what the model assumes, and what it
+        leaves out. I add them when they are finished, not on a schedule.
+      </p>
+      <a class="home-method-link" href="/about">About the site →</a>
+    </div>
+  </aside>
 </Base>

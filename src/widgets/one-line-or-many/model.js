@@ -40,7 +40,7 @@ export const QUEUE_CV_MIN = 0.25;
 export const QUEUE_CV_MAX = 2;
 export const QUEUE_CV_STEP = 0.05;
 export const QUEUE_CV_DEFAULT = 1;
-/** 이 값에서만 두 배치의 식이 정확하다. 벗어나면 근사임을 화면이 말한다. */
+/** 이 값에서만 모든 수(두 배치의 평균·95퍼센타일)가 정확하다. 벗어나면 무엇이 근사인지 화면이 말한다. */
 export const QUEUE_CV_EXACT = 1;
 
 // ── 퍼센타일 ────────────────────────────────────────────────

@@ -32,8 +32,12 @@ import {
   tools_check_publishable,
   tools_read_category,
   tools_read_one,
+  tools_read_latest,
+  tools_read_latest_day,
   tools_read_published,
 } from "./tools.js";
+import { thumb_read_markup, thumb_read_slugs } from "../components/thumb.js";
+import { art_read_markup, art_read_names } from "../components/art.js";
 
 /** 발행 게이트를 통과한 가상의 목록. 실제 TOOLS는 검수 전이라 게이트에 걸린다. */
 function tools_build_pool(overrides = {}) {
@@ -505,5 +509,83 @@ describe("목록 읽기", () => {
   it("미발행 도구는 어느 목록에도 없다", () => {
     const published = new Set(tools_read_slugs(tools_read_published()));
     for (const t of TOOLS.filter((x) => !x.published)) expect(published.has(t.slug)).toBe(false);
+  });
+});
+
+describe("최신순 — 홈의 대표 카드와 The latest 격자", () => {
+  it("발행된 것 전부를, 발행된 것만 낸다", () => {
+    expect(tools_read_slugs(tools_read_latest()).sort()).toEqual(tools_read_slugs(tools_read_published()).sort());
+  });
+
+  it("since가 내림차순이다", () => {
+    const dates = tools_read_latest().map((t) => t.since);
+    for (let i = 1; i < dates.length; i += 1) expect(dates[i - 1] >= dates[i]).toBe(true);
+  });
+
+  it("같은 날이면 TOOLS에서 뒤에 있는 글이 앞에 선다", () => {
+    const latest = tools_read_latest();
+    for (let i = 1; i < latest.length; i += 1) {
+      if (latest[i - 1].since === latest[i].since) {
+        expect(TOOLS.indexOf(latest[i - 1])).toBeGreaterThan(TOOLS.indexOf(latest[i]));
+      }
+    }
+  });
+
+  it("현재 대표 카드는 one-line-or-many다 (2026-09-25 두 편 중 배열 뒤쪽)", () => {
+    expect(tools_read_latest()[0].slug).toBe("one-line-or-many");
+  });
+});
+
+describe("썸네일", () => {
+  it("발행된 도구는 전부 자기 폴더에 _thumb.svg를 갖는다", () => {
+    const slugs = new Set(thumb_read_slugs());
+    for (const t of tools_read_published()) expect(slugs.has(t.slug), t.slug).toBe(true);
+  });
+
+  it("그림에는 글자가 없다 — 검사할 주장을 그림에 싣지 않는다", () => {
+    for (const slug of thumb_read_slugs()) expect(thumb_read_markup(slug)).not.toMatch(/<text\b/);
+  });
+
+  it("장식으로 박히고, 크기는 CSS가 정한다", () => {
+    for (const slug of thumb_read_slugs()) {
+      const svgTag = thumb_read_markup(slug).match(/<svg\b[^>]*>/)[0];
+      expect(svgTag).toContain('aria-hidden="true"');
+      expect(svgTag).not.toMatch(/\s(width|height)=/);
+    }
+  });
+
+  it("색은 사이트 토큰만 쓴다 — 16진 색을 직접 적지 않는다", () => {
+    for (const slug of thumb_read_slugs()) expect(thumb_read_markup(slug)).not.toMatch(/#[0-9a-f]{3,6}\b/i);
+  });
+
+  it("없는 slug는 null", () => {
+    expect(thumb_read_markup("no-such-tool")).toBeNull();
+  });
+});
+
+describe("첫 화면 삽화", () => {
+  it("홈과 열린 카테고리마다 삽화가 있다", () => {
+    const names = new Set(art_read_names());
+    expect(names.has("home")).toBe(true);
+    for (const c of CATEGORIES) expect(names.has(c.key), c.key).toBe(true);
+  });
+
+  it("글자·16진 색이 없고 장식으로 박힌다", () => {
+    for (const name of art_read_names()) {
+      const markup = art_read_markup(name);
+      expect(markup).not.toMatch(/<text\b/);
+      expect(markup).not.toMatch(/#[0-9a-f]{3,6}\b/i);
+      expect(markup.match(/<svg\b[^>]*>/)[0]).toContain('aria-hidden="true"');
+    }
+  });
+});
+
+describe("가장 최근 발행일 — 대표 칸", () => {
+  it("대표 칸은 그날 발행된 도구 전부, 나머지는 모두 그보다 앞선 날", () => {
+    const { date, newest, earlier } = tools_read_latest_day();
+    expect(newest.length).toBeGreaterThan(0);
+    for (const t of newest) expect(t.since).toBe(date);
+    for (const t of earlier) expect(t.since < date).toBe(true);
+    expect(newest.length + earlier.length).toBe(tools_read_published().length);
   });
 });

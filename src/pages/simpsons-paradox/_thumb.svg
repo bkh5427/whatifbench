@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
+  <rect width="320" height="200" style="fill:var(--steel-100)"/>
+  <path d="M0 20H320M0 40H320M0 60H320M0 80H320M0 100H320M0 120H320M0 140H320M0 160H320M0 180H320M20 0V200M40 0V200M60 0V200M80 0V200M100 0V200M120 0V200M140 0V200M160 0V200M180 0V200M200 0V200M220 0V200M240 0V200M260 0V200M280 0V200M300 0V200" style="fill:none;stroke:var(--steel-200);stroke-width:1"/>
+  <!-- 두 집단에서는 B(--series-2)가 앞서고, 합치면 A(--series-1)가 앞선다 — 위젯 기본 프리셋(버클리)과 같은 방향.
+       합친 막대는 가중평균이라 각 선택지의 두 집단 막대 사이 높이다: A 72·32 → 66, B 90·48 → 54 -->
+  <path d="M20 160H300" style="fill:none;stroke:var(--graphite);stroke-width:2"/>
+  <rect x="34" y="88" width="20" height="72" style="fill:var(--series-1)"/>
+  <rect x="58" y="70" width="20" height="90" style="fill:var(--series-2)"/>
+  <rect x="104" y="128" width="20" height="32" style="fill:var(--series-1)"/>
+  <rect x="128" y="112" width="20" height="48" style="fill:var(--series-2)"/>
+  <path d="M30 172V178H152V172" style="fill:none;stroke:var(--graphite-soft);stroke-width:1.5"/>
+  <path d="M176 30V160" style="fill:none;stroke:var(--graphite-soft);stroke-width:1.5;stroke-dasharray:5 4"/>
+  <path d="M184 96H206" style="fill:none;stroke:var(--graphite-soft);stroke-width:2;stroke-linecap:round"/>
+  <path d="M214 96L204 90.5V101.5Z" style="fill:var(--graphite-soft)"/>
+  <rect x="228" y="94" width="28" height="66" style="fill:var(--series-1)"/>
+  <rect x="262" y="106" width="28" height="54" style="fill:var(--series-2)"/>
+  <path d="M224 172V178H294V172" style="fill:none;stroke:var(--graphite-soft);stroke-width:1.5"/>
+</svg>

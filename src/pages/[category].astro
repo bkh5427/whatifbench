@@ -1,6 +1,9 @@
 ---
 import Base from "@layouts/Base.astro";
-import { CATEGORIES, tools_read_published } from "@data/tools.js";
+import Art from "@components/Art.astro";
+import FeatureCard from "@components/FeatureCard.astro";
+import ToolCard from "@components/ToolCard.astro";
+import { CATEGORIES, tools_read_latest_day, tools_read_published } from "@data/tools.js";
 import { INTROS } from "@data/category-intros.js";
 
 export function getStaticPaths() {
@@ -10,6 +13,12 @@ export function getStaticPaths() {
 const { category } = Astro.props;
 const intro = INTROS[category.key];
 const tools = tools_read_published(category.key);
+// 맨 위 그림 아래에 가장 최근 글을 크게, 나머지는 격자로. 도입글은 그 아래로 내린다 —
+// 첫 화면이 글 벽이면 아무것도 읽히지 않는다.
+const { date: newestDate, newest, earlier } = tools_read_latest_day(category.key);
+/** 첫 화면 칩의 도구 개수 문구. 하나면 단수. */
+const TOOL_COUNT_MIN_FOR_PLURAL = 2;
+const tool_count_text = (n) => `${n} ${n >= TOOL_COUNT_MIN_FOR_PLURAL ? "tools" : "tool"}`;
 
 // 이 카테고리가 아직 비었을 때 내보낼 곳. **막다른 골목을 만들지 않는다** —
 // 지금 이 페이지의 본문 내부 링크는 브레드크럼의 `/` 하나뿐이다.
@@ -37,35 +46,56 @@ const category_link_text = (c) =>
     : `The ${c.name} section →`;
 ---
 
-<Base title={category.name} description={intro.description} category={category.key}>
-  <nav class="crumbs" aria-label="Breadcrumb">
-    <a href="/">Home</a> <span aria-hidden="true">›</span> {category.name}
-  </nav>
-
-  <h1>{category.name}</h1>
-
-  {intro.paragraphs.map((text) => <p>{text}</p>)}
+<Base title={category.name} description={intro.description} category={category.key} wide>
+  <section class="hero-panel">
+    <div class="hero-panel-text">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="/">Home</a> <span aria-hidden="true">›</span> {category.name}
+      </nav>
+      <p class="kicker">Section</p>
+      <h1>{category.name}</h1>
+      <p class="hero-panel-sub">{intro.description}</p>
+      {tools.length > 0 && <p class="hero-count">{tool_count_text(tools.length)}</p>}
+    </div>
+    <Art name={category.key} />
+  </section>
 
   {
-    tools.length > 0 && (
-      <div class="tool-grid">
-        {tools.map((tool) => (
-          <article class="tool-card">
-            <div class="tool-body">
-              <h2><a href={`/${tool.slug}`}>{tool.name}</a></h2>
-              <p>{tool.blurb}</p>
-            </div>
-            {tool.figure && (
-              <p class="tool-figure">
-                <span class="tool-figure-value">{tool.figure.value}</span>{" "}
-                <span class="tool-figure-label">{tool.figure.label}</span>
-              </p>
-            )}
-          </article>
-        ))}
-      </div>
+    newest.length > 0 && (
+      <section class="home-block" aria-labelledby="cat-newest-title">
+        <div class="section-head">
+          <p class="kicker">Newest</p>
+          <h2 id="cat-newest-title">Published {newestDate}</h2>
+        </div>
+        <div class="feature-stack">
+          {newest.map((tool) => <FeatureCard tool={tool} />)}
+        </div>
+      </section>
     )
   }
+
+  {
+    earlier.length > 0 && (
+      <section class="home-block" aria-labelledby="cat-earlier-title">
+        <div class="section-head">
+          <h2 id="cat-earlier-title">Earlier</h2>
+        </div>
+        <div class="tool-grid">
+          {earlier.map((tool) => (
+            <ToolCard tool={tool} heading="h3" showCategory={false} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <section class="home-block prose-col" aria-labelledby="cat-about-title">
+    <div class="section-head">
+      <p class="kicker">About this section</p>
+      <h2 id="cat-about-title">About the {category.name} section</h2>
+    </div>
+    {intro.paragraphs.map((text) => <p>{text}</p>)}
+  </section>
 
   {
     elsewhere.length > 0 && (
@@ -74,18 +104,7 @@ const category_link_text = (c) =>
         <p>{elsewhere_text(elsewhere.length)}</p>
         <div class="tool-grid">
           {elsewhere.map((tool) => (
-            <article class="tool-card">
-              <div class="tool-body">
-                <h3><a href={`/${tool.slug}`}>{tool.name}</a></h3>
-                <p>{tool.blurb}</p>
-              </div>
-              {tool.figure && (
-                <p class="tool-figure">
-                  <span class="tool-figure-value">{tool.figure.value}</span>{" "}
-                  <span class="tool-figure-label">{tool.figure.label}</span>
-                </p>
-              )}
-            </article>
+            <ToolCard tool={tool} heading="h3" />
           ))}
         </div>
         {otherSections.length > 0 && (

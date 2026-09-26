@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
+  <rect width="320" height="200" style="fill:var(--steel-100)"/>
+  <path d="M0 20H320M0 40H320M0 60H320M0 80H320M0 100H320M0 120H320M0 140H320M0 160H320M0 180H320M20 0V200M40 0V200M60 0V200M80 0V200M100 0V200M120 0V200M140 0V200M160 0V200M180 0V200M200 0V200M220 0V200M240 0V200M260 0V200M280 0V200M300 0V200" style="fill:none;stroke:var(--steel-200);stroke-width:1"/>
+  <!-- 문 셋: 고른 문(머무름 = --series-2), 사회자가 연 문(점선), 바꿀 문(바꿈 = --series-1) -->
+  <path d="M30 160H290" style="fill:none;stroke:var(--graphite);stroke-width:2"/>
+  <rect x="50" y="62" width="60" height="98" style="fill:var(--surface);stroke:var(--series-2);stroke-width:3"/>
+  <circle cx="99" cy="113" r="3.5" style="fill:var(--series-2)"/>
+  <rect x="130" y="62" width="60" height="98" style="fill:var(--steel-200);stroke:var(--graphite-soft);stroke-width:1.5;stroke-dasharray:5 4"/>
+  <path d="M130 62L114 70V154L130 160Z" style="fill:var(--surface);stroke:var(--graphite-soft);stroke-width:1.5;stroke-linejoin:round"/>
+  <rect x="210" y="62" width="60" height="98" style="fill:var(--surface);stroke:var(--series-1);stroke-width:3"/>
+  <circle cx="259" cy="113" r="3.5" style="fill:var(--series-1)"/>
+  <!-- 바꾸기 화살표 -->
+  <path d="M80 50Q160 12 238 49" style="fill:none;stroke:var(--series-1);stroke-width:2.5;stroke-linecap:round"/>
+  <path d="M244 52L230.5 50.6L235.2 41.3Z" style="fill:var(--series-1)"/>
+  <circle cx="80" cy="50" r="4.5" style="fill:var(--series-2)"/>
+</svg>

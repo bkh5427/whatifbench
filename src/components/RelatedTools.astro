@@ -9,6 +9,7 @@ import {
   tools_read_category,
   tools_read_published,
 } from "../data/tools.js";
+import ToolCard from "./ToolCard.astro";
 import { prose_format_fallback_lead, prose_format_separator } from "./prose.js";
 
 const { slug } = Astro.props;
@@ -49,18 +50,7 @@ const sectionLinkText =
     related.length > 0 ? (
       <div class="tool-grid">
         {related.map((t) => (
-          <article class="tool-card">
-            <div class="tool-body">
-              <h3><a href={`/${t.slug}`}>{t.name}</a></h3>
-              <p>{t.blurb}</p>
-            </div>
-            {t.figure && (
-              <p class="tool-figure">
-                <span class="tool-figure-value">{t.figure.value}</span>{" "}
-                <span class="tool-figure-label">{t.figure.label}</span>
-              </p>
-            )}
-          </article>
+          <ToolCard tool={t} heading="h3" />
         ))}
       </div>
     ) : (

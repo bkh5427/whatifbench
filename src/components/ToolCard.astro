@@ -1,0 +1,31 @@
+---
+// 도구 카드 한 장. 홈·카테고리 인덱스·"Read next"가 모두 이 한 벌을 쓴다 —
+// 예전에는 같은 마크업이 세 파일에 복사돼 있어, 한 곳만 고치면 나머지가 어긋났다.
+//
+// heading: 그 페이지의 문서 위계에서 카드 제목이 설 자리 ("h2" | "h3").
+// showCategory: 카드 위 분류 표찰. 이미 한 분류 안에 있는 목록(카테고리 인덱스)에서는
+//               같은 말을 카드마다 되풀이하므로 끈다.
+import Thumb from "./Thumb.astro";
+import { tools_read_category } from "../data/tools.js";
+
+const { tool, heading = "h3", showCategory = true } = Astro.props;
+const Heading = heading;
+const cat = showCategory ? tools_read_category(tool.category) : null;
+---
+
+<article class="tool-card">
+  <Thumb slug={tool.slug} />
+  <div class="tool-body">
+    {cat && <p class="tool-chip">{cat.name}</p>}
+    <Heading><a href={`/${tool.slug}`}>{tool.name}</a></Heading>
+    <p>{tool.blurb}</p>
+  </div>
+  {
+    tool.figure && (
+      <p class="tool-figure">
+        <span class="tool-figure-value">{tool.figure.value}</span>{" "}
+        <span class="tool-figure-label">{tool.figure.label}</span>
+      </p>
+    )
+  }
+</article>

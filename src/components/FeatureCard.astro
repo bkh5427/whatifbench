@@ -1,0 +1,30 @@
+---
+// 큰 대표 카드: 큰 썸네일 왼쪽, 글 오른쪽. 홈과 카테고리 인덱스가 "가장 최근 글"에 쓴다.
+// 카드 전체가 클릭 영역이고 링크는 제목 하나다 (`ToolCard.astro`와 같은 방법).
+import Thumb from "./Thumb.astro";
+import { tools_read_category } from "../data/tools.js";
+
+const { tool, heading = "h3" } = Astro.props;
+const Heading = heading;
+const cat = tools_read_category(tool.category);
+---
+
+<article class="feature">
+  <div class="feature-thumb">
+    <Thumb slug={tool.slug} />
+  </div>
+  <div class="feature-copy">
+    <p class="kicker">{cat.name} · Published {tool.since}</p>
+    <Heading><a href={`/${tool.slug}`}>{tool.name}</a></Heading>
+    <p class="feature-blurb">{tool.blurb}</p>
+    {
+      tool.figure && (
+        <p class="tool-figure">
+          <span class="tool-figure-value">{tool.figure.value}</span>{" "}
+          <span class="tool-figure-label">{tool.figure.label}</span>
+        </p>
+      )
+    }
+    <span class="feature-button" aria-hidden="true">Open the tool →</span>
+  </div>
+</article>

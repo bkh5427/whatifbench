@@ -123,6 +123,34 @@ export function tools_read_published(categoryKey = null) {
   return TOOLS.filter((t) => t.published && (!categoryKey || t.category === categoryKey));
 }
 
+/**
+ * 발행된 도구를 **최신순**으로. 홈의 대표 카드와 "The latest" 격자가 읽는다.
+ * 기준은 `since`(최초 발행일)다 — `updated`로 정렬하면 오타 하나 고친 옛 글이
+ * 새 글처럼 맨 앞에 선다. 같은 날 발행된 글은 `TOOLS`에서 **뒤에 있는 쪽이 먼저**다
+ * (배열에 나중에 들어온 글이 나중에 발행된 글이다). 결정적이어야 한다.
+ */
+export function tools_read_latest(categoryKey = null) {
+  return tools_read_published(categoryKey)
+    .map((tool) => ({ tool, index: TOOLS.indexOf(tool) }))
+    .sort((a, b) => (b.tool.since ?? "").localeCompare(a.tool.since ?? "") || b.index - a.index)
+    .map((entry) => entry.tool);
+}
+
+/**
+ * 가장 최근 발행일과 **그날 발행된 도구 전부**. 홈·카테고리 인덱스의 대표 칸이 읽는다.
+ * 같은 날 두 편이 나오면 둘 다 대표 칸에 선다 — 한 편만 세우면 "가장 새 글"이라는
+ * 기록에 없는 순서를 주장하게 된다(2026-09-25 검사). 나머지(`earlier`)는 모두 그보다 앞선 날이다.
+ */
+export function tools_read_latest_day(categoryKey = null) {
+  const latest = tools_read_latest(categoryKey);
+  const date = latest[0]?.since ?? null;
+  return {
+    date,
+    newest: latest.filter((t) => t.since === date),
+    earlier: latest.filter((t) => t.since !== date),
+  };
+}
+
 /** slug로 도구 하나. */
 export function tools_read_one(slug) {
   return TOOLS.find((t) => t.slug === slug) ?? null;

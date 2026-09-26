@@ -11,6 +11,9 @@ export const meta = {
     "A single queue against one queue per counter, on average wait and on a bad visit (the 95th percentile).",
   tags: ["probability", "counterintuitive", "queueing", "errands"],
   grade: "A",
+  // 등급 A의 일반 뜻("either right or wrong")은 CV = 1에서만 참이다 — 본문이 CV 슬라이더를
+  // "leaves the exact model"이라고 적는다. 바이라인이 이 문구를 대신 찍는다.
+  gradeNote: "arithmetic and probability — exact while transaction times keep their default spread; the page says where changing that spread makes it an approximation",
   since: "2026-09-25",
   updated: "2026-09-25",
   changed: "",

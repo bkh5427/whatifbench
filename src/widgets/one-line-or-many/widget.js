@@ -98,8 +98,12 @@ const RATIO_MIN_DENOMINATOR_MINUTES = MINUTE_ROUND_TO_ZERO_MINUTES;
 const AXIS_LABEL_WHOLE_MIN = 10;
 /** 축 눈금 라벨의 유효숫자. */
 const AXIS_LABEL_SIGNIFICANT = 2;
-/** 소수 자릿수 상한. 이보다 잘면 축이 그 값을 구분해 보여주지 못한다. */
-const AXIS_LABEL_DECIMALS_MAX = 4;
+/** 소수 자릿수 상한. 이보다 작은 값은 소수 대신 10의 거듭제곱 표기(6.4×10⁻⁸)로 적는다. */
+const AXIS_LABEL_DECIMALS_MAX = 5;
+/** 거듭제곱 표기의 지수에 쓰는 위첨자 글자. */
+const AXIS_SUPERSCRIPT_DIGITS = { '-': '⁻', 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
+/** 가수의 밑. 가수가 반올림으로 이 값에 닿으면 지수를 하나 올린다. */
+const AXIS_MANTISSA_BASE = 10;
 const RECOMPUTE_DELAY_MS = 110;
 
 // ── 애니메이션 치수 ────────────────────────────────────────
@@ -126,7 +130,7 @@ const CHART_HEIGHT_PX = 330;
 const CHART_PAD_TOP = 16;
 const CHART_PAD_RIGHT = 16;
 const CHART_PAD_BOTTOM = 54;
-const CHART_PAD_LEFT = 66;
+const CHART_PAD_LEFT = 80;
 const CHART_AXIS_TITLE_GAP = 16;
 const CHART_LABEL_FONT = '12px "IBM Plex Sans", system-ui, sans-serif';
 const CHART_LABEL_GAP = 8;
@@ -251,7 +255,23 @@ export function display_format_axis_minutes(minutes) {
   if (!Number.isFinite(minutes) || minutes <= 0) return '—';
   if (minutes >= AXIS_LABEL_WHOLE_MIN) return String(Math.round(minutes));
   const decimals = Math.max(0, AXIS_LABEL_SIGNIFICANT - 1 - Math.floor(Math.log10(minutes)));
-  return minutes.toFixed(Math.min(decimals, AXIS_LABEL_DECIMALS_MAX));
+  if (decimals <= AXIS_LABEL_DECIMALS_MAX) return minutes.toFixed(decimals);
+  // 소수 다섯째 자리(AXIS_LABEL_DECIMALS_MAX)로 유효숫자 둘을 못 담는 값. 예전에는 넷째 자리 상한에서 잘라 "0.0000"(로그 축에
+  // 0)이나 "0.0001"(9.2×10⁻⁵를 한 자리로)이 찍혔고, 다음 판은 "<0.0001"로 적었다가 한 축의
+  // 10⁻⁵·10⁻⁶ 눈금과 바닥이 같은 글자가 됐다(2026-09-26 검사). 값을 그대로 거듭제곱으로 적는다.
+  return display_format_power_of_ten(minutes);
+}
+
+/** 유효숫자 둘의 10의 거듭제곱 표기. 가수가 1이면 가수를 뺀다(10⁻⁵). */
+export function display_format_power_of_ten(value) {
+  let exponent = Math.floor(Math.log10(value));
+  let mantissa = display_round_half_up(value / 10 ** exponent, AXIS_LABEL_SIGNIFICANT - 1);
+  if (mantissa >= AXIS_MANTISSA_BASE) {
+    mantissa /= AXIS_MANTISSA_BASE;
+    exponent += 1;
+  }
+  const power = `10${String(exponent).split('').map((c) => AXIS_SUPERSCRIPT_DIGITS[c]).join('')}`;
+  return mantissa === 1 ? power : `${mantissa.toFixed(AXIS_LABEL_SIGNIFICANT - 1)}×${power}`;
 }
 
 export function display_format_ratio(ratio) {
@@ -330,20 +350,25 @@ export function display_describe_verdict(result) {
 /**
  * 변동계수가 1이 아니면 카드가 근사임을 말한다. 정확한 자리와 섞어 두지 않는다.
  *
- * "is exact"가 아니라 "leaves both exact"다(2026-09-25 사실검사). 창구 하나에서는
- * CV≠1에서도 **평균 대기**가 Pollaczek–Khinchine으로 정확하고, 정확하지 않은 것은
- * 맞춘 꼬리에서 나오는 95퍼센타일뿐이다. CV 1.00은 **둘 다**를 정확하게 남긴다.
- * 본문 Four rules 절이 같은 구분을 적는다.
+ * 무엇이 근사인지 **배치와 창구 수로 나눠** 말한다(2026-09-26 사실검사).
+ *   · 창구마다 줄: 손님이 줄을 무작위·같은 확률로 고르므로 줄마다 M/G/1이고, 평균 대기는
+ *     Pollaczek–Khinchine으로 창구 수와 상관없이 정확하다(model.js의 separate 식에 c가 없다).
+ *   · 한 줄: 창구 하나면 같은 P–K라 정확, 둘 이상이면 M/M/c에 배수를 곱한 두 모멘트 근사.
+ *   · 95퍼센타일: 어느 배치든 평균에 맞춘 지수 꼬리 — CV≠1이면 맞춤값이다.
+ * CV 1.00은 **모든** 수를 정확하게 남긴다. 본문 Four rules 절이 같은 구분을 적는다.
  */
 export function display_describe_exactness(result) {
   if (result.exact) {
     return `Exponential service times, so both layouts are the model's closed forms with nothing approximated.`;
   }
   const spread = result.variation > QUEUE_CV_EXACT ? 'more' : 'less';
+  // 표는 창구 수 슬라이더와 상관없이 1~8 창구를 다 보인다 — 문장도 창구 수로 가르지 않고
+  // 표 전체에 대해 말한다(2026-09-26 5차 검사).
   return (
-    `Service times vary ${spread} than the exponential case (CV ${result.variation.toFixed(2)}), so the means carry ` +
-    `the two-moment approximation and the ${display_format_percent(QUEUE_PERCENTILE)} figures keep an ` +
-    `exponential tail shape fitted to them. Only CV ${QUEUE_CV_EXACT.toFixed(2)} leaves both exact.`
+    `Service times vary ${spread} than the exponential case (CV ${result.variation.toFixed(2)}), so the one-line mean ` +
+    `is exact at one counter and a two-moment approximation at two or more, a line per counter keeps an exact mean ` +
+    `at every counter count, and each ${display_format_percent(QUEUE_PERCENTILE)} figure comes from an exponential ` +
+    `tail shape fitted to its layout's mean. Only CV ${QUEUE_CV_EXACT.toFixed(2)} leaves every figure exact.`
   );
 }
 
