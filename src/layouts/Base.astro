@@ -14,7 +14,7 @@ import "@fontsource/ibm-plex-mono/500.css";
 import "../styles/global.css";
 
 import { CATEGORIES, tools_read_published } from "../data/tools.js";
-import { SITE_NAME, SITE_TAGLINE } from "../data/site.js";
+import { SITE_NAME, SITE_TAGLINE, SITE_FEED_PATH } from "../data/site.js";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
@@ -88,6 +88,8 @@ const navColumns = Math.min(Math.max(CATEGORIES.length, 1), NAV_COLUMNS_MAX);
       )
     }
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {/* RSS 피드. 구독 앱이 사이트 주소만 받아도 피드를 찾게 한다(자동 발견). */}
+    <link rel="alternate" type="application/rss+xml" title={SITE_NAME} href={SITE_FEED_PATH} />
 
     {
       /* URL이 평면이라 이 도구가 어느 카테고리인지 알려줄 자리가 여기밖에 없다. */

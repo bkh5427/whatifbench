@@ -25,3 +25,9 @@ export const SITE_DOMAIN = "whatifbench.com";
 
 /** 머리말 워드마크 아래 작은 한 줄. 모든 도구가 움직일 수 있는 모델이라는 것만 말한다. */
 export const SITE_TAGLINE = "Models you can move";
+
+/**
+ * RSS 피드 주소. 피드 파일(`pages/rss.xml.js`)과 모든 페이지 머리의
+ * `<link rel="alternate">`가 이 한 값을 읽는다 — 둘이 갈라지면 구독 앱이 없는 주소를 찾는다.
+ */
+export const SITE_FEED_PATH = "/rss.xml";

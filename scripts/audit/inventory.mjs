@@ -10,6 +10,8 @@ import { units_extract } from "./html-units.mjs";
 
 // ── 상수 ───────────────────────────────────────────────────
 const SKIP_DIRS = new Set(["_astro", "og"]);
+/** RSS 피드 파일 이름(`src/data/site.js`의 SITE_FEED_PATH와 같다). */
+const RSS_FILE = "rss.xml";
 
 /** 명령줄로 직접 실행됐는가. 심볼릭 링크·Windows 드라이브 대소문자에도 맞게 실제 경로로 비교한다. */
 export function cli_is_main(metaUrl) {
@@ -73,6 +75,21 @@ export function inventory_build(dist, manifest = null) {
   for (const name of readdirSync(dist).filter((n) => /^sitemap.*\.xml$/.test(n)).sort()) {
     const locs = [...readFileSync(join(dist, name), "utf8").matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
     extra.push(siteUnit("site-file", name, `${name}: ${locs.join(" ")}`));
+  }
+  // RSS 피드: 채널 한 단위 + 항목마다 한 단위. 항목의 where는 주소로 잡는다 — 순서가 바뀌어도(새 글이 맨 앞에 서도)
+  // 이미 검사한 항목의 id가 그대로 남는다.
+  const feed = join(dist, RSS_FILE);
+  if (existsSync(feed)) {
+    const xml = readFileSync(feed, "utf8");
+    // 글자는 XML 이스케이프를 풀어 사람이 읽는 그대로 센다(&apos; → ').
+    const xml_unescape = (t) => t.replace(/&(lt|gt|quot|apos|amp);/g, (_, n) => ({ lt: "<", gt: ">", quot: '"', apos: "'", amp: "&" })[n]);
+    const tag = (block, name) => xml_unescape((block.match(new RegExp(`<${name}\\b[^>]*>([^<]*)</${name}>`)) || [])[1] ?? "");
+    const channel = xml.replace(/<item>[\s\S]*?<\/item>/g, "");
+    extra.push(siteUnit("site-file", RSS_FILE, `${RSS_FILE} 채널: 제목 "${tag(channel, "title")}" · 주소 ${tag(channel, "link")} · 설명 "${tag(channel, "description")}" · 언어 ${tag(channel, "language")}`));
+    for (const [, block] of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
+      const link = tag(block, "link");
+      extra.push(siteUnit("site-file", `${RSS_FILE}#${link}`, `${RSS_FILE} 항목: 제목 "${tag(block, "title")}" · 주소 ${link} · 분류 "${tag(block, "category")}" · 설명 "${tag(block, "description")}"`));
+    }
   }
   const astroDir = join(dist, "_astro");
   if (existsSync(astroDir)) {
