@@ -55,9 +55,9 @@
    "text": "contact@whatifbench.com → mailto:contact@whatifbench.com",
    "verdict": "OK",
    "checks": "ooo--oooo-oooo--oooooo",
-   "evidence": "CODE: src/pages/privacy.astro:206 Questions about this policy: <a href={`mailto:${EMAIL}`}>{EMAIL}</a> · CODE: src/pages/privacy.astro:4 const EMAIL = \"contact@whatifbench.com\" — 링크 글과 mailto: 대상이 같은 상수에서 나오므로 어긋날 수 없다. SITE: ab3afffa41ce 같은 페이지의 다른 mailto 링크와 값이 같다. DEF: 링크 글이 곧 주소 자체다. VIS: privacy-desktop.png Contact 절.",
+   "evidence": "CODE: src/pages/privacy.astro:230 Questions about this policy: <a href={`mailto:${EMAIL}`}>{EMAIL}</a> · CODE: src/pages/privacy.astro:4 const EMAIL = \"contact@whatifbench.com\" — 링크 글과 mailto: 대상이 같은 상수에서 나오므로 어긋날 수 없다. SITE: ab3afffa41ce 같은 페이지의 다른 mailto 링크와 값이 같다. DEF: 링크 글이 곧 주소 자체다. VIS: privacy-desktop.png Contact 절.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "ab3afffa41ce"
@@ -91,23 +91,6 @@
    },
    "siteRefs": [],
    "run": "scale-staging-r2",
-   "date": "2026-09-26"
-  },
-  "006149b065bf": {
-   "page": "/privacy",
-   "kind": "text",
-   "text": "The revision of 25 September 2026 named the right to limit disclosure as well as use for California readers, added the automated-processing condition the portability right carries, and pointed the advertising opt-out at My Ad Center, which is what Google now calls that setting.",
-   "verdict": "OK",
-   "checks": "oooooooooooooooooooooo",
-   "evidence": "SRC: ccpa-cpra-sale-sharing \"Right to LIMIT the use and disclosure of sensitive personal information collected about them.\" — CPPA는 민감정보의 '이용과 공개'를 제한할 권리로 적는다. SRC: gdpr-art20-portability \"the processing is based on consent pursuant to point (a) of Article 6(1) or point (a) of Article 9(2) or on a contract pursuant to point (b) of Article 6(1); and the processing is carried out by automated means.\" — 조문이 조건 둘을 요구한다. SRC: google-my-ad-center \"My Ad Center\" — 그 설정의 지금 이름이다. CODE: src/pages/privacy.astro:143 — 본문의 캘리포니아 절이 'use and disclosure'로 적혀 있다. DEF: 세 항목이 오늘 실제로 바뀐 것과 하나씩 대응한다. CODE: src/pages/privacy.astro:5 const UPDATED = \"25 September 2026\" — 이 문장의 날짜(25 September 2026)는 이 페이지의 개정일 상수와 같다.",
-   "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
-    "audit/sources/ccpa-cpra-sale-sharing.md": "ef3610c9dac3c429",
-    "audit/sources/gdpr-art20-portability.md": "f02cf19b50b058fe",
-    "audit/sources/google-my-ad-center.md": "cd8f511dc0ae9636"
-   },
-   "siteRefs": [],
-   "run": "36902cac284f",
    "date": "2026-09-26"
   },
   "0081683b1893": {
@@ -661,27 +644,6 @@
     "audit/sources/berkeley-1973-six-departments.md": "cd6023f79d51e5c8"
    },
    "siteRefs": [],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
-  },
-  "04df049976a3": {
-   "page": "/privacy",
-   "kind": "meta",
-   "text": "This site stores nothing itself. What Cloudflare processes to serve it, what advertising would change, and the choices you have.",
-   "verdict": "OK",
-   "checks": "ooo--oooo--oooo-ooo--o",
-   "evidence": "CODE: src/pages/privacy.astro:16 description=\"This site stores nothing itself. What Cloudflare processes to serve it, what advertising would change, and the choices you have.\" · CODE: src/layouts/Base.astro:74 <meta name=\"description\" content={description} /> · CODE: src/layouts/Base.astro:109 <meta property=\"og:description\" content={description} /> — 한 값에서 나오므로 description과 og:description이 어긋날 수 없고 dist/privacy/index.html에서 둘이 글자까지 같다. 세 마디가 본문의 세 자리와 같은 말을 한다: SITE: fe29d04b2cb3 \"stores nothing itself\", SITE: e123884949fc Cloudflare 처리, SITE: 221b45693013 광고가 들어오면 달라지는 것. DEF: 이 요약문에는 제3자의 말을 옮긴 대목이 없다 — Cloudflare가 처리한다는 사실만 가리키고 그 근거는 아래 출처가 진다. SRC: cloudflare-privacy-enduser-data \"The information processed may include but is not limited to IP addresses, traffic routing data, system configuration information, and other information about traffic to and from Customers' websites, devices, applications, and/or networks.\" SITE: ed9076ce4ae4 og:description 단위.",
-   "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
-    "src/layouts/Base.astro": "797b6eb443ac9be2",
-    "audit/sources/cloudflare-privacy-enduser-data.md": "75786dd667559171"
-   },
-   "siteRefs": [
-    "fe29d04b2cb3",
-    "e123884949fc",
-    "221b45693013",
-    "ed9076ce4ae4"
-   ],
    "run": "36902cac284f",
    "date": "2026-09-26"
   },
@@ -2266,17 +2228,17 @@
    "text": "Cookies",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:98 <h2>Cookies</h2> — 이 절이 이 사이트의 쿠키(없음), Cloudflare의 쿠키, 광고 쿠키(오늘 없음) 셋을 차례로 적는다. SITE: a4581b4227a8 · SITE: 5aee81cc684a · SITE: 32d4aa9b7a53. VIS: privacy-desktop.png",
+   "evidence": "CODE: src/pages/privacy.astro:111 <h2>Cookies</h2> — 이 절이 이 사이트의 쿠키(없음), Cloudflare의 쿠키, 광고 쿠키(오늘 없음) 셋을 차례로 적는다. SITE: a4581b4227a8 · SITE: 5aee81cc684a · SITE: 64913eea107f. VIS: privacy-desktop.png 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "a4581b4227a8",
     "5aee81cc684a",
-    "32d4aa9b7a53"
+    "64913eea107f"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "0e91369bd195": {
    "page": "/folding-paper-moon",
@@ -3694,9 +3656,9 @@
    "text": "contact page → /contact",
    "verdict": "OK",
    "checks": "ooo--oooo-oooo--oooooo",
-   "evidence": "CODE: src/pages/privacy.astro:207 same address listed on the <a href=\"/contact\">contact page</a> — dist/contact/index.html이 실재하고 그 h1이 \"Contact\"다. SITE: 8d5af0aff95d 그 페이지에 같은 주소가 적혀 있다. DEF: 링크 글 \"contact page\"가 대상 /contact의 제목 \"Contact\"와 같은 것을 가리킨다. VIS: contact-desktop.png",
+   "evidence": "CODE: src/pages/privacy.astro:231 same address listed on the <a href=\"/contact\">contact page</a> — dist/contact/index.html이 실재하고 그 h1이 \"Contact\"다. SITE: 8d5af0aff95d 그 페이지에 같은 주소가 적혀 있다. DEF: 링크 글 \"contact page\"가 대상 /contact의 제목 \"Contact\"와 같은 것을 가리킨다. VIS: contact-desktop.png",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "8d5af0aff95d"
@@ -4408,9 +4370,9 @@
    "text": "h2:What the calculators do with your input | h2:Information collected automatically | h2:Fonts | h2:Advertising | h2:Cookies | h2:If you are in the European Economic Area or the United Kingdom | h2:If you are in California | h2:Children | h2:External links | h2:Changes | h2:Contact",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "DEF: dist/privacy/index.html에서 <h2>를 순서대로 뽑으면 열한 개가 이 문자열과 글자까지 같다 — What the calculators do with your input / Information collected automatically / Fonts / Advertising / Cookies / If you are in the European Economic Area or the United Kingdom / If you are in California / Children / External links / Changes / Contact. CODE: src/pages/privacy.astro:28 첫 h2 · CODE: src/pages/privacy.astro:203 마지막 h2 — 소스의 차례가 같다. VIS: privacy-desktop.png(1280px)와 privacy-phone.png(390px) 두 화면 폭 모두에서 같은 차례로 보이고 제목이 잘리거나 겹치지 않는다. 25일 문단이 Changes 절 안에 들어갔을 뿐 절의 차례는 바뀌지 않았다.",
+   "evidence": "DEF: dist/privacy/index.html에서 <h2>를 순서대로 뽑으면 열한 개가 이 문자열과 글자까지 같다 — What the calculators do with your input / Information collected automatically / Fonts / Advertising / Cookies / If you are in the European Economic Area or the United Kingdom / If you are in California / Children / External links / Changes / Contact. CODE: src/pages/privacy.astro:28 첫 h2 · CODE: src/pages/privacy.astro:227 마지막 h2 — 소스의 차례가 같다. VIS: privacy-desktop.png(1280px)와 privacy-phone.png(390px) 두 화면 폭 모두에서 같은 차례로 보이고 제목이 잘리거나 겹치지 않는다. 25일 문단이 Changes 절 안에 들어갔을 뿐 절의 차례는 바뀌지 않았다.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [],
    "run": "36902cac284f",
@@ -4770,6 +4732,24 @@
    "run": "scale-staging-r2",
    "date": "2026-09-26"
   },
+  "207016937a12": {
+   "page": "/privacy",
+   "kind": "text",
+   "text": "The revision of 27 September 2026 added that the site uses Cloudflare Web Analytics to count page views and visits, what that script reports and what Cloudflare says about it, including in the section on cookies, and added counting how the site is used to the legitimate-interest basis where the GDPR applies.",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "DEF: 이전 판본(2026-09-25)과의 차이 — 통계 문단 추가(SITE: adbd81b14623), 보고 내용과 Cloudflare 설명(SITE: ec5f46fdcc95 29fce0969c0b), 쿠키 절(SITE: b8b37b1f0781), GDPR 근거 확대(SITE: 9a9155654b9f). 빠짐·과장 없음. 두 번째 검사자 WB(2026-09-27) 독립 대조: OK.",
+   "deps": {},
+   "siteRefs": [
+    "adbd81b14623",
+    "ec5f46fdcc95",
+    "29fce0969c0b",
+    "b8b37b1f0781",
+    "9a9155654b9f"
+   ],
+   "run": "wa-judge",
+   "date": "2026-09-27"
+  },
   "2071391f2652": {
    "page": "/folding-paper-moon",
    "kind": "text",
@@ -5003,22 +4983,6 @@
    "run": "wifi-w1",
    "date": "2026-09-26"
   },
-  "21e625ebe1e9": {
-   "page": "/privacy",
-   "kind": "head",
-   "text": "og:url=https://whatifbench.com/privacy",
-   "verdict": "OK",
-   "checks": "oooooooooooooooooooooo",
-   "evidence": "CODE: src/layouts/Base.astro:115 og:url={canonical}. DEF: 이 값은 빌드가 Base.astro 한 줄에서 만들어 dist의 모든 페이지에 같은 글자로 나온다. SITE: 459cff58097b canonical과 같은 값이다.",
-   "deps": {
-    "src/layouts/Base.astro": "797b6eb443ac9be2"
-   },
-   "siteRefs": [
-    "459cff58097b"
-   ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
-  },
   "21f4bea99a3c": {
    "page": "/wifi-through-walls",
    "kind": "text",
@@ -5068,16 +5032,16 @@
    "text": "It is intended to carry advertising supplied by Google, including Google AdSense, and this section describes what would happen once it does.",
    "verdict": "OK",
    "checks": "ooo--oooo-ooooo-ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:61-66 — 이 문장 뒤의 광고 서술이 모두 would로 쓰여 \"광고가 들어오면\"의 조건절을 이룬다(9270e85db8f2·a61f29315ce4·a83369cd8db5). SRC: google-adsense-required-disclosures \"Third party vendors, including Google, use cookies to serve ads based on a user's prior visits to your website or other websites.\" — 이 절이 옮긴 것이 구글이 AdSense 게시자에게 싣도록 요구하는 문안이다. DEF: 앞으로 광고를 싣겠다는 의도 진술이라 지금의 사실과 어긋날 수 없고, 지금 광고가 없다는 쪽은 SITE: 98829b2d636a가 진다.",
+   "evidence": "CODE: src/pages/privacy.astro:74-79 — 이 문장 뒤의 광고 서술이 모두 would로 쓰여 \"광고가 들어오면\"의 조건절을 이룬다(9270e85db8f2·a61f29315ce4·a83369cd8db5). SRC: google-adsense-required-disclosures \"Third party vendors, including Google, use cookies to serve ads based on a user's prior visits to your website or other websites.\" — 이 절이 옮긴 것이 구글이 AdSense 게시자에게 싣도록 요구하는 문안이다. DEF: 앞으로 광고를 싣겠다는 의도 진술이라 지금의 사실과 어긋날 수 없고, 지금 광고가 없다는 쪽은 SITE: 98829b2d636a가 진다. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
+    "src/pages/privacy.astro": "aa330343d48eadc1",
     "audit/sources/google-adsense-required-disclosures.md": "f347ee61b3d87648"
    },
    "siteRefs": [
     "98829b2d636a"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "222d6d150f3e": {
    "page": "/wifi-through-walls",
@@ -5563,6 +5527,23 @@
    "run": "36902cac284f",
    "date": "2026-09-26"
   },
+  "25b6ccf7ddfa": {
+   "page": "/privacy",
+   "kind": "text",
+   "text": "The revision of 25 September 2026 named the right to limit disclosure as well as use for California readers, added the automated-processing condition the portability right carries, and pointed the advertising opt-out at My Ad Center, which is what Google now calls that setting.",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "SRC: ccpa-cpra-sale-sharing \"Right to LIMIT the use and disclosure of sensitive personal information collected about them.\" SRC: gdpr-art20-portability \"the processing is based on consent pursuant to point (a) of Article 6(1) or point (a) of Article 9(2) or on a contract pursuant to point (b) of Article 6(1); and the processing is carried out by automated means.\" SRC: google-my-ad-center \"My Ad Center\" CODE: src/pages/privacy.astro:159 — 캘리포니아 절이 'use and disclosure'로 적혀 있다. DEF: 세 항목이 2026-09-25 개정에서 바뀐 것과 하나씩 대응한다(옛 판정 006149b065bf의 대조). 판정관 재확인(wa): 글자 그대로. 옛 근거의 UPDATED 상수 인용은 이제 27일이라 뺐다 — 25일은 개정 기록의 날짜로 남는다.",
+   "deps": {
+    "src/pages/privacy.astro": "aa330343d48eadc1",
+    "audit/sources/ccpa-cpra-sale-sharing.md": "ef3610c9dac3c429",
+    "audit/sources/gdpr-art20-portability.md": "f02cf19b50b058fe",
+    "audit/sources/google-my-ad-center.md": "cd8f511dc0ae9636"
+   },
+   "siteRefs": [],
+   "run": "wa-judge",
+   "date": "2026-09-27"
+  },
   "25cafc66ae1e": {
    "page": "/solar-system-light-delay",
    "kind": "heading",
@@ -5626,9 +5607,9 @@
    "text": "External links",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:165 <h2>External links</h2> — 이어지는 두 문장이 바깥으로 나가는 링크와 그 책임 범위를 적는다. SITE: 894cf17eac21 · SITE: be6262b68886. VIS: privacy-desktop.png",
+   "evidence": "CODE: src/pages/privacy.astro:181 <h2>External links</h2> — 이어지는 두 문장이 바깥으로 나가는 링크와 그 책임 범위를 적는다. SITE: 894cf17eac21 · SITE: be6262b68886. VIS: privacy-desktop.png",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "894cf17eac21",
@@ -5701,7 +5682,7 @@
    "checks": "ooo---ooo-oooo--ooo-oo",
    "evidence": "CODE: src/pages/privacy.astro:18 <h1>Privacy Policy</h1> — 이 페이지가 실제로 개인정보 처리방침이다: 수집·글꼴·광고·쿠키·GDPR·CCPA·아동·외부 링크·변경·연락 절을 갖춘다. SITE: 1d87a23758b5 그 절 차례 단위. VIS: privacy-desktop.png 맨 위 제목.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "1d87a23758b5"
@@ -6169,6 +6150,21 @@
    "run": "wifi-w4-judge",
    "date": "2026-09-26"
   },
+  "29fce0969c0b": {
+   "page": "/privacy",
+   "kind": "text",
+   "text": "Cloudflare says its Web Analytics uses no client-side state, such as cookies or local storage, to track users, and that it does not track individual users across the sites it serves.",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "SRC: cloudflare-web-analytics-blog \"We don't use any client-side state, like cookies or localStorage, for the purposes of tracking users.\" SRC: cloudflare-web-analytics-data-origin \"Cloudflare does not track individual end users across our customers' Internet properties.\" — Cloudflare의 말로 인용하고 범위(추적 목적)를 원문대로 좁혔다. 두 번째 검사자 WB(2026-09-27) 독립 대조: OK.",
+   "deps": {
+    "audit/sources/cloudflare-web-analytics-blog.md": "f7f43ef0b1fa3075",
+    "audit/sources/cloudflare-web-analytics-data-origin.md": "0488e739438374d6"
+   },
+   "siteRefs": [],
+   "run": "wa-judge",
+   "date": "2026-09-27"
+  },
   "2a9740113109": {
    "page": "/wifi-through-walls",
    "kind": "text",
@@ -6339,15 +6335,15 @@
    "text": "You have the right to request access to your personal data, correction or deletion of it, restriction of processing, and to object to processing.",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "SRC: gdpr-art15-art21-rights \"The data subject shall have the right to obtain from the controller without undue delay the rectification of inaccurate personal data concerning him or her.\" (제16조 정정) · \"The data subject shall have the right to obtain from the controller restriction of processing where one of the following applies:\" (제18조 제한) · \"The data subject shall have the right to object, on grounds relating to his or her particular situation, at any time to processing of personal data concerning him or her which is based on point (e) or (f) of Article 6(1), including profiling based on those provisions.\" (제21조 반대) — 문장이 든 다섯 권리가 제15·16·17·18·21조에 하나씩 대응한다. 반대권의 조건(제6(1)조 (e)·(f))은 SITE: cac71e9a0efa 앞 문단이 이 사이트의 근거를 정당한 이익(= (f))으로 적어 성립한다. 본문은 \"the right to request\"로 행사 요청을 말하므로 제17·18조가 조건을 다는 것과 어긋나지 않는다.",
+   "evidence": "SRC: gdpr-art15-art21-rights \"The data subject shall have the right to obtain from the controller without undue delay the rectification of inaccurate personal data concerning him or her.\" (제16조 정정) · \"The data subject shall have the right to obtain from the controller restriction of processing where one of the following applies:\" (제18조 제한) · \"The data subject shall have the right to object, on grounds relating to his or her particular situation, at any time to processing of personal data concerning him or her which is based on point (e) or (f) of Article 6(1), including profiling based on those provisions.\" (제21조 반대) — 문장이 든 다섯 권리가 제15·16·17·18·21조에 하나씩 대응한다. 반대권의 조건(제6(1)조 (e)·(f))은 SITE: 9a9155654b9f 앞 문단이 이 사이트의 근거를 정당한 이익(= (f))으로 적어 성립한다. 본문은 \"the right to request\"로 행사 요청을 말하므로 제17·18조가 조건을 다는 것과 어긋나지 않는다. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
    "deps": {
     "audit/sources/gdpr-art15-art21-rights.md": "faca176295986d3c"
    },
    "siteRefs": [
-    "cac71e9a0efa"
+    "9a9155654b9f"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "2c4efa0178dc": {
    "page": "/solar-system-light-delay",
@@ -6565,6 +6561,23 @@
    "siteRefs": [],
    "run": "scale-staging-r2",
    "date": "2026-09-26"
+  },
+  "2e70a8659589": {
+   "page": "/privacy",
+   "kind": "text",
+   "text": "This policy explains what happens to data when you visit whatifbench.com.",
+   "verdict": "OK",
+   "checks": "ooo---ooo-oooo--ooo-oo",
+   "evidence": "CODE: src/pages/privacy.astro:22 \"This policy explains what happens to data when you visit whatifbench.com.\" · CODE: astro.config.mjs:27 site: 'https://whatifbench.com' — 이 사이트의 주소가 whatifbench.com이다. SITE: 1d87a23758b5 — 이어지는 열한 절이 실제로 방문 때 데이터에 벌어지는 일(입력 처리·Cloudflare 처리·글꼴·광고·쿠키·GDPR·CCPA·아동·외부 링크)을 차례로 다룬다. VIS: privacy-desktop.png 첫 문단. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
+   "deps": {
+    "src/pages/privacy.astro": "aa330343d48eadc1",
+    "astro.config.mjs": "96cb591d6a524ff6"
+   },
+   "siteRefs": [
+    "1d87a23758b5"
+   ],
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "2e7eae402ff2": {
    "page": "/folding-paper-moon",
@@ -7179,24 +7192,6 @@
    "run": "wifi-w1",
    "date": "2026-09-26"
   },
-  "32d4aa9b7a53": {
-   "page": "/privacy",
-   "kind": "text",
-   "text": "No advertising cookie is set today.",
-   "verdict": "OK",
-   "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:108 \"No advertising cookie is set today.\" — dist 전수 grep에서 adsbygoogle · googlesyndication · data-ad-client · gtag(가 0건이고 document.cookie도 0건이라, 오늘 이 사이트가 내주는 파일에는 광고 쿠키를 심을 코드가 없다. SITE: 98829b2d636a 오늘 광고를 내보내지 않는다. SITE: a4581b4227a8 이 사이트는 제 쿠키를 아예 심지 않는다. \"today\"라는 한정이 SITE: 92b0cbead36d(광고가 들어오면 달라진다)와 함께 참이다.",
-   "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
-   },
-   "siteRefs": [
-    "98829b2d636a",
-    "a4581b4227a8",
-    "92b0cbead36d"
-   ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
-  },
   "32f3e4cc7289": {
    "page": "/monty-hall-n-doors",
    "kind": "heading",
@@ -7769,7 +7764,7 @@
    "checks": "ooo---ooo-oooo--ooo-oo",
    "evidence": "CODE: src/pages/privacy.astro:41 <h2>Information collected automatically</h2> — 이어지는 문단이 방문만으로 남는 것(IP·브라우저와 기기 종류·요청한 쪽·시각)을 적는다. SITE: e123884949fc 그 절 첫 문장. VIS: privacy-desktop.png",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "e123884949fc"
@@ -8209,6 +8204,24 @@
    "siteRefs": [],
    "run": "36902cac284f",
    "date": "2026-09-26"
+  },
+  "39cca4c18571": {
+   "page": "/privacy",
+   "kind": "meta",
+   "text": "This site stores nothing itself. What Cloudflare processes to serve it and count visits, what advertising would change, and the choices you have.",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "CODE: src/pages/privacy.astro:16 description — \"count visits\"를 더했다. CODE: src/layouts/Base.astro:79 · src/layouts/Base.astro:114 같은 값이 meta description·og:description으로 나간다. SRC: cloudflare-pages-web-analytics \"Cloudflare will automatically add the JavaScript snippet to your Pages site on the next deployment.\" — 운영자가 2026-09-27 켰고 이 문장과 같은 배포로 나간다. SITE: adbd81b14623 본문의 통계 문단. 두 번째 검사자 WB(2026-09-27) 독립 대조: OK.",
+   "deps": {
+    "src/pages/privacy.astro": "aa330343d48eadc1",
+    "src/layouts/Base.astro": "797b6eb443ac9be2",
+    "audit/sources/cloudflare-pages-web-analytics.md": "159761dbbf58e29b"
+   },
+   "siteRefs": [
+    "adbd81b14623"
+   ],
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "39e2a9bf8894": {
    "page": "/folding-paper-moon",
@@ -9253,6 +9266,22 @@
    "run": "36902cac284f",
    "date": "2026-09-26"
   },
+  "42618c975c1d": {
+   "page": "/privacy",
+   "kind": "text",
+   "text": "Last updated: 27 September 2026",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "CODE: src/pages/privacy.astro:5 const UPDATED = \"27 September 2026\" · CODE: src/pages/privacy.astro:19 — 이 판본에서 통계 문단·쿠키 절·GDPR 근거가 바뀌었고 개정 기록 첫 문단이 같은 날짜다. SITE: 207016937a12. 발행(푸시)일이 이 날짜와 다르면 운영자가 날짜를 고친다(안내함). 두 번째 검사자 WB(2026-09-27) 독립 대조: OK.",
+   "deps": {
+    "src/pages/privacy.astro": "aa330343d48eadc1"
+   },
+   "siteRefs": [
+    "207016937a12"
+   ],
+   "run": "wa-judge",
+   "date": "2026-09-27"
+  },
   "426bd2f8899e": {
    "page": "/solar-system-light-delay",
    "kind": "svg-text",
@@ -9678,20 +9707,6 @@
    "run": "36902cac284f",
    "date": "2026-09-26"
   },
-  "459cff58097b": {
-   "page": "/privacy",
-   "kind": "head",
-   "text": "canonical=https://whatifbench.com/privacy",
-   "verdict": "OK",
-   "checks": "oooooooooooooooooooooo",
-   "evidence": "CODE: src/layouts/Base.astro:44 canonical = new URL(Astro.url.pathname, Astro.site) · CODE: src/layouts/Base.astro:87 <link rel=\"canonical\">. astro.config.mjs site https://whatifbench.com, trailingSlash never — 경로 /privacy와 맞는다. DEF: 이 값은 빌드가 Base.astro 한 줄에서 만들어 dist의 모든 페이지에 같은 글자로 나온다.",
-   "deps": {
-    "src/layouts/Base.astro": "797b6eb443ac9be2"
-   },
-   "siteRefs": [],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
-  },
   "45bd8dedafc5": {
    "page": "/one-line-or-many",
    "kind": "jsonld",
@@ -10088,9 +10103,9 @@
    "text": "Contact",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:203 <h2>Contact</h2> — 이어지는 문단이 이 방침에 대한 문의처를 적는다. SITE: ec1343bed61c. VIS: privacy-desktop.png 페이지 마지막 절.",
+   "evidence": "CODE: src/pages/privacy.astro:227 <h2>Contact</h2> — 이어지는 문단이 이 방침에 대한 문의처를 적는다. SITE: ec1343bed61c. VIS: privacy-desktop.png 페이지 마지막 절.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "ec1343bed61c"
@@ -11437,17 +11452,17 @@
    "text": "This policy may be updated.",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:175 \"This policy may be updated.\" — SITE: 006149b065bf · SITE: 55e862c3d90b · SITE: 2ef8048a1c8c 이 페이지에 25·24·23일 세 번의 개정 기록이 실려 있으므로 \"may be updated\"가 이미 일어난 일로 받쳐진다. DEF: 미래에 대한 가능 진술이라 지금의 사실과 어긋날 자리가 없다.",
+   "evidence": "CODE: src/pages/privacy.astro:191 \"This policy may be updated.\" — SITE: 25b6ccf7ddfa · SITE: 55e862c3d90b · SITE: 2ef8048a1c8c 이 페이지에 25·24·23일 세 번의 개정 기록이 실려 있으므로 \"may be updated\"가 이미 일어난 일로 받쳐진다. DEF: 미래에 대한 가능 진술이라 지금의 사실과 어긋날 자리가 없다. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
-    "006149b065bf",
+    "25b6ccf7ddfa",
     "55e862c3d90b",
     "2ef8048a1c8c"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "52b0664e9c0f": {
    "page": "/simpsons-paradox",
@@ -11483,16 +11498,16 @@
    "text": "If you are in the European Economic Area or the United Kingdom",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:111 <h2>If you are in the European Economic Area or the United Kingdom</h2> — 이어지는 네 문단이 GDPR 근거·보관·정보주체 권리를 적는다. SITE: cac71e9a0efa · SITE: 2c1b8b4531a2. VIS: privacy-desktop.png 이 제목이 두 줄로 나뉘어도 글자가 잘리지 않고, privacy-phone.png(390px)에서도 세 줄로 접혀 온전히 보인다.",
+   "evidence": "CODE: src/pages/privacy.astro:126 <h2>If you are in the European Economic Area or the United Kingdom</h2> — 이어지는 네 문단이 GDPR 근거·보관·정보주체 권리를 적는다. SITE: 9a9155654b9f · SITE: 2c1b8b4531a2. VIS: privacy-desktop.png 이 제목이 두 줄로 나뉘어도 글자가 잘리지 않고, privacy-phone.png(390px)에서도 세 줄로 접혀 온전히 보인다. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
-    "cac71e9a0efa",
+    "9a9155654b9f",
     "2c1b8b4531a2"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "531aee69f32b": {
    "page": "/scale",
@@ -11630,16 +11645,16 @@
    "text": "If you are in California",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:138 <h2>If you are in California</h2> — 이어지는 문단이 CCPA 권리·sale과 sharing의 구분·이 사이트의 처지·요청 방법을 적는다. SITE: 615c0846cbd5 · SITE: f09f44292bc1. VIS: privacy-desktop.png",
+   "evidence": "CODE: src/pages/privacy.astro:154 <h2>If you are in California</h2> — 이어지는 문단이 CCPA 권리·sale과 sharing의 구분·이 사이트의 처지·요청 방법을 적는다. SITE: 615c0846cbd5 · SITE: f09f44292bc1. VIS: privacy-desktop.png 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "615c0846cbd5",
     "f09f44292bc1"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "5432e46edf28": {
    "page": "/monty-hall-n-doors",
@@ -12700,9 +12715,9 @@
    "text": "Cloudflare, which serves the site, may set cookies of its own; Cloudflare's documentation lists them, and gives the condition for several of them, at developers.cloudflare.com.",
    "verdict": "OK",
    "checks": "ooo--oooo-ooooo-ooo-oo",
-   "evidence": "SRC: cloudflare-cookies \"The `_cfuvid` cookie is only set when a site uses this option in a Rate Limiting Rule.\" — 문서가 쿠키를 나열하고 그 가운데 몇 개(__cf_bm · __cflb · _cfuvid · __cfwaitingroom)에만 조건을 단다. 본문이 \"several of them\"이라고만 한 것이 그 캐시에 적힌 K2 정정(문서에 일반 조건 진술이 없다)과 맞는다. CODE: src/pages/privacy.astro:105 href=\"https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/\". 나도 그 주소를 직접 받아 제목 \"Cloudflare Cookies · Cloudflare Fundamentals docs\"와 조건이 일부 쿠키에만 붙는다는 것을 확인했다. CODE: CLAUDE.md:22 DNS Cloudflare — Cloudflare가 이 사이트를 낸다.",
+   "evidence": "SRC: cloudflare-cookies \"The `_cfuvid` cookie is only set when a site uses this option in a Rate Limiting Rule.\" — 문서가 쿠키를 나열하고 그 가운데 몇 개(__cf_bm · __cflb · _cfuvid · __cfwaitingroom)에만 조건을 단다. 본문이 \"several of them\"이라고만 한 것이 그 캐시에 적힌 K2 정정(문서에 일반 조건 진술이 없다)과 맞는다. CODE: src/pages/privacy.astro:118 href=\"https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/\". 나도 그 주소를 직접 받아 제목 \"Cloudflare Cookies · Cloudflare Fundamentals docs\"와 조건이 일부 쿠키에만 붙는다는 것을 확인했다. CODE: CLAUDE.md:22 DNS Cloudflare — Cloudflare가 이 사이트를 낸다.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
+    "src/pages/privacy.astro": "aa330343d48eadc1",
     "CLAUDE.md": "bdb6ec31b4e4a608",
     "audit/sources/cloudflare-cookies.md": "137228819acde766"
    },
@@ -13613,7 +13628,7 @@
    "text": "This site does not sell personal information, and, showing no advertising yet, it does not share it in that sense either.",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "SRC: ccpa-cpra-sale-sharing \"Sharing, renting, releasing, disclosing, disseminating, making available, transferring, or otherwise communicating orally, in writing, or by electronic or other means, a consumer's personal information by the business to a third party for cross-context behavioral advertising, whether or not for monetary or other valuable consideration.\" — 조문이 sharing을 교차맥락 행태광고 목적의 제공으로 정의하므로, 광고를 아직 내보내지 않는 한 그 뜻의 sharing이 없다. dist 전수 grep에서 adsbygoogle · googlesyndication · 외부 광고 스크립트가 0건이고 제3자로 나가는 요청 자체가 없다. SITE: 98829b2d636a 광고가 아직 없다. SITE: e419afef8083 바로 앞 문장이 sale과 sharing의 구분을 세워 \"in that sense either\"가 가리키는 뜻을 준다.",
+   "evidence": "SRC: ccpa-cpra-sale-sharing \"Sharing, renting, releasing, disclosing, disseminating, making available, transferring, or otherwise communicating orally, in writing, or by electronic or other means, a consumer's personal information by the business to a third party for cross-context behavioral advertising, whether or not for monetary or other valuable consideration.\" — 조문이 sharing을 교차맥락 행태광고 목적의 제공으로 정의하므로, 광고를 아직 내보내지 않는 한 그 뜻의 sharing이 없다. dist 전수 grep에서 adsbygoogle · googlesyndication · 외부 광고 스크립트가 0건이고 제3자로 나가는 요청 자체가 없다. SITE: 98829b2d636a 광고가 아직 없다. SITE: e419afef8083 바로 앞 문장이 sale과 sharing의 구분을 세워 \"in that sense either\"가 가리키는 뜻을 준다. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
    "deps": {
     "audit/sources/ccpa-cpra-sale-sharing.md": "ef3610c9dac3c429"
    },
@@ -13621,8 +13636,8 @@
     "98829b2d636a",
     "e419afef8083"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "615cab2a76c5": {
    "page": "/wifi-through-walls",
@@ -13998,6 +14013,24 @@
    "siteRefs": [],
    "run": "36902cac284f",
    "date": "2026-09-26"
+  },
+  "64913eea107f": {
+   "page": "/privacy",
+   "kind": "text",
+   "text": "No advertising cookie is set today.",
+   "verdict": "OK",
+   "checks": "ooo---ooo-oooo--ooo-oo",
+   "evidence": "CODE: src/pages/privacy.astro:122-123 \"No advertising cookie is set today.\" — dist 전수 grep에서 adsbygoogle · googlesyndication · data-ad-client · gtag(가 0건이고 document.cookie도 0건이라, 오늘 이 사이트가 내주는 파일에는 광고 쿠키를 심을 코드가 없다. SITE: 98829b2d636a 오늘 광고를 내보내지 않는다. SITE: a4581b4227a8 이 사이트는 제 쿠키를 아예 심지 않는다. \"today\"라는 한정이 SITE: 92b0cbead36d(광고가 들어오면 달라진다)와 함께 참이다. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
+   "deps": {
+    "src/pages/privacy.astro": "aa330343d48eadc1"
+   },
+   "siteRefs": [
+    "98829b2d636a",
+    "a4581b4227a8",
+    "92b0cbead36d"
+   ],
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "6493bedc6696": {
    "page": "_common",
@@ -16028,6 +16061,22 @@
    "run": "scale-staging-r2",
    "date": "2026-09-26"
   },
+  "71ea81685b38": {
+   "page": "/privacy",
+   "kind": "heading",
+   "text": "Fonts",
+   "verdict": "OK",
+   "checks": "ooo---ooo-oooo--ooo-oo",
+   "evidence": "CODE: src/pages/privacy.astro:63 <h2>Fonts</h2> — 이 절이 글꼴 파일이 어디서 오는지와 그것이 쿠키를 심지 않는다는 것을 적는다. dist/_astro/*.css의 @font-face url()이 모두 같은-출처 경로다(url(/_astro/barlow-latin-400-normal.qiz4-Cze.woff2) 등), dist 전체에 fonts.googleapis.com·fonts.gstatic.com 참조가 0건이다. SITE: d5f6fb68c858 그 절 첫 문장. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
+   "deps": {
+    "src/pages/privacy.astro": "aa330343d48eadc1"
+   },
+   "siteRefs": [
+    "d5f6fb68c858"
+   ],
+   "run": "wa-judge",
+   "date": "2026-09-27"
+  },
   "720c25b262ca": {
    "page": "/wifi-through-walls",
    "kind": "text",
@@ -16242,7 +16291,7 @@
    "checks": "ooo---ooo-oooo--ooo-oo",
    "evidence": "CODE: src/pages/privacy.astro:28 <h2>What the {manyCalculators ? \"calculators do\" : \"calculator does\"} with your input</h2> · CODE: src/pages/privacy.astro:11 const manyCalculators = tools_read_published().length >= CALCULATOR_MIN_FOR_PLURAL_TEXT · CODE: src/pages/privacy.astro:10 CALCULATOR_MIN_FOR_PLURAL_TEXT = 2 · CODE: src/data/tools.js:109 return TOOLS.filter((t) => t.published && (!categoryKey || t.category === categoryKey)) — 발행된 도구는 셋이다(CODE: src/pages/monty-hall-n-doors/_meta.js:26 published: true · CODE: src/pages/simpsons-paradox/_meta.js:22 · CODE: src/pages/one-line-or-many/_meta.js:22). CALC: 3 >= 2 → true → 복수형. dist/privacy/index.html의 h2가 \"What the calculators do with your input\"이다. 발행 안 된 도구 이름은 이 문장에 나오지 않는다 — 개수만 쓴다.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
+    "src/pages/privacy.astro": "aa330343d48eadc1",
     "src/data/tools.js": "8ac15fd7067df7c2",
     "src/pages/monty-hall-n-doors/_meta.js": "34e5c489cf4dd483",
     "src/pages/simpsons-paradox/_meta.js": "75e0168603a301e2",
@@ -16680,6 +16729,22 @@
    "run": "wifi-w1",
    "date": "2026-09-26"
   },
+  "756afebaf280": {
+   "page": "/privacy",
+   "kind": "head",
+   "text": "og:url=https://whatifbench.com/privacy",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "CODE: src/layouts/Base.astro:115 og:url={canonical}. DEF: 이 값은 빌드가 Base.astro 한 줄에서 만들어 dist의 모든 페이지에 같은 글자로 나온다. SITE: ceba0a6f62be canonical과 같은 값이다. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
+   "deps": {
+    "src/layouts/Base.astro": "797b6eb443ac9be2"
+   },
+   "siteRefs": [
+    "ceba0a6f62be"
+   ],
+   "run": "wa-judge",
+   "date": "2026-09-27"
+  },
   "756d10c6e6e5": {
    "page": "/wifi-through-walls",
    "kind": "text",
@@ -16739,41 +16804,6 @@
     "3d9cd9ce7081"
    ],
    "run": "scale-staging-r3",
-   "date": "2026-09-26"
-  },
-  "75e136ba3b4d": {
-   "page": "/privacy",
-   "kind": "text",
-   "text": "The legal basis for personalised advertising is your consent.",
-   "verdict": "OK",
-   "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:115-116 The legal basis for personalised advertising is your consent. — SRC: gdpr-art7-art77 \"The data subject shall have the right to withdraw his or her consent at any time.\" 제7조가 동의를 근거 유형으로 두는 조문이다. SITE: 92b0cbead36d 다음 문장이 그 동의를 어떻게 받을지(안내를 띄우고 언제든 바꿀 수 있게) 적으므로 두 문장이 함께 참이다. SITE: cac71e9a0efa 기술 데이터 쪽 근거와 갈라 적었다.",
-   "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
-    "audit/sources/gdpr-art7-art77.md": "e6acdfb8a93e428d"
-   },
-   "siteRefs": [
-    "92b0cbead36d",
-    "cac71e9a0efa"
-   ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
-  },
-  "75e686881ef0": {
-   "page": "/privacy",
-   "kind": "text",
-   "text": "This policy explains what happens to data when you visit whatifbench.com.",
-   "verdict": "OK",
-   "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:22 \"This policy explains what happens to data when you visit whatifbench.com.\" · CODE: astro.config.mjs:27 site: 'https://whatifbench.com' — 이 사이트의 주소가 whatifbench.com이다. SITE: 1d87a23758b5 — 이어지는 열한 절이 실제로 방문 때 데이터에 벌어지는 일(입력 처리·Cloudflare 처리·글꼴·광고·쿠키·GDPR·CCPA·아동·외부 링크)을 차례로 다룬다. VIS: privacy-desktop.png 첫 문단.",
-   "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
-    "astro.config.mjs": "96cb591d6a524ff6"
-   },
-   "siteRefs": [
-    "1d87a23758b5"
-   ],
-   "run": "36902cac284f",
    "date": "2026-09-26"
   },
   "75f90e66d89b": {
@@ -17051,7 +17081,7 @@
    "checks": "ooo---ooo--ooo--ooo--o",
    "evidence": "CODE: src/pages/privacy.astro:15 title=\"Privacy Policy\" · CODE: src/layouts/Base.astro:43 const fullTitle = title ? `${title} — ${SITE_NAME}` : SITE_NAME · CODE: src/layouts/Base.astro:73 <title>{fullTitle}</title> · CODE: src/layouts/Base.astro:108 <meta property=\"og:title\" content={fullTitle} /> — <title>과 og:title이 한 값에서 나오므로 어긋날 수 없고, dist/privacy/index.html에서 둘 다 \"Privacy Policy — whatifbench\"다. SITE: 2660bcb1c384 h1 \"Privacy Policy\"와도 같은 주제를 말한다. SITE: b7ea0e2f7a6d <title> 단위.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
+    "src/pages/privacy.astro": "aa330343d48eadc1",
     "src/layouts/Base.astro": "797b6eb443ac9be2"
    },
    "siteRefs": [
@@ -17132,6 +17162,24 @@
    "siteRefs": [],
    "run": "36902cac284f",
    "date": "2026-09-26"
+  },
+  "78a823aea3f9": {
+   "page": "/privacy",
+   "kind": "text",
+   "text": "The legal basis for personalised advertising is your consent.",
+   "verdict": "OK",
+   "checks": "ooo---ooo-oooo--ooo-oo",
+   "evidence": "CODE: src/pages/privacy.astro:131-132 The legal basis for personalised advertising is your consent. — SRC: gdpr-art7-art77 \"The data subject shall have the right to withdraw his or her consent at any time.\" 제7조가 동의를 근거 유형으로 두는 조문이다. SITE: 92b0cbead36d 다음 문장이 그 동의를 어떻게 받을지(안내를 띄우고 언제든 바꿀 수 있게) 적으므로 두 문장이 함께 참이다. SITE: 9a9155654b9f 기술 데이터 쪽 근거와 갈라 적었다. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
+   "deps": {
+    "src/pages/privacy.astro": "aa330343d48eadc1",
+    "audit/sources/gdpr-art7-art77.md": "e6acdfb8a93e428d"
+   },
+   "siteRefs": [
+    "92b0cbead36d",
+    "9a9155654b9f"
+   ],
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "78d6bb1b9fad": {
    "page": "/folding-paper-moon",
@@ -18788,7 +18836,7 @@
    "evidence": "CODE: src/layouts/Base.astro:233 <a href=\"/privacy\">Privacy</a> — 푸터 SITE 칸의 링크이고 모든 페이지에 같은 자리로 나온다. CODE: src/pages/privacy.astro:18 <h1>Privacy Policy</h1> — 대상 /privacy가 실재하고 그 제목이 \"Privacy Policy\"다(dist/privacy/index.html 있음). SITE: 2660bcb1c384 그 h1 단위. DEF: 링크 글 \"Privacy\"는 대상 페이지 제목 \"Privacy Policy\"의 앞말이라 어디로 가는지 어긋나게 읽힐 자리가 없다. VIS: privacy-desktop.png 푸터 SITE 칸에 About·Contact와 나란히 \"Privacy\"가 보인다.",
    "deps": {
     "src/layouts/Base.astro": "797b6eb443ac9be2",
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "2660bcb1c384"
@@ -19048,6 +19096,24 @@
    ],
    "run": "36902cac284f",
    "date": "2026-09-26"
+  },
+  "84b64c75afb0": {
+   "page": "/privacy",
+   "kind": "meta",
+   "text": "This site stores nothing itself. What Cloudflare processes to serve it and count visits, what advertising would change, and the choices you have.",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "CODE: src/pages/privacy.astro:16 description — \"count visits\"를 더했다. CODE: src/layouts/Base.astro:79 · src/layouts/Base.astro:114 같은 값이 meta description·og:description으로 나간다. SRC: cloudflare-pages-web-analytics \"Cloudflare will automatically add the JavaScript snippet to your Pages site on the next deployment.\" — 운영자가 2026-09-27 켰고 이 문장과 같은 배포로 나간다. SITE: adbd81b14623 본문의 통계 문단. 두 번째 검사자 WB(2026-09-27) 독립 대조: OK.",
+   "deps": {
+    "src/pages/privacy.astro": "aa330343d48eadc1",
+    "src/layouts/Base.astro": "797b6eb443ac9be2",
+    "audit/sources/cloudflare-pages-web-analytics.md": "159761dbbf58e29b"
+   },
+   "siteRefs": [
+    "adbd81b14623"
+   ],
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "84f826f89b8b": {
    "page": "/solar-system-light-delay",
@@ -20893,6 +20959,21 @@
    "run": "scale-staging-r2",
    "date": "2026-09-26"
   },
+  "91290735baea": {
+   "page": "/privacy",
+   "kind": "text",
+   "text": "Cloudflare counts a visit when the page you arrive at was not reached from another page of this site, which it tells from the referring address your browser sends.",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "SRC: cloudflare-web-analytics-metrics \"A page view that originated from a different website or direct link.\" · \"Cloudflare checks where the HTTP referer does not match the hostname.\" SRC: cloudflare-web-analytics-blog \"A visit is defined simply as a successful page view that has an HTTP referer that doesn't match the hostname of the request.\" — 다른 사이트에서 왔거나 바로 연 경우 = 이 사이트의 다른 페이지에서 오지 않은 경우. 두 번째 검사자 WB(2026-09-27) 독립 대조: OK.",
+   "deps": {
+    "audit/sources/cloudflare-web-analytics-metrics.md": "b5b90432abc061e7",
+    "audit/sources/cloudflare-web-analytics-blog.md": "f7f43ef0b1fa3075"
+   },
+   "siteRefs": [],
+   "run": "wa-judge",
+   "date": "2026-09-27"
+  },
   "912a3871d145": {
    "page": "/monty-hall-n-doors",
    "kind": "caption",
@@ -20976,9 +21057,9 @@
    "text": "policies.google.com → https://policies.google.com/technologies/partner-sites (target=_blank) (rel=nofollow noopener)",
    "verdict": "OK",
    "checks": "ooo--oooo-oooo--oooooo",
-   "evidence": "CODE: src/pages/privacy.astro:92 href=\"https://policies.google.com/technologies/partner-sites\" · CODE: src/pages/privacy.astro:94 링크 글이 \"policies.google.com\"이다. DEF: 링크 글이 대상 주소의 호스트와 글자까지 같으므로 어디로 가는지 어긋나게 읽힐 자리가 없다. 나는 그 주소를 직접 받아 제목 \"How Google uses information from sites or apps that use our services – Privacy & Terms – Google\"을 확인했다 — 본문 문장(SITE: 93984463eb99)이 말하는 내용과 같다. rel=\"nofollow noopener\" target=\"_blank\"도 같은 줄에 있다.",
+   "evidence": "CODE: src/pages/privacy.astro:105 href=\"https://policies.google.com/technologies/partner-sites\" · CODE: src/pages/privacy.astro:107 링크 글이 \"policies.google.com\"이다. DEF: 링크 글이 대상 주소의 호스트와 글자까지 같으므로 어디로 가는지 어긋나게 읽힐 자리가 없다. 나는 그 주소를 직접 받아 제목 \"How Google uses information from sites or apps that use our services – Privacy & Terms – Google\"을 확인했다 — 본문 문장(SITE: 93984463eb99)이 말하는 내용과 같다. rel=\"nofollow noopener\" target=\"_blank\"도 같은 줄에 있다.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "93984463eb99"
@@ -21081,15 +21162,15 @@
    "text": "From then on, third-party vendors, including Google, would use cookies to serve ads based on your prior visits to this and other websites.",
    "verdict": "OK",
    "checks": "ooo--oooo-ooooo-ooo-oo",
-   "evidence": "SRC: google-adsense-required-disclosures \"Third party vendors, including Google, use cookies to serve ads based on a user's prior visits to your website or other websites.\" — 본문이 그 문안을 조건절(\"From then on … would\")로 옮긴 것이고 낱말이 하나씩 대응한다: third-party vendors / including Google / cookies to serve ads / prior visits / this and other websites. SITE: 98829b2d636a \"From then on\"의 기준점(광고가 들어오는 때)이 앞 문장에 있다.",
+   "evidence": "SRC: google-adsense-required-disclosures \"Third party vendors, including Google, use cookies to serve ads based on a user's prior visits to your website or other websites.\" — 본문이 그 문안을 조건절(\"From then on … would\")로 옮긴 것이고 낱말이 하나씩 대응한다: third-party vendors / including Google / cookies to serve ads / prior visits / this and other websites. SITE: 98829b2d636a \"From then on\"의 기준점(광고가 들어오는 때)이 앞 문장에 있다. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
    "deps": {
     "audit/sources/google-adsense-required-disclosures.md": "f347ee61b3d87648"
    },
    "siteRefs": [
     "98829b2d636a"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "92a8fe565950": {
    "page": "/solar-system-light-delay",
@@ -21114,16 +21195,16 @@
    "text": "Since the site does not yet show advertising, no consent notice is displayed; one will be shown, and will be changeable at any time, before any advertising cookie is set.",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:116-118 — dist 전수 grep에서 cookieconsent · consent-banner · onetrust · cookiebot이 0건이고 외부 스크립트 자체가 없다. 곧 지금 화면에 동의 안내가 없다. VIS: privacy-desktop.png·privacy-phone.png 두 화면 폭 모두 동의 배너가 없다. SITE: 98829b2d636a 광고가 아직 없다는 앞 사실이 \"Since\"의 전제이고, 앞으로의 약속 부분은 SITE: 32d4aa9b7a53(\"No advertising cookie is set today\")과 함께 참이다.",
+   "evidence": "CODE: src/pages/privacy.astro:132-134 — dist 전수 grep에서 cookieconsent · consent-banner · onetrust · cookiebot이 0건이고 외부 스크립트 자체가 없다. 곧 지금 화면에 동의 안내가 없다. VIS: privacy-desktop.png·privacy-phone.png 두 화면 폭 모두 동의 배너가 없다. SITE: 98829b2d636a 광고가 아직 없다는 앞 사실이 \"Since\"의 전제이고, 앞으로의 약속 부분은 SITE: 64913eea107f(\"No advertising cookie is set today\")과 함께 참이다. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜. 판정관 메모(wa): 배포 때 Cloudflare Web Analytics 비콘 스크립트가 붙지만 광고·동의 창·광고 쿠키가 아니다 — 이 문장의 참은 그대로.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "98829b2d636a",
-    "32d4aa9b7a53"
+    "64913eea107f"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "92c959523f59": {
    "page": "/simpsons-paradox",
@@ -21311,9 +21392,9 @@
    "text": "Google describes how it uses data from sites that use its services at policies.google.com.",
    "verdict": "OK",
    "checks": "ooo--oooo-ooooo-ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:92 href=\"https://policies.google.com/technologies/partner-sites\" — 나는 이 주소를 직접 받아 보았다: 제목이 \"How Google uses information from sites or apps that use our services – Privacy & Terms – Google\"이고 첫 문장이 \"Many websites and apps use Google services to improve their content and keep it free.\"다. 곧 \"Google describes how it uses data from sites that use its services\"가 그 문서가 하는 일과 같다. SRC: google-adsense-required-disclosures \"Google's use of advertising cookies enables it and its partners to serve ads to your users based on their visit to your sites and/or other sites on the Internet.\" SITE: 91a1b797a708 그 링크 단위.",
+   "evidence": "CODE: src/pages/privacy.astro:105 href=\"https://policies.google.com/technologies/partner-sites\" — 나는 이 주소를 직접 받아 보았다: 제목이 \"How Google uses information from sites or apps that use our services – Privacy & Terms – Google\"이고 첫 문장이 \"Many websites and apps use Google services to improve their content and keep it free.\"다. 곧 \"Google describes how it uses data from sites that use its services\"가 그 문서가 하는 일과 같다. SRC: google-adsense-required-disclosures \"Google's use of advertising cookies enables it and its partners to serve ads to your users based on their visit to your sites and/or other sites on the Internet.\" SITE: 91a1b797a708 그 링크 단위.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
+    "src/pages/privacy.astro": "aa330343d48eadc1",
     "audit/sources/google-adsense-required-disclosures.md": "f347ee61b3d87648"
    },
    "siteRefs": [
@@ -21873,16 +21954,16 @@
    "text": "Advertising",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:58 <h2>Advertising</h2> — 이 절이 지금 광고가 없다는 것과 광고가 들어오면 달라지는 것을 적는다. SITE: 98829b2d636a 지금 상태, SITE: 221b45693013 조건절 선언. VIS: privacy-desktop.png",
+   "evidence": "CODE: src/pages/privacy.astro:71 <h2>Advertising</h2> — 이 절이 지금 광고가 없다는 것과 광고가 들어오면 달라지는 것을 적는다. SITE: 98829b2d636a 지금 상태, SITE: 221b45693013 조건절 선언. VIS: privacy-desktop.png 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "98829b2d636a",
     "221b45693013"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "970ed66fcf34": {
    "page": "/simpsons-paradox",
@@ -21976,9 +22057,9 @@
    "text": "No font request goes to Google or any other third party, and no cookie is set by this.",
    "verdict": "OK",
    "checks": "oooooooooooooooooooooo",
-   "evidence": "CODE: src/pages/privacy.astro:54-55. CODE: src/layouts/Base.astro:4 서체는 @fontsource npm 패키지에서 들여와 자체 번들로 나간다 — 외부 주소를 가리키는 link·@import가 없다. CALC: dist의 HTML·CSS에서 googleapis·gstatic 검색 결과 = 0건. DEF: 이 문장의 제3자 부분은 \"요청이 Google로 가지 않는다\"는 사이트 자신의 동작 서술이지 제3자의 동작에 대한 주장이 아니다. \"no cookie is set by this\"의 \"this\"는 서체 제공이다; Cloudflare 쿠키는 같은 페이지의 쿠키 절(dist 단위 ‹/privacy text: Cloudflare, which serves the site, may set cookies of its ow›)이 따로 적고, 광고 쿠키 문장들(dist 단위 ‹/privacy text: From then on, third-party vendors, including Google, would u›)은 광고 시작 뒤의 가정이라 모순이 없다.",
+   "evidence": "CODE: src/pages/privacy.astro:67-68. CODE: src/layouts/Base.astro:4 서체는 @fontsource npm 패키지에서 들여와 자체 번들로 나간다 — 외부 주소를 가리키는 link·@import가 없다. CALC: dist의 HTML·CSS에서 googleapis·gstatic 검색 결과 = 0건. DEF: 이 문장의 제3자 부분은 \"요청이 Google로 가지 않는다\"는 사이트 자신의 동작 서술이지 제3자의 동작에 대한 주장이 아니다. \"no cookie is set by this\"의 \"this\"는 서체 제공이다; Cloudflare 쿠키는 같은 페이지의 쿠키 절(dist 단위 ‹/privacy text: Cloudflare, which serves the site, may set cookies of its ow›)이 따로 적고, 광고 쿠키 문장들(dist 단위 ‹/privacy text: From then on, third-party vendors, including Google, would u›)은 광고 시작 뒤의 가정이라 모순이 없다.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
+    "src/pages/privacy.astro": "aa330343d48eadc1",
     "src/layouts/Base.astro": "797b6eb443ac9be2"
    },
    "siteRefs": [],
@@ -22094,16 +22175,16 @@
    "text": "This site does not currently show advertising.",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:61 \"This site does not currently show advertising.\" — dist 전수 grep에서 adsbygoogle · googlesyndication · data-ad-client · gtag( · googletagmanager가 0건이고, 배포 산출물에 외부 스크립트 태그 자체가 없다. SITE: 32d4aa9b7a53 \"No advertising cookie is set today.\"와 함께 참이다. SITE: 92b0cbead36d 아직 광고가 없어 동의 안내도 없다는 문장과도 맞는다. VIS: privacy-desktop.png·privacy-phone.png 어느 화면 폭에도 광고 자리가 없다.",
+   "evidence": "CODE: src/pages/privacy.astro:74 \"This site does not currently show advertising.\" — dist 전수 grep에서 adsbygoogle · googlesyndication · data-ad-client · gtag( · googletagmanager가 0건이고, 배포 산출물에 외부 스크립트 태그 자체가 없다. SITE: 64913eea107f \"No advertising cookie is set today.\"와 함께 참이다. SITE: 92b0cbead36d 아직 광고가 없어 동의 안내도 없다는 문장과도 맞는다. VIS: privacy-desktop.png·privacy-phone.png 어느 화면 폭에도 광고 자리가 없다. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜. 판정관 메모(wa): 배포 때 Cloudflare Web Analytics 비콘 스크립트가 붙지만 광고·동의 창·광고 쿠키가 아니다 — 이 문장의 참은 그대로.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
-    "32d4aa9b7a53",
+    "64913eea107f",
     "92b0cbead36d"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "9899569940b6": {
    "page": "/one-line-or-many",
@@ -22476,6 +22557,25 @@
    "run": "36902cac284f",
    "date": "2026-09-26"
   },
+  "9a9155654b9f": {
+   "page": "/privacy",
+   "kind": "text",
+   "text": "Where the GDPR applies, the legal basis for processing technical data is legitimate interest in operating and securing the site and in counting how it is used.",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "CODE: src/pages/privacy.astro:129 — 운영자가 어떤 근거에 기대는지를 밝히는 문장이고, 그 근거가 GDPR이 두는 근거 가운데 하나라는 것은 SRC: gdpr-art15-art21-rights \"The data subject shall have the right to object, on grounds relating to his or her particular situation, at any time to processing of personal data concerning him or her which is based on point (e) or (f) of Article 6(1), including profiling based on those provisions.\" — 제21조가 제6(1)조 (f)(정당한 이익)를 근거 유형으로 든다. SITE: e123884949fc 그 technical data가 무엇인지는 앞 절이 적는다. SITE: 78a823aea3f9 광고 쪽 근거는 따로 적어 두 문장이 함께 참이다. 늘어난 \"and in counting how it is used\"는 운영자가 선언하는 근거로, 통계 문단(SITE: adbd81b14623)과 짝을 이룬다. 법률 판단(ePrivacy 5(3) 등)은 운영자 몫 — 2026-09-27 운영자에게 알림. 두 번째 검사자 WB(2026-09-27) 독립 대조: OK.",
+   "deps": {
+    "src/pages/privacy.astro": "aa330343d48eadc1",
+    "audit/sources/gdpr-art15-art21-rights.md": "faca176295986d3c"
+   },
+   "siteRefs": [
+    "e123884949fc",
+    "78a823aea3f9",
+    "adbd81b14623"
+   ],
+   "run": "wa-judge",
+   "date": "2026-09-27"
+  },
   "9aaeeb50baa4": {
    "page": "/one-line-or-many",
    "kind": "text",
@@ -22689,9 +22789,9 @@
    "text": "Children",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:154 <h2>Children</h2> — 이어지는 문단이 13세 미만을 겨냥하지 않는다는 것, 아무것도 묻지 않는다는 것, 사본이 없다는 것과 그때 할 수 있는 일을 적는다. SITE: c26c03bbc4ae · SITE: 0c9883268220. VIS: privacy-desktop.png",
+   "evidence": "CODE: src/pages/privacy.astro:170 <h2>Children</h2> — 이어지는 문단이 13세 미만을 겨냥하지 않는다는 것, 아무것도 묻지 않는다는 것, 사본이 없다는 것과 그때 할 수 있는 일을 적는다. SITE: c26c03bbc4ae · SITE: 0c9883268220. VIS: privacy-desktop.png",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "c26c03bbc4ae",
@@ -24275,19 +24375,18 @@
    "kind": "text",
    "text": "The date at the top reflects the most recent revision.",
    "verdict": "OK",
-   "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "SITE: c4969ee2d56a 맨 위 줄이 \"Last updated: 25 September 2026\"이다. SITE: 006149b065bf 이 페이지에 실린 가장 최근 개정 기록이 \"The revision of 25 September 2026 …\"으로 같은 날짜다. SITE: 55e862c3d90b 그다음이 24 September 2026, SITE: 2ef8048a1c8c 그다음이 23 September 2026 — 기록이 최신순이고 맨 위 날짜가 그 가운데 가장 최근 것과 같다. CALC: 25 > 24 > 23 → 맨 위 날짜 25 September 2026 = 가장 최근 개정일. CODE: src/pages/privacy.astro:19 그 줄의 자리가 \"the top\"이다.",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "SITE: 42618c975c1d 맨 위 줄이 \"Last updated: 27 September 2026\"이다. SITE: 207016937a12 이 페이지에 실린 가장 최근 개정 기록이 같은 날짜다. SITE: 25b6ccf7ddfa 그다음이 25일, 이어 24·23일 — 기록이 최신순. CALC: 27 > 25 > 24 > 23 → 맨 위 날짜 27 September 2026 = 가장 최근 개정일. CODE: src/pages/privacy.astro:19 그 줄의 자리가 \"the top\"이다. 두 번째 검사자 WB(2026-09-27) 독립 대조: OK.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
-    "c4969ee2d56a",
-    "006149b065bf",
-    "55e862c3d90b",
-    "2ef8048a1c8c"
+    "42618c975c1d",
+    "207016937a12",
+    "25b6ccf7ddfa"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "a57c2859a133": {
    "page": "/simpsons-paradox",
@@ -24416,16 +24515,16 @@
    "text": "Google's use of advertising cookies would enable it and its partners to serve ads to you based on your visit to this site and other sites on the internet.",
    "verdict": "OK",
    "checks": "ooo--oooo-ooooo-ooo-oo",
-   "evidence": "SRC: google-adsense-required-disclosures \"Google's use of advertising cookies enables it and its partners to serve ads to your users based on their visit to your sites and/or other sites on the Internet.\" — 본문은 게시자 시점(\"your users\", \"your sites\")을 독자 시점(\"you\", \"this site\")으로 바꾸고 시제를 조건법(would)으로 바꾼 것뿐이다. SITE: 98829b2d636a 지금은 광고가 없고, SITE: 32d4aa9b7a53 지금은 광고 쿠키도 없다 — 조건법과 어긋나지 않는다.",
+   "evidence": "SRC: google-adsense-required-disclosures \"Google's use of advertising cookies enables it and its partners to serve ads to your users based on their visit to your sites and/or other sites on the Internet.\" — 본문은 게시자 시점(\"your users\", \"your sites\")을 독자 시점(\"you\", \"this site\")으로 바꾸고 시제를 조건법(would)으로 바꾼 것뿐이다. SITE: 98829b2d636a 지금은 광고가 없고, SITE: 64913eea107f 지금은 광고 쿠키도 없다 — 조건법과 어긋나지 않는다. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
    "deps": {
     "audit/sources/google-adsense-required-disclosures.md": "f347ee61b3d87648"
    },
    "siteRefs": [
     "98829b2d636a",
-    "32d4aa9b7a53"
+    "64913eea107f"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "a64432dc10a5": {
    "page": "/wifi-through-walls",
@@ -24639,17 +24738,17 @@
    "text": "Changes",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:172 <h2>Changes</h2> — 이어지는 네 문단이 갱신 규칙과 25·24·23일의 개정 기록을 적는다. SITE: 5272664dba73 · SITE: a56c9042f536 · SITE: d2ce51fba510. VIS: privacy-desktop.png",
+   "evidence": "CODE: src/pages/privacy.astro:188 <h2>Changes</h2> — 이어지는 네 문단이 갱신 규칙과 25·24·23일의 개정 기록을 적는다. SITE: 5272664dba73 · SITE: a56c9042f536 · SITE: d2ce51fba510. VIS: privacy-desktop.png 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "5272664dba73",
     "a56c9042f536",
     "d2ce51fba510"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "a823d763bb44": {
    "page": "/one-line-or-many",
@@ -24685,9 +24784,9 @@
    "text": "Any third-party advertising vendor would operate under its own privacy policy.",
    "verdict": "OK",
    "checks": "ooo--oooo-ooooo-ooo-oo",
-   "evidence": "DEF: 이 문장은 어느 회사의 말도 옮기지 않는다 — 제3자 광고 벤더가 자기 개인정보 방침 아래 움직인다는 것은 제3자(곧 이 사이트의 방침이 미치지 않는 별개 사업자)라는 말뜻에서 따라 나온다. SRC: google-adsense-required-disclosures \"Google's use of advertising cookies enables it and its partners to serve ads to your users based on their visit to your sites and/or other sites on the Internet.\" — 구글도 자기 방침을 따로 두는 벤더의 한 예다. CODE: src/pages/privacy.astro:89 이 문장도 광고가 들어온 뒤를 말하는 would 절이다. SITE: 93984463eb99 다음 문장이 그 예를 든다.",
+   "evidence": "DEF: 이 문장은 어느 회사의 말도 옮기지 않는다 — 제3자 광고 벤더가 자기 개인정보 방침 아래 움직인다는 것은 제3자(곧 이 사이트의 방침이 미치지 않는 별개 사업자)라는 말뜻에서 따라 나온다. SRC: google-adsense-required-disclosures \"Google's use of advertising cookies enables it and its partners to serve ads to your users based on their visit to your sites and/or other sites on the Internet.\" — 구글도 자기 방침을 따로 두는 벤더의 한 예다. CODE: src/pages/privacy.astro:102 이 문장도 광고가 들어온 뒤를 말하는 would 절이다. SITE: 93984463eb99 다음 문장이 그 예를 든다.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
+    "src/pages/privacy.astro": "aa330343d48eadc1",
     "audit/sources/google-adsense-required-disclosures.md": "f347ee61b3d87648"
    },
    "siteRefs": [
@@ -25084,9 +25183,9 @@
    "text": "contact@whatifbench.com → mailto:contact@whatifbench.com",
    "verdict": "OK",
    "checks": "ooo--oooo-oooo--oooooo",
-   "evidence": "CODE: src/pages/privacy.astro:134 To exercise any of these, email <a href={`mailto:${EMAIL}`} · CODE: src/pages/privacy.astro:4 const EMAIL = \"contact@whatifbench.com\" — 링크 글과 mailto: 대상이 같은 상수에서 나오므로 어긋날 수 없다. SITE: 8d5af0aff95d /contact에 적힌 같은 주소. DEF: 링크 글이 곧 주소 자체라 링크 글과 대상이 같다. VIS: privacy-desktop.png EEA/UK 절 끝의 링크.",
+   "evidence": "CODE: src/pages/privacy.astro:150 To exercise any of these, email <a href={`mailto:${EMAIL}`} · CODE: src/pages/privacy.astro:4 const EMAIL = \"contact@whatifbench.com\" — 링크 글과 mailto: 대상이 같은 상수에서 나오므로 어긋날 수 없다. SITE: 8d5af0aff95d /contact에 적힌 같은 주소. DEF: 링크 글이 곧 주소 자체라 링크 글과 대상이 같다. VIS: privacy-desktop.png EEA/UK 절 끝의 링크.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "8d5af0aff95d"
@@ -25632,6 +25731,21 @@
    "run": "36902cac284f",
    "date": "2026-09-26"
   },
+  "adbd81b14623": {
+   "page": "/privacy",
+   "kind": "text",
+   "text": "The site also uses Cloudflare Web Analytics to count page views and visits.",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "SRC: cloudflare-pages-web-analytics \"Cloudflare will automatically add the JavaScript snippet to your Pages site on the next deployment.\" VIS: 운영자 화면 캡처(2026-09-27) \"Web analytics is enabled\". SRC: cloudflare-web-analytics-metrics \"A page view that originated from a different website or direct link.\" — 세는 것이 page view와 visit다. 배포 뒤 라이브 페이지에서 비콘 삽입을 다시 확인한다. 두 번째 검사자 WB(2026-09-27) 독립 대조: OK.",
+   "deps": {
+    "audit/sources/cloudflare-pages-web-analytics.md": "159761dbbf58e29b",
+    "audit/sources/cloudflare-web-analytics-metrics.md": "b5b90432abc061e7"
+   },
+   "siteRefs": [],
+   "run": "wa-judge",
+   "date": "2026-09-27"
+  },
   "ade6a956dd79": {
    "page": "/wifi-through-walls",
    "kind": "text",
@@ -25817,9 +25931,9 @@
    "text": "developers.cloudflare.com → https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/ (target=_blank) (rel=nofollow noopener)",
    "verdict": "OK",
    "checks": "ooo--oooo-oooo--oooooo",
-   "evidence": "CODE: src/pages/privacy.astro:105 href=\"https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/\" · CODE: src/pages/privacy.astro:107 링크 글이 \"developers.cloudflare.com\"이다. DEF: 링크 글이 대상 주소의 호스트와 글자까지 같다. 나는 그 주소를 직접 받아 제목 \"Cloudflare Cookies · Cloudflare Fundamentals docs\"를 확인했고, 본문이 그 문서에 기대는 말(쿠키 나열 + 몇 개의 조건)도 거기 있다. SRC: cloudflare-cookies \"The `__cfruid` cookie is strictly necessary to support Cloudflare Rate Limiting products.\"",
+   "evidence": "CODE: src/pages/privacy.astro:118 href=\"https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/\" · CODE: src/pages/privacy.astro:120 링크 글이 \"developers.cloudflare.com\"이다. DEF: 링크 글이 대상 주소의 호스트와 글자까지 같다. 나는 그 주소를 직접 받아 제목 \"Cloudflare Cookies · Cloudflare Fundamentals docs\"를 확인했고, 본문이 그 문서에 기대는 말(쿠키 나열 + 몇 개의 조건)도 거기 있다. SRC: cloudflare-cookies \"The `__cfruid` cookie is strictly necessary to support Cloudflare Rate Limiting products.\"",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
+    "src/pages/privacy.astro": "aa330343d48eadc1",
     "audit/sources/cloudflare-cookies.md": "137228819acde766"
    },
    "siteRefs": [],
@@ -25939,22 +26053,6 @@
    },
    "siteRefs": [],
    "run": "wifi-w1",
-   "date": "2026-09-26"
-  },
-  "b0e6857bfb5b": {
-   "page": "/privacy",
-   "kind": "heading",
-   "text": "Fonts",
-   "verdict": "OK",
-   "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:50 <h2>Fonts</h2> — 이 절이 글꼴 파일이 어디서 오는지와 그것이 쿠키를 심지 않는다는 것을 적는다. dist/_astro/*.css의 @font-face url()이 모두 같은-출처 경로다(url(/_astro/barlow-latin-400-normal.qiz4-Cze.woff2) 등), dist 전체에 fonts.googleapis.com·fonts.gstatic.com 참조가 0건이다. SITE: d5f6fb68c858 그 절 첫 문장.",
-   "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
-   },
-   "siteRefs": [
-    "d5f6fb68c858"
-   ],
-   "run": "36902cac284f",
    "date": "2026-09-26"
   },
   "b10c351c512a": {
@@ -26874,7 +26972,7 @@
    "checks": "ooo---ooo--ooo--ooo--o",
    "evidence": "CODE: src/pages/privacy.astro:15 title=\"Privacy Policy\" · CODE: src/layouts/Base.astro:43 const fullTitle = title ? `${title} — ${SITE_NAME}` : SITE_NAME · CODE: src/layouts/Base.astro:73 <title>{fullTitle}</title> · CODE: src/layouts/Base.astro:108 <meta property=\"og:title\" content={fullTitle} /> — <title>과 og:title이 한 값에서 나오므로 어긋날 수 없고, dist/privacy/index.html에서 둘 다 \"Privacy Policy — whatifbench\"다. SITE: 2660bcb1c384 h1 \"Privacy Policy\"와도 같은 주제를 말한다. SITE: 77d8d2ab40c3 og:title 단위.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
+    "src/pages/privacy.astro": "aa330343d48eadc1",
     "src/layouts/Base.astro": "797b6eb443ac9be2"
    },
    "siteRefs": [
@@ -26931,7 +27029,7 @@
     "src/widgets/monty-hall-n-doors/model.js": "7100479eb52798eb",
     "src/widgets/simpsons-paradox/model.js": "b9ebdca69624e9e0",
     "src/widgets/one-line-or-many/model.js": "04c75c57bb12e5a2",
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
+    "src/pages/privacy.astro": "aa330343d48eadc1",
     "src/pages/about.astro": "2764197f1ec70a8a"
    },
    "siteRefs": [
@@ -27011,6 +27109,22 @@
    "siteRefs": [],
    "run": "36902cac284f",
    "date": "2026-09-26"
+  },
+  "b8b37b1f0781": {
+   "page": "/privacy",
+   "kind": "text",
+   "text": "Cloudflare says the analytics script described above uses no cookie to track you.",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "SRC: cloudflare-web-analytics-blog \"We don't use any client-side state, like cookies or localStorage, for the purposes of tracking users.\" — Cloudflare의 말로, 추적 목적 쿠키로 한정. SITE: 29fce0969c0b 앞 절의 같은 내용. 두 번째 검사자 WB(2026-09-27) 독립 대조: OK.",
+   "deps": {
+    "audit/sources/cloudflare-web-analytics-blog.md": "f7f43ef0b1fa3075"
+   },
+   "siteRefs": [
+    "29fce0969c0b"
+   ],
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "b8bc3e9109d3": {
    "page": "/one-line-or-many",
@@ -27906,9 +28020,9 @@
    "text": "Those sites have their own policies and are outside my control.",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "SITE: 93984463eb99 — 바로 그 예로 구글이 자기 방침 문서를 따로 두고 이 페이지가 그것을 가리킨다. CODE: src/pages/privacy.astro:74 rel=\"nofollow noopener\" target=\"_blank\" — 이 사이트는 바깥 문서를 담아 내지 않고 넘겨줄 뿐이다. DEF: 남의 사이트의 방침과 내용은 그 사이트가 정한다는 뜻에서 \"outside my control\"이 따라 나온다. SITE: 894cf17eac21 앞 문장이 가리키는 \"Those sites\".",
+   "evidence": "SITE: 93984463eb99 — 바로 그 예로 구글이 자기 방침 문서를 따로 두고 이 페이지가 그것을 가리킨다. CODE: src/pages/privacy.astro:87 rel=\"nofollow noopener\" target=\"_blank\" — 이 사이트는 바깥 문서를 담아 내지 않고 넘겨줄 뿐이다. DEF: 남의 사이트의 방침과 내용은 그 사이트가 정한다는 뜻에서 \"outside my control\"이 따라 나온다. SITE: 894cf17eac21 앞 문장이 가리키는 \"Those sites\".",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "93984463eb99",
@@ -28366,7 +28480,7 @@
     "src/widgets/monty-hall-n-doors/model.js": "7100479eb52798eb",
     "src/widgets/simpsons-paradox/model.js": "b9ebdca69624e9e0",
     "src/widgets/one-line-or-many/model.js": "04c75c57bb12e5a2",
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
+    "src/pages/privacy.astro": "aa330343d48eadc1",
     "src/pages/about.astro": "2764197f1ec70a8a"
    },
    "siteRefs": [],
@@ -28853,22 +28967,6 @@
    "siteRefs": [],
    "run": "scale-staging-r2",
    "date": "2026-09-26"
-  },
-  "c4969ee2d56a": {
-   "page": "/privacy",
-   "kind": "text",
-   "text": "Last updated: 25 September 2026",
-   "verdict": "ACCEPTED",
-   "checks": "ooooooooo-ooooo-ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:5 const UPDATED = \"25 September 2026\" · CODE: src/pages/privacy.astro:19 <p class=\"legal-date\">Last updated: {UPDATED}</p> — dist/privacy/index.html이 \"Last updated: 25 September 2026\"을 낸다. 오늘이 2026-09-25이고 이 판본에서 세 곳이 실제로 바뀌었다: CODE: src/pages/privacy.astro:143 \"to limit the use and disclosure of sensitive personal information\", CODE: src/pages/privacy.astro:132 \"and is carried out by automated means\", CODE: src/pages/privacy.astro:73 href=\"https://myadcenter.google.com/\". CALC: 25 September 2026 = 오늘(2026-09-25) → 갱신일이 앞서지도 뒤서지도 않는다. tried: scanB/shots/privacy-phone.png·privacy-desktop.png는 14:23에 찍혀 이 줄이 바뀌기 전 판본(\"Last updated: 24 September 2026\")을 보여 준다 — 지금 판본을 찍은 스크린숏이 없어 화면 확인은 dist HTML로 대신했다.",
-   "problem": "운영자 진술 — 운영자 Keu가 2026-09-25에 사실로 확인",
-   "deps": {},
-   "siteRefs": [],
-   "run": "36902cac284f",
-   "date": "2026-09-26",
-   "by": "Keu",
-   "reason": "운영자 본인만 확인할 수 있는 진술(개정 기록·갱신일). 2026-09-25에 운영자가 사실로 확인했다.",
-   "acceptedOn": "2026-09-26"
   },
   "c49a8641d6a6": {
    "page": "/wifi-through-walls",
@@ -29790,24 +29888,6 @@
    "run": "36902cac284f",
    "date": "2026-09-26"
   },
-  "cac71e9a0efa": {
-   "page": "/privacy",
-   "kind": "text",
-   "text": "Where the GDPR applies, the legal basis for processing technical data is legitimate interest in operating and securing the site.",
-   "verdict": "OK",
-   "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "CODE: src/pages/privacy.astro:114 Where the GDPR applies, the legal basis for processing technical data is legitimate interest in operating and securing the site — 운영자가 어떤 근거에 기대는지를 밝히는 문장이고, 그 근거가 GDPR이 두는 근거 가운데 하나라는 것은 SRC: gdpr-art15-art21-rights \"The data subject shall have the right to object, on grounds relating to his or her particular situation, at any time to processing of personal data concerning him or her which is based on point (e) or (f) of Article 6(1), including profiling based on those provisions.\" — 제21조가 제6(1)조 (f)(정당한 이익)를 근거 유형으로 든다. SITE: e123884949fc 그 technical data가 무엇인지는 앞 절이 적는다. SITE: 75e136ba3b4d 광고 쪽 근거는 따로 적어 두 문장이 함께 참이다.",
-   "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
-    "audit/sources/gdpr-art15-art21-rights.md": "faca176295986d3c"
-   },
-   "siteRefs": [
-    "e123884949fc",
-    "75e136ba3b4d"
-   ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
-  },
   "cad743b52eec": {
    "page": "/folding-paper-moon",
    "kind": "head",
@@ -30230,6 +30310,20 @@
    "siteRefs": [],
    "run": "36902cac284f",
    "date": "2026-09-26"
+  },
+  "ceba0a6f62be": {
+   "page": "/privacy",
+   "kind": "head",
+   "text": "canonical=https://whatifbench.com/privacy",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "CODE: src/layouts/Base.astro:44 canonical = new URL(Astro.url.pathname, Astro.site) · CODE: src/layouts/Base.astro:87 <link rel=\"canonical\">. astro.config.mjs site https://whatifbench.com, trailingSlash never — 경로 /privacy와 맞는다. DEF: 이 값은 빌드가 Base.astro 한 줄에서 만들어 dist의 모든 페이지에 같은 글자로 나온다. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
+   "deps": {
+    "src/layouts/Base.astro": "797b6eb443ac9be2"
+   },
+   "siteRefs": [],
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "cebf3588e943": {
    "page": "/scale",
@@ -30760,17 +30854,17 @@
    "text": "Material changes will be noted on this page.",
    "verdict": "OK",
    "checks": "ooo---ooo-oooo--ooo-oo",
-   "evidence": "SITE: 006149b065bf · SITE: 55e862c3d90b · SITE: 2ef8048a1c8c — 이 페이지에 세 번의 개정이 각각 무엇을 바꿨는지 문단으로 적혀 있다. 곧 약속이 이미 지켜진 형태로 같은 페이지에 있다. CODE: src/pages/privacy.astro:179-201 그 세 문단. VIS: privacy-desktop.png \"Changes\" 절.",
+   "evidence": "SITE: 25b6ccf7ddfa · SITE: 55e862c3d90b · SITE: 2ef8048a1c8c — 이 페이지에 세 번의 개정이 각각 무엇을 바꿨는지 문단으로 적혀 있다. 곧 약속이 이미 지켜진 형태로 같은 페이지에 있다. CODE: src/pages/privacy.astro:195-225 그 세 문단. VIS: privacy-desktop.png \"Changes\" 절. 판정관 재확인(wa): 글자 그대로, 앞 문장 또는 인용 줄 위치만 바뀜.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
-    "006149b065bf",
+    "25b6ccf7ddfa",
     "55e862c3d90b",
     "2ef8048a1c8c"
    ],
-   "run": "36902cac284f",
-   "date": "2026-09-26"
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "d2f19df7e704": {
    "page": "/solar-system-light-delay",
@@ -30827,6 +30921,21 @@
    },
    "siteRefs": [],
    "run": "rss-judge",
+   "date": "2026-09-27"
+  },
+  "d3496cc9934a": {
+   "page": "/privacy",
+   "kind": "text",
+   "text": "Cloudflare adds a small script, loaded from static.cloudflareinsights.com, to each page; it runs in your browser and reports timing measurements of how the page loaded to Cloudflare.",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "SRC: cloudflare-web-analytics-data-origin \"The Web Analytics performance beacon loads from\" · \"Web Analytics collects the minimum amount of information - timing metrics - to show customers how their websites perform.\" SRC: cloudflare-pages-web-analytics \"Cloudflare will automatically add the JavaScript snippet to your Pages site on the next deployment.\" — dist의 HTML 13개 모두 doctype·</body>가 있어 자동 삽입 대상(WB 확인). 두 번째 검사자 WB(2026-09-27) 독립 대조: OK.",
+   "deps": {
+    "audit/sources/cloudflare-web-analytics-data-origin.md": "0488e739438374d6",
+    "audit/sources/cloudflare-pages-web-analytics.md": "159761dbbf58e29b"
+   },
+   "siteRefs": [],
+   "run": "wa-judge",
    "date": "2026-09-27"
   },
   "d34f5f226164": {
@@ -31236,9 +31345,9 @@
    "text": "The typefaces are served from this site's own address, like every other file on it.",
    "verdict": "OK",
    "checks": "oooooooooooooooooooooo",
-   "evidence": "CODE: src/pages/privacy.astro:53. CODE: src/layouts/Base.astro:1-2 \"서체는 자체 호스팅한다\" 주석 · CODE: src/layouts/Base.astro:4 import \"@fontsource/barlow/400.css\" 외 아홉 줄(4–12) — 글꼴이 사이트 번들로 나간다. DEF: dist/_astro/에 woff2 62개가 있고, 번들 CSS의 url(…) 62개가 모두 /_astro/ 경로다; dist HTML의 외부 src/href는 본문 링크(a)뿐이고 외부 script·stylesheet·img가 없다 — \"like every other file on it\"이 참이다. dist 단위 ‹/privacy text: This site sets no cookies of its own.› \"This site sets no cookies of its own.\"과 모순 없음. SITE: 9778717cd375 다음 문장이 같은 사실을 부정형으로 한 번 더 말한다(this site = 서체를 내보내는 whatifbench.com).",
+   "evidence": "CODE: src/pages/privacy.astro:66. CODE: src/layouts/Base.astro:1-2 \"서체는 자체 호스팅한다\" 주석 · CODE: src/layouts/Base.astro:4 import \"@fontsource/barlow/400.css\" 외 아홉 줄(4–12) — 글꼴이 사이트 번들로 나간다. DEF: dist/_astro/에 woff2 62개가 있고, 번들 CSS의 url(…) 62개가 모두 /_astro/ 경로다; dist HTML의 외부 src/href는 본문 링크(a)뿐이고 외부 script·stylesheet·img가 없다 — \"like every other file on it\"이 참이다. dist 단위 ‹/privacy text: This site sets no cookies of its own.› \"This site sets no cookies of its own.\"과 모순 없음. SITE: 9778717cd375 다음 문장이 같은 사실을 부정형으로 한 번 더 말한다(this site = 서체를 내보내는 whatifbench.com).",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
+    "src/pages/privacy.astro": "aa330343d48eadc1",
     "src/layouts/Base.astro": "797b6eb443ac9be2"
    },
    "siteRefs": [
@@ -34145,7 +34254,7 @@
    "checks": "ooo---ooo-oooo--ooo-oo",
    "evidence": "CODE: src/pages/privacy.astro:4 const EMAIL = \"contact@whatifbench.com\" · CODE: src/pages/contact.astro:5 const EMAIL = \"contact@whatifbench.com\" — 두 페이지가 같은 값을 쓴다. SITE: 8d5af0aff95d /contact에 그 주소가 글자로 적혀 있다. SITE: 17d03266305b \"the contact page\"가 가리키는 /contact 링크. dist 전수에서 mailto: 링크가 세 자리뿐이고 값이 모두 같다 — \"the same address\"가 성립한다.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
+    "src/pages/privacy.astro": "aa330343d48eadc1",
     "src/pages/contact.astro": "581b8d8f07c3d121"
    },
    "siteRefs": [
@@ -34213,6 +34322,20 @@
    "siteRefs": [],
    "run": "36902cac284f",
    "date": "2026-09-26"
+  },
+  "ec5f46fdcc95": {
+   "page": "/privacy",
+   "kind": "text",
+   "text": "Cloudflare's reports break page views and visits down by country, referring site, page, browser, operating system and device type.",
+   "verdict": "OK",
+   "checks": "oooooooooooooooooooooo",
+   "evidence": "SRC: cloudflare-web-analytics-dimensions \"The visitor's country.\" · \"The external links referring visits to a page.\" · \"The links within your site referring visits to a page.\" · \"The web browser (for example, Chrome, Safari) visitors use to access your website.\" · \"The operating system visitors use to access a page.\" · \"The device visitors use to access a page (for example, desktop, mobile, or tablet).\" — 차원 Country·Referer·Path·Browser·Operating system·Device type. 두 번째 검사자 WB(2026-09-27) 독립 대조: OK.",
+   "deps": {
+    "audit/sources/cloudflare-web-analytics-dimensions.md": "1460de9d242bcc12"
+   },
+   "siteRefs": [],
+   "run": "wa-judge",
+   "date": "2026-09-27"
   },
   "ec8aa5bc53e8": {
    "page": "/simpsons-paradox",
@@ -34458,27 +34581,6 @@
    },
    "siteRefs": [],
    "run": "scale-staging-r2",
-   "date": "2026-09-26"
-  },
-  "ed9076ce4ae4": {
-   "page": "/privacy",
-   "kind": "meta",
-   "text": "This site stores nothing itself. What Cloudflare processes to serve it, what advertising would change, and the choices you have.",
-   "verdict": "OK",
-   "checks": "ooo--oooo--oooo-ooo--o",
-   "evidence": "CODE: src/pages/privacy.astro:16 description=\"This site stores nothing itself. What Cloudflare processes to serve it, what advertising would change, and the choices you have.\" · CODE: src/layouts/Base.astro:74 <meta name=\"description\" content={description} /> · CODE: src/layouts/Base.astro:109 <meta property=\"og:description\" content={description} /> — 한 값에서 나오므로 description과 og:description이 어긋날 수 없고 dist/privacy/index.html에서 둘이 글자까지 같다. 세 마디가 본문의 세 자리와 같은 말을 한다: SITE: fe29d04b2cb3 \"stores nothing itself\", SITE: e123884949fc Cloudflare 처리, SITE: 221b45693013 광고가 들어오면 달라지는 것. DEF: 이 요약문에는 제3자의 말을 옮긴 대목이 없다 — Cloudflare가 처리한다는 사실만 가리키고 그 근거는 아래 출처가 진다. SRC: cloudflare-privacy-enduser-data \"The information processed may include but is not limited to IP addresses, traffic routing data, system configuration information, and other information about traffic to and from Customers' websites, devices, applications, and/or networks.\" SITE: 04df049976a3 description 단위.",
-   "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db",
-    "src/layouts/Base.astro": "797b6eb443ac9be2",
-    "audit/sources/cloudflare-privacy-enduser-data.md": "75786dd667559171"
-   },
-   "siteRefs": [
-    "fe29d04b2cb3",
-    "e123884949fc",
-    "221b45693013",
-    "04df049976a3"
-   ],
-   "run": "36902cac284f",
    "date": "2026-09-26"
   },
   "ed9ea1c57e3c": {
@@ -34778,7 +34880,7 @@
    "checks": "ooo---ooo-oooo--ooo-oo",
    "evidence": "SITE: ab3afffa41ce — \"the email address above\"가 가리키는 주소가 바로 앞 절(EEA/UK) 끝에 contact@whatifbench.com 링크로 있다. SITE: 8d5af0aff95d 같은 주소가 /contact에도 있다. VIS: privacy-desktop.png 캘리포니아 절 위쪽에 그 주소가 실제로 보인다. CODE: src/pages/privacy.astro:4 const EMAIL = \"contact@whatifbench.com\" — 페이지의 모든 주소가 이 한 상수에서 나온다.",
    "deps": {
-    "src/pages/privacy.astro": "c7cfc86c9faa51db"
+    "src/pages/privacy.astro": "aa330343d48eadc1"
    },
    "siteRefs": [
     "ab3afffa41ce",
@@ -46267,6 +46369,59 @@
    ],
    "units": 3,
    "note": "RSS 피드 추가: 새 단위(채널·항목·머리 link) 근거 작성, 머리 link가 끼어 앞 문장만 바뀐 단위는 옛 판정을 옮김."
+  },
+  {
+   "run": "line-refresh-wa",
+   "date": "2026-09-27",
+   "auditors": [
+    "판정관"
+   ],
+   "units": 29,
+   "note": "개인정보 페이지에 Web Analytics 문단 추가 뒤, 인용한 줄의 내용이 그대로인 판정의 줄 번호와 해시만 새로 적음."
+  },
+  {
+   "run": "wa-judge",
+   "date": "2026-09-27",
+   "auditors": [
+    "판정관",
+    "WB",
+    "WA2(출처)"
+   ],
+   "units": 27,
+   "note": "개인정보 페이지에 Cloudflare Web Analytics 문단·쿠키 문장·GDPR 근거·개정 기록 추가."
+  },
+  {
+   "run": "wa-judge",
+   "date": "2026-09-27",
+   "auditors": [
+    "판정관",
+    "WB",
+    "WA2(출처)"
+   ],
+   "units": 19,
+   "note": "개인정보 페이지에 Cloudflare Web Analytics 문단·쿠키 문장·GDPR 근거·개정 기록 추가."
+  },
+  {
+   "run": "wa-judge",
+   "date": "2026-09-27",
+   "auditors": [
+    "판정관",
+    "WB",
+    "WA2(출처)"
+   ],
+   "units": 16,
+   "note": "개인정보 페이지에 Cloudflare Web Analytics 문단·쿠키 문장·GDPR 근거·개정 기록 추가."
+  },
+  {
+   "run": "wa-judge",
+   "date": "2026-09-27",
+   "auditors": [
+    "판정관",
+    "WB",
+    "WA2(출처)"
+   ],
+   "units": 18,
+   "note": "개인정보 페이지에 Cloudflare Web Analytics 문단·쿠키 문장·GDPR 근거·개정 기록 추가."
   }
  ]
 }

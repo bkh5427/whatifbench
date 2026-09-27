@@ -2,7 +2,7 @@
 import Base from "@layouts/Base.astro";
 import { tools_read_published } from "@data/tools.js";
 const EMAIL = "contact@whatifbench.com";
-const UPDATED = "25 September 2026";
+const UPDATED = "27 September 2026";
 
 // 이 페이지가 말하는 "계산기"는 발행된 도구의 개수를 약속한다 — 하나인데 복수형으로
 // 쓰면 거짓이다. `[category].astro`의 `elsewhere_text`와 같은 규율이다: 개수에서
@@ -13,7 +13,7 @@ const manyCalculators = tools_read_published().length >= CALCULATOR_MIN_FOR_PLUR
 
 <Base
   title="Privacy Policy"
-  description="This site stores nothing itself. What Cloudflare processes to serve it, what advertising would change, and the choices you have."
+  description="This site stores nothing itself. What Cloudflare processes to serve it and count visits, what advertising would change, and the choices you have."
 >
   <h1>Privacy Policy</h1>
   <p class="legal-date">Last updated: {UPDATED}</p>
@@ -45,6 +45,19 @@ const manyCalculators = tools_read_published().length >= CALCULATOR_MIN_FOR_PLUR
     needed to deliver pages and to protect the site from abuse. This includes
     your IP address, browser and device type, the pages requested, and the time
     of the request.
+  </p>
+
+  <p>
+    The site also uses Cloudflare Web Analytics to count page views and visits.
+    Cloudflare adds a small script, loaded from static.cloudflareinsights.com, to
+    each page; it runs in your browser and reports timing measurements of how the
+    page loaded to Cloudflare. Cloudflare's reports break page views and visits
+    down by country, referring site, page, browser, operating system and device
+    type. Cloudflare counts a visit when the page you arrive at was not reached
+    from another page of this site, which it tells from the referring address
+    your browser sends. Cloudflare says its Web Analytics uses no client-side
+    state, such as cookies or local storage, to track users, and that it does not
+    track individual users across the sites it serves.
   </p>
 
   <h2>Fonts</h2>
@@ -105,14 +118,17 @@ const manyCalculators = tools_read_published().length >= CALCULATOR_MIN_FOR_PLUR
       href="https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/"
       rel="nofollow noopener"
       target="_blank">developers.cloudflare.com</a
-    >. No advertising cookie is set today.
+    >. Cloudflare says the analytics script described above uses no cookie to
+    track you. No
+    advertising cookie is set today.
   </p>
 
   <h2>If you are in the European Economic Area or the United Kingdom</h2>
 
   <p>
     Where the GDPR applies, the legal basis for processing technical data is
-    legitimate interest in operating and securing the site. The legal basis for
+    legitimate interest in operating and securing the site and in counting how it
+    is used. The legal basis for
     personalised advertising is your consent. Since the site does not yet show
     advertising, no consent notice is displayed; one will be shown, and will be
     changeable at any time, before any advertising cookie is set.
@@ -174,6 +190,14 @@ const manyCalculators = tools_read_published().length >= CALCULATOR_MIN_FOR_PLUR
   <p>
     This policy may be updated. The date at the top reflects the most recent
     revision. Material changes will be noted on this page.
+  </p>
+
+  <p>
+    The revision of 27 September 2026 added that the site uses Cloudflare Web
+    Analytics to count page views and visits, what that script reports and what
+    Cloudflare says about it, including in the section on cookies, and added
+    counting how the site is used to the legitimate-interest basis where the GDPR
+    applies.
   </p>
 
   <p>
