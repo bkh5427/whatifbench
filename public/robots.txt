@@ -4,3 +4,5 @@ User-agent: *
 Allow: /
 
 Sitemap: https://whatifbench.com/sitemap-index.xml
+
+#DaumWebMasterTool:9896cdfa4d23723e0e49b8afa2d90591d408a7bc0878a16622cb375ce9983b15:ia4x0bw2ZVxaPUxp2Momww==

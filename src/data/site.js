@@ -31,3 +31,11 @@ export const SITE_TAGLINE = "Models you can move";
  * `<link rel="alternate">`가 이 한 값을 읽는다 — 둘이 갈라지면 구독 앱이 없는 주소를 찾는다.
  */
 export const SITE_FEED_PATH = "/rss.xml";
+
+/**
+ * 검색엔진 소유 확인 값. 사이트가 우리 것임을 보이는 공개 값이다(비밀이 아니다).
+ * 인증이 끝난 뒤에도 지우지 않는다 — 검색엔진이 나중에 다시 확인할 수 있다.
+ * - 네이버 서치어드바이저: HTML 태그 방식(`<meta name="naver-site-verification">`).
+ *   파일 방식을 쓰지 않는 이유: Cloudflare Pages가 `…​.html` 주소를 확장자 없는 주소로 넘긴다.
+ */
+export const SITE_VERIFY_NAVER = "eac6f012d223140f19d10fbe05e6babdc29f1840";
