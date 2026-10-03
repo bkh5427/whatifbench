@@ -41,6 +41,13 @@
     "figureLabel": "the model’s 5 GHz shortfall with no walls, at equal power and antenna gain",
     "sha256": "0b70c27c9cbf54d72632f9dcce350d69e005b30984f63eb2e51796eb13fc41e4"
   },
+  "shower-vs-bath": {
+    "eyebrow": "Energy",
+    "headline": "Shower vs Bath",
+    "figureValue": "8.4 min",
+    "figureLabel": "the minute the model has a 9.5 L/min shower pass an 80 L bath",
+    "sha256": "6a92914e2d0c66fa92f33aa072846bd258824a1b3ece5be05c38bc0dfaf2caf4"
+  },
   "default": {
     "eyebrow": "Interactive calculators",
     "headline": "Move the number and see what happens.",

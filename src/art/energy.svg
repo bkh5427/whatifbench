@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 360" width="560" height="360">
+  <!-- Energy: 위 칸 = 물, 아래 칸 = 데우는 에너지. 주황 실선 = 욕조(평평), 밝은 실선 = 샤워(기울어짐), 점선 세로선 = 교차. 두 교차가 다른 x에 서고 그 사이 회색 띠가 '물로는 아직, 에너지로는 이미'인 구간이다. 글자·숫자 없음 -->
+  <path d="M0 20H560M0 40H560M0 60H560M0 80H560M0 100H560M0 120H560M0 140H560M0 160H560M0 180H560M0 200H560M0 220H560M0 240H560M0 260H560M0 280H560M0 300H560M0 320H560M0 340H560M20 0V360M40 0V360M60 0V360M80 0V360M100 0V360M120 0V360M140 0V360M160 0V360M180 0V360M200 0V360M220 0V360M240 0V360M260 0V360M280 0V360M300 0V360M320 0V360M340 0V360M360 0V360M380 0V360M400 0V360M420 0V360M440 0V360M460 0V360M480 0V360M500 0V360M520 0V360M540 0V360" style="fill:none;stroke:var(--steel-800);stroke-width:1"/>
+  <path d="M40 30V170M40 190V330" style="fill:none;stroke:var(--steel-500);stroke-width:1.5"/>
+  <rect x="230.5" y="30" width="109.5" height="300" style="fill:var(--steel-500);fill-opacity:0.25"/>
+  <path d="M340 30V170" style="fill:none;stroke:var(--steel-400);stroke-width:2;stroke-dasharray:6 5"/>
+  <path d="M40 80H520" style="fill:none;stroke:var(--series-2);stroke-width:3"/>
+  <path d="M40 170L506.7 30" style="fill:none;stroke:var(--steel-200);stroke-width:3.5;stroke-linecap:round"/>
+  <path d="M230.5 190V330" style="fill:none;stroke:var(--steel-400);stroke-width:2;stroke-dasharray:6 5"/>
+  <path d="M40 250H520" style="fill:none;stroke:var(--series-2);stroke-width:3"/>
+  <path d="M40 330L373.3 190" style="fill:none;stroke:var(--steel-200);stroke-width:3.5;stroke-linecap:round"/>
+</svg>

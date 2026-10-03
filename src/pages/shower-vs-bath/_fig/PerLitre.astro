@@ -1,0 +1,86 @@
+---
+/*
+  ** 이 파일이 `---`로 시작하는 이유 **
+  `<svg`나 주석으로 시작하는 `.astro`는 전송 중 C2PA 서명이 붙어 파일이 깨진다.
+  프런트매터가 맨 앞에 있으면 붙지 않는다. 규약 §5 제작 표준.
+
+  도해 2 — 메커니즘. 반전 절에 둔다.
+  **위젯이 그리는 것(분에 대한 누적 곡선 두 개와 세로선)을 다시 그리지 않는다** (규약 §5).
+  여기서 그리는 것은 누적이 아니라 **1 L 한 장씩**이다 — 샤워 물 1 L가 지고 가는
+  온도 상승폭이 욕조 물 1 L보다 크다는 것, 그래서 에너지 쪽 표시가 먼저 온다는 것.
+  숫자는 전부 model.js의 기본값에서 계산해 온다. 하드코딩하지 않는다.
+*/
+import {
+  RISE_SHOWER_DEFAULT_K,
+  RISE_BATH_DEFAULT_K,
+} from "@widgets/shower-vs-bath/model.js";
+
+// 화면 숫자는 모델 값 그대로. 비는 소수 둘째 자리까지 — 위젯의 분 표기와 같은 거칠기다.
+const RISE_SHOWER = RISE_SHOWER_DEFAULT_K;
+const RISE_BATH = RISE_BATH_DEFAULT_K;
+const RATIO = (RISE_BATH / RISE_SHOWER).toFixed(2);
+
+const W = 420;
+const H = 340;
+
+const COL_LEFT = 104;
+const COL_RIGHT = 316;
+
+// 막대는 상승폭에 비례한다. 눈금이 아니라 비교용이므로 축을 그리지 않는다.
+const BAR_BASE = 214;
+const BAR_W = 58;
+const BAR_SCALE = 3.6;
+const barTop = (rise) => BAR_BASE - rise * BAR_SCALE;
+
+// 막대 아래 "1 L" 칸. 두 쪽이 같은 크기다 — 다른 것은 상승폭뿐이라는 뜻이다.
+const LITRE_TOP = BAR_BASE + 6;
+const LITRE_H = 36;
+---
+<svg
+  class="fig-svg"
+  viewBox={`0 0 ${W} ${H}`}
+  role="img"
+  aria-label={`One litre from each side, drawn side by side. Two boxes of identical size are labelled one litre each: the left one belongs to the shower, the right one to the bath. Above each box stands a vertical bar whose height is the temperature rise that litre carries. The shower bar is taller and reads ${RISE_SHOWER} K; the bath bar is shorter and reads ${RISE_BATH} K, and each bar is also labelled taller or shorter in words. Because each shower litre carries more heat than each bath litre, the energy mark arrives earlier than the water mark, at ${RATIO} times the water crossover minute.`}
+>
+  <text x={W / 2} y="26" class="fig-label" fill="var(--graphite)" text-anchor="middle">one litre from each side</text>
+
+  <text x={COL_LEFT} y="50" class="fig-label" fill="var(--graphite)" text-anchor="middle">shower litre</text>
+  <text x={COL_RIGHT} y="50" class="fig-label" fill="var(--graphite)" text-anchor="middle">bath litre</text>
+
+  <line x1="24" y1={BAR_BASE} x2={W - 24} y2={BAR_BASE} stroke="var(--graphite)" stroke-width="1.5" />
+
+  <!-- 왼쪽 막대 — 샤워 물 1 L가 지고 가는 상승폭 -->
+  <rect
+    x={COL_LEFT - BAR_W / 2}
+    y={barTop(RISE_SHOWER)}
+    width={BAR_W}
+    height={RISE_SHOWER * BAR_SCALE}
+    fill="var(--steel-500)"
+    stroke="var(--graphite)"
+    stroke-width="1.5"
+  />
+  <text x={COL_LEFT} y={barTop(RISE_SHOWER) - 22} class="fig-value" fill="var(--graphite)" text-anchor="middle">{RISE_SHOWER} K</text>
+  <text x={COL_LEFT} y={barTop(RISE_SHOWER) - 6} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">taller</text>
+
+  <!-- 오른쪽 막대 — 욕조 물 1 L가 지고 가는 상승폭 -->
+  <rect
+    x={COL_RIGHT - BAR_W / 2}
+    y={barTop(RISE_BATH)}
+    width={BAR_W}
+    height={RISE_BATH * BAR_SCALE}
+    fill="var(--surface)"
+    stroke="var(--graphite)"
+    stroke-width="1.5"
+  />
+  <text x={COL_RIGHT} y={barTop(RISE_BATH) - 22} class="fig-value" fill="var(--graphite)" text-anchor="middle">{RISE_BATH} K</text>
+  <text x={COL_RIGHT} y={barTop(RISE_BATH) - 6} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">shorter</text>
+
+  <!-- 같은 크기의 1 L 칸 둘. 물의 양은 같고 지고 가는 열만 다르다 -->
+  <rect x={COL_LEFT - BAR_W / 2} y={LITRE_TOP} width={BAR_W} height={LITRE_H} rx="1" fill="var(--paper-sunk)" stroke="var(--graphite)" stroke-width="1.5" />
+  <text x={COL_LEFT} y={LITRE_TOP + 25} class="fig-num" fill="var(--graphite)" text-anchor="middle">1 L</text>
+  <rect x={COL_RIGHT - BAR_W / 2} y={LITRE_TOP} width={BAR_W} height={LITRE_H} rx="1" fill="var(--paper-sunk)" stroke="var(--graphite)" stroke-width="1.5" />
+  <text x={COL_RIGHT} y={LITRE_TOP + 25} class="fig-num" fill="var(--graphite)" text-anchor="middle">1 L</text>
+
+  <text x={W / 2} y="298" class="fig-label" fill="var(--graphite)" text-anchor="middle">each shower litre carries more heat</text>
+  <text x={W / 2} y="322" class="fig-value" fill="var(--graphite)" text-anchor="middle">energy mark = water mark × {RATIO}</text>
+</svg>

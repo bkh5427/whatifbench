@@ -42,6 +42,8 @@
 export const CATEGORIES = [
   { key: "chance", href: "/chance", short: "Chance", name: "Chance" },
   { key: "scale", href: "/scale", short: "Scale", name: "Scale" },
+  // 2026-10-03 운영자 결정: shower-vs-bath 한 편으로 연다(아래 CATEGORY_OPEN_MIN_EXCEPTIONS).
+  { key: "energy", href: "/energy", short: "Energy", name: "Energy" },
 ];
 
 /**
@@ -52,7 +54,6 @@ export const CATEGORIES = [
  */
 export const CATEGORIES_PLANNED = [
   { key: "motion", href: "/motion", short: "Motion", name: "Motion" },
-  { key: "energy", href: "/energy", short: "Energy", name: "Energy" },
 ];
 
 /** 열렸든 닫혔든 이름이 붙어 있는 모든 카테고리. 도구의 `category` 검증용. */
@@ -64,10 +65,22 @@ import { meta as ONE_LINE_OR_MANY } from "../pages/one-line-or-many/_meta.js";
 import { meta as FOLDING_PAPER_MOON } from "../pages/folding-paper-moon/_meta.js";
 import { meta as SOLAR_SYSTEM_LIGHT_DELAY } from "../pages/solar-system-light-delay/_meta.js";
 import { meta as WIFI_THROUGH_WALLS } from "../pages/wifi-through-walls/_meta.js";
+import { meta as SHOWER_VS_BATH } from "../pages/shower-vs-bath/_meta.js";
 
 export const CATEGORY_MAX_BEFORE_HEADER_CHANGE = 4;
 /** 카테고리를 열 수 있는 최소 발행 수. 위 주석의 규칙을 기계가 읽는 값으로. */
 export const CATEGORY_OPEN_MIN_PUBLISHED = 2;
+/**
+ * 위 최소 수의 예외. 2026-10-03 운영자 결정 — energy는 초안이 shower-vs-bath 하나뿐이라
+ * 둘째 글을 기다리면 열 수 없다. 한 편으로 열되, 도입글은 그 한 편에 대해서만 말한다
+ * (아직 없는 글을 전제하는 복수 표현 금지 — 09-24 결함의 원인). 둘째 글이 나오면 지운다.
+ */
+export const CATEGORY_OPEN_MIN_EXCEPTIONS = { energy: 1 };
+
+/** 카테고리를 열 수 있는 최소 발행 수 — 예외가 있으면 그 값. */
+export function tools_read_open_min(key) {
+  return CATEGORY_OPEN_MIN_EXCEPTIONS[key] ?? CATEGORY_OPEN_MIN_PUBLISHED;
+}
 
 // 발행된 글은 자기 폴더에서 자기 메타를 선언한다 (`_meta.js`).
 // 여기 배열은 **순서 목록**이다 — 관련 도구 동점을 이 순서로 깨므로
@@ -81,10 +94,10 @@ export const TOOLS = [
   FOLDING_PAPER_MOON,
   SOLAR_SYSTEM_LIGHT_DELAY,
   WIFI_THROUGH_WALLS,
+  SHOWER_VS_BATH,
 
   // 5.00분은 40→60 km/h · 10 km에서만 참이다 — 같은 +20이라도 70→90이면 1.90분이다.
   { slug: "speed-vs-time-saved", category: "motion", name: "How Little Time Speeding Saves", blurb: "Time saved against speed, with the fixed delays held constant on both sides.", grade: "A", since: null, updated: null, changed: "", tags: ["counterintuitive", "rates", "commute"], figure: { value: "5.00 min", label: "the model’s saving from 40 to 60 km/h over 10 km" }, published: false },
-  { slug: "shower-vs-bath", category: "energy", name: "Shower vs Bath", blurb: "Water and heating energy plotted together, each with its own crossing minute marked — the model does not put the two in the same place.", grade: "A", since: null, updated: null, changed: "", tags: ["rates", "energy", "home"], figure: { value: "8.4 min", label: "the minute the model has a 9.5 L/min shower pass an 80 L bath" }, published: false },
 
   // “6 of 22”는 허용오차 5%에서의 값이다. 중복은 정의마다 갈리므로 라벨에 조건을 넣는다.
   { slug: "bicycle-gear-ratio", category: "motion", name: "Bicycle Gear Ratios", blurb: "Gear inches, gain ratio and speed against cadence, with duplicate gears marked.", grade: "A", since: null, updated: null, changed: "", tags: ["rates", "mechanics", "outdoors"], figure: { value: "6 of 22", label: "the combinations the model can drop at a 5% tolerance, on a 50/34 with 11–28" }, published: false },
@@ -249,11 +262,11 @@ export function tools_check_publishable(pool = TOOLS) {
   }
   // 열려 있는데 발행이 모자란 카테고리. 빈 인덱스는 "under construction" 신호다.
   const thin = CATEGORIES.filter(
-    (c) => pool.filter((t) => t.published && t.category === c.key).length < CATEGORY_OPEN_MIN_PUBLISHED,
+    (c) => pool.filter((t) => t.published && t.category === c.key).length < tools_read_open_min(c.key),
   );
   if (thin.length > 0) {
     throw new Error(
-      `공개 도구가 ${CATEGORY_OPEN_MIN_PUBLISHED}개 미만인 카테고리가 열려 있다 (CATEGORIES_PLANNED로 옮길 것): ${thin.map((c) => c.key).join(", ")}`,
+      `공개 도구가 최소 수(기본 ${CATEGORY_OPEN_MIN_PUBLISHED}, 예외 CATEGORY_OPEN_MIN_EXCEPTIONS)에 못 미치는 카테고리가 열려 있다 (CATEGORIES_PLANNED로 옮길 것): ${thin.map((c) => c.key).join(", ")}`,
     );
   }
   // 발행된 도구가 닫힌 카테고리에 있으면 그 글은 브레드크럼도 인덱스도 없다.

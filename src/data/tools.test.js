@@ -21,6 +21,8 @@ import {
   CATEGORIES_PLANNED,
   CATEGORY_MAX_BEFORE_HEADER_CHANGE,
   CATEGORY_OPEN_MIN_PUBLISHED,
+  CATEGORY_OPEN_MIN_EXCEPTIONS,
+  tools_read_open_min,
   CATEGORY_MAX_BEFORE_HEADER_CHANGE,
   RELATED_COUNT,
   RELATED_SAME_CATEGORY_MAX,
@@ -152,9 +154,16 @@ describe("데이터 무결성", () => {
   });
 
   // 열려 있는 카테고리는 공개 도구가 둘 이상. tools.js 주석의 규칙을 기계가 지킨다.
-  it("열린 카테고리마다 공개 도구가 2개 이상이다", () => {
+  // 2026-10-03: energy만 1편 예외(운영자 결정). 예외가 기본값을 넘어 늘지 않게 못박는다.
+  it("최소 발행 수 예외는 energy 하나, 값은 1이다", () => {
+    expect(CATEGORY_OPEN_MIN_EXCEPTIONS).toEqual({ energy: 1 });
+    expect(tools_read_open_min("energy")).toBe(1);
+    expect(tools_read_open_min("chance")).toBe(CATEGORY_OPEN_MIN_PUBLISHED);
+  });
+
+  it("열린 카테고리마다 공개 도구가 최소 수 이상이다(기본 2, 예외 표)", () => {
     for (const c of CATEGORIES) {
-      expect(tools_read_published(c.key).length).toBeGreaterThanOrEqual(CATEGORY_OPEN_MIN_PUBLISHED);
+      expect(tools_read_published(c.key).length).toBeGreaterThanOrEqual(tools_read_open_min(c.key));
     }
   });
 
@@ -193,8 +202,8 @@ describe("데이터 무결성", () => {
   });
 
   it("카테고리 수가 헤더 한 줄 한계 안에 있다", () => {
-    // 2026-09-24: scale·motion·energy를 닫았다. 2026-09-26: scale을 두 편으로 다시 연다.
-    expect(CATEGORIES.length).toBe(2); // 골든(2026-09-26: scale 열림). 늘리려면 헤더 패턴을 먼저 본다.
+    // 2026-09-24: scale·motion·energy를 닫았다. 2026-09-26: scale을 두 편으로 다시 연다. 2026-10-03: energy를 한 편으로 연다.
+    expect(CATEGORIES.length).toBe(3); // 골든(2026-09-26: scale, 2026-10-03: energy 열림). 늘리려면 헤더 패턴을 먼저 본다.
     expect(CATEGORIES.length).toBeLessThanOrEqual(CATEGORY_MAX_BEFORE_HEADER_CHANGE);
     expect(CATEGORIES_ALL.length).toBe(4); // 이름이 붙은 것은 넷 그대로
   });

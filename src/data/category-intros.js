@@ -127,34 +127,37 @@ export const INTROS = {
   },
 
   energy: {
+    // 2026-10-03: shower-vs-bath 한 편으로 연다(운영자 결정). 아직 없는 글을 전제하는 복수 표현
+    // ("almost everything in this section", "these pages")을 그 한 편에 대한 말로 바꿨다.
     description:
-      "Power, heat, water and fuel: what a habit costs once water and heat are counted separately.",
+      "Water and heating energy: what a habit costs once water and heat are counted separately.",
     paragraphs: [
       `Energy questions get argued about in the wrong unit. Someone says a bath
        uses more than a shower, someone else says it depends how long you stand
-       there, and neither says whether they mean the water or the heat. Those are
-       two different quantities that happen to arrive on the same bill, and they
-       cross at the same moment only when the water is heated through the same
-       rise both ways.`,
-      `That is the shape of almost everything in this section. A 9.5 litre per
-       minute shower passes an 80 litre bath at about the eight-minute mark on
-       water — but the energy curve has its own crossing, at its own minute,
-       because the two are computed from different things: one from litres
-       alone, the other from litres and the temperature the water has to be
-       lifted through. Drawing them on one chart with two separate crossings
-       marked is the honest version of the answer. Quoting one number is not.`,
-      `The arithmetic itself is undramatic — a flow rate times minutes, a specific
-       heat times a temperature rise. What makes these worth a dial is that the
-       inputs are personal and the published averages are not. A household's real
-       shower head, real bath, real inlet temperature and real habits move the
-       crossing point around enough that the general claim cannot survive it. You
-       have the numbers for your own house; the model does not.`,
-      `So these pages are built to be argued with. Every coefficient is sourced,
-       every assumption is named, and where a figure depends on a tariff or a
-       climate or an appliance that varies by country, the page says so rather
-       than quietly picking one. Where the answer would need a judgement call
-       about how somebody actually lives, the tool draws the range and stops
-       there.`,
+       there, and the same swap is urged to save water and to save energy, as if
+       the two were one quantity. They are two different quantities, and in the
+       model they cross at exactly the same minute only when the water is heated
+       through the same rise both ways.`,
+      `That is the shape of the shower-and-bath question. A 9.5 litre per minute
+       shower passes an 80 litre bath at about 8.4 minutes on water.
+       The model computes energy from litres and the temperature rise, so its
+       energy crossing moves off that mark whenever the two rises differ: the
+       energy minute is the water minute multiplied by the bath's rise over the
+       shower's. Heat the bath less than the shower and the energy crossing comes
+       first.`,
+      `The arithmetic itself is undramatic, a flow rate times minutes and a
+       specific heat times a temperature rise. What makes it worth a dial is that
+       each input belongs to one household: the flow of one showerhead, the
+       water drawn for one bath, how long one person stands there. In the model
+       the flow and tub sliders move both crossings and the temperature sliders
+       move only the energy one, and the right setting for each slider is a
+       figure from your own house.`,
+      `The page cites sources for its flow presets, for the hour behind the
+       kilowatt-hour and for how water's specific heat and density vary with temperature, and says that its
+       opening values are choices. A price per kilowatt-hour is something you
+       type in, since the model has no tariff of its own. Where the answer would
+       turn on how somebody actually lives, it reports two crossover minutes and
+       stops there.`,
     ],
   },
 };

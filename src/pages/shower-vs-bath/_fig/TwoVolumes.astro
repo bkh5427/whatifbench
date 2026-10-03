@@ -1,0 +1,72 @@
+---
+/*
+  ** 이 파일이 `---`로 시작하는 이유 **
+  `<svg`나 주석으로 시작하는 `.astro`는 전송 중 C2PA 서명이 붙어 파일이 깨진다.
+  프런트매터가 맨 앞에 있으면 붙지 않는다. 규약 §5 제작 표준.
+
+  도해 1 — 설정. 위젯 **앞**에 둔다 (규약 §5.5 S7): 무엇이 자라고 무엇이 고정인지
+  모르면 슬라이더를 만질 수가 없다. **숫자 결과를 담지 않는다** (규약 §5).
+
+  **가로 띠로 그린다.** 세로형으로 그렸더니 이 한 장이 386px를 먹고 위젯 상단이
+  1,490px로 내려갔다(390×844 실측). 규약 §8의 한계는 1,200px다. 높이를 3분의 1로
+  줄여 위젯을 주목 구간 안으로 되돌렸다 — 리드와 위젯 사이는 예산이 가장 빡빡한
+  자리라는 §1.5의 경고가 이 자리에도 그대로 걸린다.
+  온도 상승폭이 둘로 나뉘어 있다는 나머지 규칙은 캡션이 맡는다.
+*/
+const W = 420;
+const H = 134;
+
+// 두 무리의 중심선과 그 사이 칸막이.
+const COL_LEFT = 100;
+const COL_RIGHT = 310;
+const DIVIDER_X = 200;
+
+// 샤워 — 같은 상자가 분마다 하나씩 더 붙는다.
+const BOX_W = 28;
+const BOX_H = 30;
+const BOX_PITCH = 44;
+const BOX_TOP = 40;
+const BOX_FIRST_X = 22;
+const BOX_COUNT = 4;
+const boxes = Array.from({ length: BOX_COUNT }, (_, i) => BOX_FIRST_X + i * BOX_PITCH);
+const plusses = boxes.slice(0, -1).map((x) => x + BOX_W + (BOX_PITCH - BOX_W) / 2);
+
+// 욕조 — 한 번에 받는 한 덩어리.
+const TUB_TOP = BOX_TOP;
+const TUB_H = 30;
+const TUB_W = 100;
+const TUB_LIP = 8;
+
+const ROW_CAPTION = 98;
+const ROW_RULE = 122;
+---
+<svg
+  class="fig-svg"
+  viewBox={`0 0 ${W} ${H}`}
+  role="img"
+  aria-label="A wide strip divided down the middle. On the left, under the word shower, four identical small boxes stand in a row with plus signs between them; a note says one box is one minute, and below it the words the pile keeps growing. On the right, under the word bath, a single tub-shaped block stands alone; a note says it is poured once and then it stops, and below it the words it does not grow. Nothing in the picture carries a number."
+>
+  <!-- 왼쪽 — 샤워: 분마다 같은 상자가 하나씩 더 붙는다 -->
+  <text x={COL_LEFT} y="24" class="fig-label" fill="var(--graphite)" text-anchor="middle">shower</text>
+  {boxes.map((x) => (
+    <rect x={x} y={BOX_TOP} width={BOX_W} height={BOX_H} rx="1" fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+  ))}
+  {plusses.map((x) => (
+    <text x={x} y={BOX_TOP + 20} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">+</text>
+  ))}
+  <text x={COL_LEFT} y={ROW_CAPTION} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">one box = one minute</text>
+  <text x={COL_LEFT} y={ROW_RULE} class="fig-label" fill="var(--graphite)" text-anchor="middle">the pile keeps growing</text>
+
+  <line x1={DIVIDER_X} y1="16" x2={DIVIDER_X} y2={H - 12} stroke="var(--rule-strong)" stroke-width="1" />
+
+  <!-- 오른쪽 — 욕조: 한 번 받고 끝난다 -->
+  <text x={COL_RIGHT} y="24" class="fig-label" fill="var(--graphite)" text-anchor="middle">bath</text>
+  <path
+    d={`M ${COL_RIGHT - TUB_W / 2} ${TUB_TOP} L ${COL_RIGHT + TUB_W / 2} ${TUB_TOP} L ${COL_RIGHT + TUB_W / 2 - TUB_LIP} ${TUB_TOP + TUB_H} L ${COL_RIGHT - TUB_W / 2 + TUB_LIP} ${TUB_TOP + TUB_H} Z`}
+    fill="var(--paper-sunk)"
+    stroke="var(--graphite)"
+    stroke-width="2"
+  />
+  <text x={COL_RIGHT} y={ROW_CAPTION} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">poured once, then it stops</text>
+  <text x={COL_RIGHT} y={ROW_RULE} class="fig-label" fill="var(--graphite)" text-anchor="middle">it does not grow</text>
+</svg>
