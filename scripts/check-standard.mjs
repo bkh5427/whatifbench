@@ -160,7 +160,9 @@ const STYLE_BANNED_PATTERNS = [
  * **목록 삭제가 PR-6 완료 정의에 들어간다**(운영자 결정 2026-10-03). 목록이 남아 있는 동안
  * check:full은 `[전환 대기] N편`을 찍는다 — 0편이 되어도 목록을 지울 때까지 찍는다.
  */
-const STYLE_REVISED_SLUGS = new Set([]);
+const STYLE_REVISED_SLUGS = new Set([
+  "shower-vs-bath", // 2026-10-03 새 발행 — 처음부터 막는 규칙으로
+]);
 /** 시험용: 모든 편을 개정 편으로 본다. */
 export const STYLE_REVISED_ALL = "all";
 

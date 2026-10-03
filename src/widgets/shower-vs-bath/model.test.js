@@ -31,7 +31,6 @@ import {
   RISE_SHOWER_DEFAULT_K,
   RISE_BATH_DEFAULT_K,
   PRICE_MIN,
-  CROSSOVER_MERGE_MINUTES,
   VERDICT_HOLD,
   VERDICT_EDGE,
   VERDICT_BREAK,
@@ -368,19 +367,16 @@ describe('판정 — 물과 에너지가 같은 말을 하는가', () => {
     expect(model_calculate_verdict(result)).toBe(VERDICT_BREAK);
   });
 
-  it('간격이 표시 정밀도보다 좁으면 같은 분으로 본다', () => {
-    // 0.1분 단위로 찍히므로 그 절반보다 좁으면 화면에 같은 숫자가 나온다.
-    // 슬라이더가 닿을 수 있는 가장 좁은 자리는 t*가 가장 작고 상승폭 비가 1에 가장
-    // 가까운 구석이다: t* = 40/20 = 2분, 44/45 → 간격 0.044분.
-    expect(CROSSOVER_MERGE_MINUTES).toBe(0.05);
+  it('상승폭이 1 K만 달라도 같은 분으로 묶지 않는다 — 정확히 같을 때만 hold', () => {
+    // 2026-10-03: 예전에는 간격 0.05분 미만을 묶어 "both at 2.2 … energy at 2.1"처럼
+    // 판정문이 스스로 어긋났다. 슬라이더가 닿는 가장 좁은 구석: t* = 40/20 = 2분, 44/45 → 0.044분.
     const narrow = model_calculate_result(20, 8, 40, 45, 44);
     expect(narrow.crossoverGapMinutes).toBeCloseTo(0.0444, 4);
-    expect(Math.abs(narrow.crossoverGapMinutes)).toBeLessThan(CROSSOVER_MERGE_MINUTES);
-    expect(narrow.merged).toBe(true);
-    expect(model_calculate_verdict(narrow)).toBe(VERDICT_HOLD);
-    // 한 칸만 더 벌리면 화면에서 갈리는 두 숫자가 된다.
-    const wide = model_calculate_result(20, 8, 40, 45, 43);
-    expect(wide.merged).toBe(false);
+    expect(narrow.merged).toBe(false);
+    expect(model_calculate_verdict(narrow)).not.toBe(VERDICT_HOLD);
+    const same = model_calculate_result(20, 8, 40, 44, 44);
+    expect(same.merged).toBe(true);
+    expect(model_calculate_verdict(same)).toBe(VERDICT_HOLD);
   });
 });
 

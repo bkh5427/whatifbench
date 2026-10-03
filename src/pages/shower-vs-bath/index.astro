@@ -1,0 +1,404 @@
+---
+import Base from "@layouts/Base.astro";
+import Byline from "@components/Byline.astro";
+import RelatedTools from "@components/RelatedTools.astro";
+import Figure from "@components/Figure.astro";
+// 도해 셋. 설정(위젯 앞) → 메커니즘(반전 절) → 증명(손계산 절) 순서다. 규약 §5.
+import TwoVolumes from "./_fig/TwoVolumes.astro";
+import PerLitre from "./_fig/PerLitre.astro";
+import TwoRoutes from "./_fig/TwoRoutes.astro";
+import { tools_read_category } from "@data/tools.js";
+// **본문의 숫자는 전부 여기서 나온다.** 손으로 적지 않는다 — 적으면 모델이 바뀌어도
+// 본문만 옛날 값을 말하고, 화면과 글이 다른 숫자를 들고 서게 된다 (규약 §5.5 S4).
+import {
+  SHOWER_FLOW_DEFAULT_LPM,
+  SHOWER_FLOW_MIN_LPM,
+  SHOWER_FLOW_MAX_LPM,
+  SHOWER_MINUTES_DEFAULT,
+  BATH_LITRES_DEFAULT,
+  RISE_SHOWER_DEFAULT_K,
+  RISE_BATH_DEFAULT_K,
+  SHOWER_FLOW_PRESETS,
+  LITRES_PER_US_GALLON,
+  KILOJOULES_PER_KILOWATT_HOUR,
+  WATER_DENSITY_KG_PER_LITRE,
+  WATER_SPECIFIC_HEAT_KJ_PER_KG_K,
+  model_calculate_water_volume,
+  model_calculate_water_crossover,
+  model_calculate_energy_crossover,
+} from "@widgets/shower-vs-bath/model.js";
+
+// 등급·검수일은 Byline이 tools.js에서 읽는다. 페이지가 다시 말하지 않는다.
+const SLUG = "shower-vs-bath";
+const CATEGORY = "energy";
+const cat = tools_read_category(CATEGORY);
+
+// 브레드크럼 이름. 화면과 구조화 데이터가 **같은 상수 하나**를 읽는다.
+const CRUMB = "Shower vs Bath";
+
+// ── 화면 표기 — 위젯이 쓰는 자릿수를 그대로 따른다 (S4) ──
+const minute = (value) => value.toFixed(1);
+// 유량은 위젯이 소수 두 자리로 찍는다 (`9.50 L/min`). 본문도 그 형식을 쓴다.
+const flow = (value) => value.toFixed(2);
+// 규격값은 규격 문서가 적는 자릿수로 (2.0 gpm · 8.0 L/min).
+const spec = (value) => value.toFixed(1);
+const litre = (value) => value.toFixed(1);
+// 천 단위는 좁은 공백(U+202F) — 사이트 숫자 규약(writing-standard §6). 쉼표를 쓰지 않는다.
+const THOUSANDS_SEPARATOR = "\u202f";
+const kj = (value) => Math.round(value).toLocaleString("en-US").replace(/,/g, THOUSANDS_SEPARATOR);
+
+// ── 페이지가 열릴 때의 설정 ──
+const FLOW = SHOWER_FLOW_DEFAULT_LPM;
+const TUB = BATH_LITRES_DEFAULT;
+const MINUTES = SHOWER_MINUTES_DEFAULT;
+const RISE_SHOWER = RISE_SHOWER_DEFAULT_K;
+const RISE_BATH = RISE_BATH_DEFAULT_K;
+
+const waterCrossover = model_calculate_water_crossover(TUB, FLOW);
+const energyCrossover = model_calculate_energy_crossover(TUB, FLOW, RISE_SHOWER, RISE_BATH);
+// 위젯은 1분 미만의 간격을 초로 읽어 준다. 본문도 같은 형식을 쓴다.
+const gapSeconds = Math.round((waterCrossover - energyCrossover) * 60);
+
+// ── 유량 프리셋 세 개가 같은 욕조에 대해 내는 분 ──
+const preset = (key) => SHOWER_FLOW_PRESETS.find((item) => item.key === key);
+const WATERSENSE = preset("watersense");
+const EPCA = preset("epca");
+const ECOLABEL = preset("ecolabel");
+const crossoverAt = (flow) => minute(model_calculate_water_crossover(TUB, flow));
+
+// 슬라이더 양끝. "다섯 배"라는 말이 어디서 나온 수인지 본문이 보이게 한다.
+const slowestMinutes = minute(model_calculate_water_crossover(TUB, SHOWER_FLOW_MIN_LPM));
+const fastestMinutes = minute(model_calculate_water_crossover(TUB, SHOWER_FLOW_MAX_LPM));
+
+// ── 손으로 세는 한 경우 — 두 상승폭이 같을 때 ──
+const handLitres = model_calculate_water_volume(FLOW, MINUTES);
+const handShortLitres = TUB - handLitres;
+const handKilojoules = (litres) =>
+  WATER_DENSITY_KG_PER_LITRE * litres * WATER_SPECIFIC_HEAT_KJ_PER_KG_K * RISE_BATH;
+const handShowerKj = handKilojoules(handLitres);
+const handTubKj = handKilojoules(TUB);
+const handShortKj = handTubKj - handShowerKj;
+const handKjPerMinute = handKilojoules(FLOW);
+const handExtraMinutes = (handShortLitres / FLOW).toFixed(2);
+const handExtraSeconds = Math.round((handShortLitres / FLOW) * 60);
+---
+
+<Base
+  title="Shower vs bath: when does the shower pass the tub?"
+  description="Set a showerhead's flow against a tub of water. The model marks the minute the shower passes the tub, and a second minute for the heating energy, which comes earlier when the shower's water is heated more than the bath's."
+  category={CATEGORY}
+  crumbTool={true}
+  crumbLabel={CRUMB}
+>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span aria-hidden="true">›</span>
+    <a href={cat.href}>{cat.name}</a> <span aria-hidden="true">›</span>
+    {CRUMB}
+  </nav>
+
+  <h1>Shower vs bath: when does the shower pass the tub?</h1>
+
+  <p class="deck">
+    Set a showerhead's flow against a tub and the model marks the minute the
+    shower passes it. Does the heating energy cross at that minute too?
+  </p>
+
+  <Byline slug={SLUG} />
+
+  <p class="lead">
+    Ask whether a shower or a bath uses more water and "the bath" is the easy
+    answer, one that needs no counting. That answer treats the two as fixed
+    amounts, one larger than the other, like two jugs standing side by side.
+  </p>
+
+  <p class="lead">
+    Only one of them behaves like a jug. In the model a tub is filled once and then
+    stays put, while a showerhead adds the same litres for every minute it runs.
+  </p>
+
+  <p class="lead">
+    <span class="lead-turn">That makes the comparison a question about minutes.</span>
+    {" "}At some minute the shower catches the tub, and the sliders below move that
+    minute along with a second one, where the heating energy catches up.
+  </p>
+
+  <Figure caption="The picture counts litres only; nothing in it says how hot either lot of water is.">
+    <TwoVolumes />
+  </Figure>
+
+  <div id="sliders" data-widget="shower-vs-bath">
+    <noscript>
+      <p>
+        Without JavaScript nothing appears here. The by-hand section further down
+        counts the {TUB} L tub at the opening flow, with both temperature rises set
+        to {RISE_BATH} K.
+      </p>
+    </noscript>
+  </div>
+
+  <h2 data-block="reversal">Unequal temperature rises split the crossover in two</h2>
+
+  <p>
+    Of the five sliders, “Showerhead flow rate” sets how fast the head pours and
+    “Water drawn for the bath” sets how much goes into the tub. “How long the
+    shower runs” moves a marker along the time axis. The last two, “Temperature
+    rise for the shower” and “Temperature rise for the bath”, set how far the heater
+    lifts each lot of water. Below them, the “Energy price per kWh (optional)” box
+    takes a price you type in; left empty, it shows no cost.
+  </p>
+
+  <p>
+    The page opens at {flow(FLOW)} L/min against {TUB} L, and the model puts the
+    water crossover at {minute(waterCrossover)} minutes. The
+    “{WATERSENSE.label}” preset stretches that to {crossoverAt(WATERSENSE.flow)} minutes
+    for the same tub, and “{EPCA.label}” makes it {crossoverAt(EPCA.flow)}. Across
+    the whole flow slider the minute runs from {slowestMinutes} down to {fastestMinutes}.
+  </p>
+
+  <Figure caption="The multiplier at the bottom is the bath's rise divided by the shower's.">
+    <PerLitre />
+  </Figure>
+
+  <p>
+    At the opening setting the model lifts the shower's water {RISE_SHOWER} K and the
+    tub's {RISE_BATH} K, so each shower litre carries more heat than each tub litre. That brings the
+    energy crossover forward to {minute(energyCrossover)} minutes, {gapSeconds} seconds
+    before the water one. Between the two marks the model has the shower using less
+    water than the tub but more energy. Press “Same temperature both” and the gap
+    closes to nothing.
+  </p>
+
+  <p>
+    In this model only unequal rises can part the two marks, and the ratio of the
+    rises makes the energy minute a fixed multiple of the water one; flow and tub
+    size move both marks by the same factor.
+  </p>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 data-block="howto" id="howto-title">Where the rising line meets the flat one</h2>
+
+    <p>
+      Both panels share one horizontal axis, minutes of shower. On each, the
+      sloping line is the shower and the flat line is the tub. The tub's line is
+      level because how long anyone showers is not one of its inputs. It stands for
+      the tub's own total, in litres on one panel and kilowatt-hours on the other.
+    </p>
+
+    <p>
+      The dashed vertical line is the crossover. To its left the model has the
+      shower using less than the tub, and to its right more. It moves in inverse
+      proportion to flow, so doubling the flow halves the crossover minute. The
+      dotted vertical, with a dot where it meets the rising line, sits wherever
+      “How long the shower runs” is set.
+    </p>
+
+    <p>
+      The lower panel is the one to watch as the two rises go from equal to
+      unequal. While they match, its dashed line sits directly under the upper one
+      and there is only one mark to see. Once they differ the two lines separate.
+      The shaded band between them is the stretch of minutes in which the model has
+      the shower ahead on one panel and behind on the other. Every axis rescales to
+      fit, so check the axis labels before comparing two settings.
+    </p>
+  </section>
+
+  <section class="math" aria-labelledby="math-title">
+    <h2 data-block="math" class="math-title" id="math-title">Why one crossover is the other times a ratio</h2>
+
+    <p>The shower's volume is flow times time; the tub's is a single number.</p>
+
+    <div class="math-eq">
+      <span>V<sub>shower</sub>(t)</span><span class="op">=</span><span>Q · t</span>
+      <span class="op">,</span>
+      <span>V<sub>bath</sub></span><span class="op">=</span><span>V</span>
+    </div>
+
+    <dl class="math-where">
+      <dt>Q</dt><dd>how fast the head pours, L/min — the first slider</dd>
+      <dt>t</dt><dd>how long the shower runs, min</dd>
+      <dt>V</dt><dd>water drawn for the bath, L</dd>
+      <dt>ΔT</dt><dd>how far the heater lifts the water, K</dd>
+      <dt>ρ, c</dt><dd>water's density, {WATER_DENSITY_KG_PER_LITRE} kg/L, and its specific heat, {WATER_SPECIFIC_HEAT_KJ_PER_KG_K} kJ/(kg·K)</dd>
+    </dl>
+
+    <p>Setting the two volumes equal gives the first crossover:</p>
+
+    <div class="math-eq">
+      <span>t*</span><span class="op">=</span>
+      <span class="frac"><span class="frac-num">V</span><span class="frac-den">Q</span></span>
+    </div>
+
+    <p>
+      Energy is the same water carried through a temperature rise, E = ρ·V·c·ΔT, so
+      the shower's energy grows as ρ·Q·t·c·ΔT<sub>s</sub> while the tub's stays at
+      ρ·V·c·ΔT<sub>b</sub>. Equating those two gives the second crossover:
+    </p>
+
+    <div class="math-eq">
+      <span>t*<sub>E</sub></span><span class="op">=</span>
+      <span class="frac"><span class="frac-num">V · ΔT<sub>b</sub></span><span class="frac-den">Q · ΔT<sub>s</sub></span></span>
+      <span class="op">=</span>
+      <span>t* ·</span>
+      <span class="frac"><span class="frac-num">ΔT<sub>b</sub></span><span class="frac-den">ΔT<sub>s</sub></span></span>
+    </div>
+
+    <p>
+      Two things follow from the shape of that fraction alone, whatever numbers go
+      into it. First, ρ and c appear on both sides and cancel. They set how tall the
+      energy lines are, but they cannot move the minute where the two lines meet.
+    </p>
+
+    <p class="math-check">
+      Second, equal rises make the ratio exactly one, and the energy crossover then
+      lands on the water one. In that case the lower panel says nothing the upper
+      one had not already said.
+    </p>
+  </section>
+
+  <h2 data-block="byhand">Reaching the {TUB} L tub by litres and by kilojoules</h2>
+
+  <p>
+    Start from the opening setting, {flow(FLOW)} L/min against an {TUB} L tub, and
+    press “Same temperature both” so both rises sit at {RISE_BATH} K. Count the water
+    first: {MINUTES} minutes of shower is {flow(FLOW)} × {MINUTES} = {litre(handLitres)} L,
+    which leaves the shower {litre(handShortLitres)} L short of the tub's {litre(TUB)} L.
+    At {flow(FLOW)} litres a minute that gap takes {handExtraMinutes} of a minute, so
+    the shower draws level at {MINUTES} minutes and {handExtraSeconds} seconds.
+  </p>
+
+  <p>
+    Now count the heat, without using the answer the water count gave.
+    At ρ = {WATER_DENSITY_KG_PER_LITRE} kg/L, {litre(handLitres)} L of water weighs {litre(handLitres)} kg, and lifting it {RISE_BATH} K
+    takes {litre(handLitres)} × {WATER_SPECIFIC_HEAT_KJ_PER_KG_K} × {RISE_BATH} ≈ {kj(handShowerKj)} kJ.
+    The tub takes {kj(handTubKj)} kJ, so the shower is {kj(handShortKj)} kJ short,
+    and each further minute adds {kj(handKjPerMinute)} kJ. Dividing {kj(handShortKj)} by {kj(handKjPerMinute)} gives the same {handExtraMinutes} of a
+    minute, and the same {MINUTES} minutes and {handExtraSeconds} seconds.
+  </p>
+
+  <Figure caption={`The kilojoule column lifts shower and tub water by the same ${RISE_BATH} K; with unequal rises it would land on the energy crossover instead.`}>
+    <TwoRoutes />
+  </Figure>
+
+  <p>
+    The closed form agrees: {TUB} ÷ {flow(FLOW)} = {minute(waterCrossover)} minutes,
+    which is what the “Water crossover” card reads.
+  </p>
+
+  <h2 data-block="assumptions">The flow stays steady and no heat escapes</h2>
+
+  <p>
+    Every figure above is worked out under five things the model holds fixed.
+  </p>
+
+  <ol>
+    <li>The head pours at one flow rate for the whole shower.</li>
+    <li>The tub is one volume, drawn once, at one temperature.</li>
+    <li>The heater lifts each volume by the rise its own slider sets.</li>
+    <li>Nothing is lost between the heater and the drain.</li>
+    <li>The price, if you type one in, is one multiplication at the end.</li>
+  </ol>
+
+  <p>
+    <strong>The two measured constants.</strong> c is {WATER_SPECIFIC_HEAT_KJ_PER_KG_K} kJ/(kg·K)
+    and ρ is {WATER_DENSITY_KG_PER_LITRE} kg/L. Both drift with temperature, and both
+    are held still here. The conversions, by contrast, are definitions. One US gallon is {LITRES_PER_US_GALLON} L,
+    and one kilowatt-hour is {kj(KILOJOULES_PER_KILOWATT_HOUR)} kJ because an hour holds
+    that many seconds. The gallon figure only turns the two US ceilings into litres per
+    minute. The kilowatt-hour figure only restates energy in another unit, and neither
+    appears in the crossover formula.
+  </p>
+
+  <p>
+    <strong>The flow presets are ceilings.</strong> They are the most a product may
+    pour under each rule or label, not a measurement of any installed head. <strong>The tub volume is not
+    sourced.</strong> None of the sources below sets how much water a bath holds, so
+    that slider's opening value is a choice, as are the opening flow
+    of {flow(FLOW)} L/min, the {MINUTES} minutes and the two rises.
+  </p>
+
+  <p class="note"><a href="#sliders">Back to the sliders ↑</a></p>
+
+  <h2 data-block="limits">Heat that escapes and bills that vary sit outside the model</h2>
+
+  <p>
+    <strong>The plumbing.</strong> The model lifts a mass of water by ΔT and stops
+    there. It has no heater efficiency, no standby loss from a tank and no heat left
+    behind in the pipe run. Nor does it count the cold water run off while the hot
+    arrives, which belongs on the water panel. Because flow is held
+    constant, a tank running dry mid-shower is outside the model as well.
+  </p>
+
+  <p>
+    The bath counts as one number at one temperature,
+    so the model has no cooling during the soak, no hot water added partway
+    through, and no allowance for the volume a body pushes aside, which lowers how
+    much has to be drawn.
+  </p>
+
+  <p>
+    <strong>The tariff.</strong> Energy price enters as one multiplication at the end.
+    Standing charges, block rates, time-of-use pricing and separate water and
+    wastewater billing are all absent, so the output prices the energy alone and
+    stops short of a bill.
+  </p>
+
+  <p class="note"><a href="#sliders">Back to the sliders ↑</a></p>
+
+  <h2 data-block="about">About this page</h2>
+
+  <p class="note">
+    Both crossovers are checked by a second path. A loop pours one minute of water at
+    a time until it passes the tub, and its answer is held against the closed form
+    above. The energy is worked out twice as well, once through kilojoules and once
+    with a kilowatt-hour constant from the start. What I could not check is listed
+    on the About page, under <a href="/about#how-i-check">How I check things</a>.
+  </p>
+
+  <p><strong>Sources.</strong></p>
+
+  <ul class="sources">
+    <li>
+      US Environmental Protection Agency, 2018. <em>WaterSense Specification for
+      Showerheads</em>, version 1.1, effective 26 July 2018. No DOI; <a
+      href="https://www.epa.gov/sites/production/files/2018-07/documents/ws-products-specification-showerheads-v1-1.pdf">official
+      text linked</a>. Its rated flow ceiling is the {spec(WATERSENSE.gallonsPerMinute)} gpm preset.
+    </li>
+    <li>
+      42 U.S.C. 6295(j)(1), <em>Energy Policy and Conservation Act</em>, United
+      States Code, 2023 edition. No DOI; <a
+      href="https://www.govinfo.gov/content/pkg/USCODE-2023-title42/html/USCODE-2023-title42-chap77-subchapIII-partA-sec6295.htm">official
+      text linked</a>. Its statutory ceiling, measured at 80 pounds per square
+      inch, is the {spec(EPCA.gallonsPerMinute)} gpm preset.
+    </li>
+    <li>
+      European Commission, 2013. <em>Commission Decision 2013/250/EU</em>, on
+      sanitary tapware, criterion 1(a). No DOI; <a
+      href="https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32013D0250">EUR-Lex
+      text linked</a>. Its showerhead ceiling is the {spec(ECOLABEL.flow)} L/min preset.
+    </li>
+    <li>
+      BIPM. <em>The International System of Units (SI Brochure)</em>, 9th edition,
+      Table 8, “Non-SI units”. <a href="https://doi.org/10.59161/AUEZ1291">doi:10.59161/AUEZ1291</a>.
+      The hour is 3{"\u202f"}600 seconds there, which is where the kilowatt-hour comes from.
+    </li>
+    <li>
+      Wagner, W. and Pruß, A., 2002. The IAPWS formulation 1995 for the
+      thermodynamic properties of ordinary water substance for general and
+      scientific use. <em>Journal of Physical and Chemical Reference Data</em> 31(2),
+      387–535. <a href="https://doi.org/10.1063/1.1461829">doi:10.1063/1.1461829</a>.
+      The reference for how c and ρ move with temperature.
+    </li>
+    <li>
+      CEN, 2012. <em>EN 232:2012, Baths — Connecting dimensions</em>. Sold, with only a
+      preview free; <a
+      href="https://standards.iteh.ai/catalog/standards/cen/ed9df96d-3443-48d0-a691-78d52ce354f8/en-232-2012">catalogue
+      entry linked</a>.
+    </li>
+  </ul>
+
+  <RelatedTools slug={SLUG} />
+
+  <script>
+    import "@widgets/shower-vs-bath/widget.js";
+  </script>
+</Base>

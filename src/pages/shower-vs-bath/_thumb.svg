@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
+  <!-- 위 칸 = 물, 아래 칸 = 데우는 에너지. 위젯과 같은 색 뜻: 샤워 = --series-1(기울어진 실선), 욕조 = --series-2(평평한 실선), 교차 = 회색 점선 세로선. 두 교차가 칸마다 다른 x에 서고, 그 사이 회색 띠가 두 교차 사이 구간이다. 글자·숫자 없음 -->
+  <rect width="320" height="200" style="fill:var(--steel-100)"/>
+  <path d="M0 20H320M0 40H320M0 60H320M0 80H320M0 100H320M0 120H320M0 140H320M0 160H320M0 180H320M20 0V200M40 0V200M60 0V200M80 0V200M100 0V200M120 0V200M140 0V200M160 0V200M180 0V200M200 0V200M220 0V200M240 0V200M260 0V200M280 0V200M300 0V200" style="fill:none;stroke:var(--steel-200);stroke-width:1"/>
+  <rect x="177.3" y="14" width="64.8" height="172" style="fill:var(--steel-300);fill-opacity:0.5"/>
+  <path d="M24 14V92M24 108V186" style="fill:none;stroke:var(--steel-400);stroke-width:1.5"/>
+  <path d="M242.2 14V92M177.3 108V186" style="fill:none;stroke:var(--steel-500);stroke-width:1.5;stroke-dasharray:4 4"/>
+  <path d="M24 44H300M24 140H300" style="fill:none;stroke:var(--series-2);stroke-width:2.5"/>
+  <path d="M24 92L300.0 31.3" style="fill:none;stroke:var(--series-1);stroke-width:3;stroke-linecap:round"/>
+  <path d="M24 186L284.0 108.0" style="fill:none;stroke:var(--series-1);stroke-width:3;stroke-linecap:round"/>
+</svg>

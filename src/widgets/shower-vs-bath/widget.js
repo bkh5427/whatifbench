@@ -29,6 +29,7 @@ import {
   SHOWER_FLOW_PRESETS,
   SHOWER_SITUATION_PRESETS,
   TABLE_BATH_LITRES,
+  TABLE_FLOWS_LPM,
   model_clamp_flow,
   model_clamp_minutes,
   model_clamp_bath_litres,
@@ -88,6 +89,12 @@ const AXIS_DIGITS_MAX = 3;
 export const CAPTION_AXIS_PRECISION_DIVISOR = 10;
 /** 음수 부호. ASCII 하이픈과 섞이면 같은 화면에 두 글자가 나온다. */
 const MINUS = '−';
+/**
+ * 반올림 허용오차(상대). 9.5 × 8.4 같은 곱은 부동소수에서 …4999로 떨어져
+ * `toFixed`가 0.5를 내림한다(31.25 → "31.2"). 사이트 규칙은 0.5 올림이다.
+ * 2026-10-03 오라클(shown.test.js)이 잡았다.
+ */
+const DISPLAY_ROUND_EPSILON = 1e-9;
 
 const RECOMPUTE_DELAY_MS = 110;
 
@@ -154,9 +161,15 @@ const TABLE_NOTE_BASE =
   'The water crossover is V divided by Q and uses neither temperature, so this grid does not move when the two ' +
   'temperature sliders move.';
 const TABLE_NOTE_ROW_MARKED = ' The row matching the flow slider is marked.';
-const TABLE_NOTE_ROW_UNMARKED =
+// 유량 슬라이더가 표의 행 범위 안이면 "두 행 사이", 밖이면 "가장 가까운 끝 행"이라고 쓴다 —
+// 슬라이더(4~20)가 표(6~15)보다 넓어 "사이"가 거짓이 되는 상태가 있었다(B6 대조, 2026-10-03).
+const TABLE_NOTE_ROW_BETWEEN =
   ' The flow slider sits between two of these rows right now, so none is marked — read the neighbouring rows on ' +
   'either side instead.';
+const TABLE_NOTE_ROW_BELOW = (flowText) =>
+  ` The flow slider is below the lowest row right now, so none is marked — the ${flowText} row is the nearest.`;
+const TABLE_NOTE_ROW_ABOVE = (flowText) =>
+  ` The flow slider is above the highest row right now, so none is marked — the ${flowText} row is the nearest.`;
 
 const VERDICT_HEADLINE = {
   hold: 'Both crossovers land on the same minute.',
@@ -166,45 +179,72 @@ const VERDICT_HEADLINE = {
 
 // ── 표시 함수 ──────────────────────────────────────────────
 
+/** 표 아래 문장의 꼬리 — 강조 행이 있는지, 없으면 슬라이더가 표 범위의 안·아래·위 어디인지. */
+export function display_describe_table_row(rowMarked, flow) {
+  if (rowMarked) return TABLE_NOTE_ROW_MARKED;
+  const lowest = Math.min(...TABLE_FLOWS_LPM);
+  const highest = Math.max(...TABLE_FLOWS_LPM);
+  if (flow < lowest) return TABLE_NOTE_ROW_BELOW(lowest.toFixed(FLOW_DIGITS));
+  if (flow > highest) return TABLE_NOTE_ROW_ABOVE(highest.toFixed(FLOW_DIGITS));
+  return TABLE_NOTE_ROW_BETWEEN;
+}
+
+/**
+ * 고정 자릿수 표기. **0.5는 올림**(크기 기준)이고, 반올림해서 0이 되면 부호를 버린다 —
+ * `toFixed`는 부동소수 오차로 동점을 내림하고 −0.000을 찍는다.
+ */
+export function display_format_fixed(value, digits) {
+  const scale = 10 ** digits;
+  const scaled = Math.abs(value) * scale;
+  const rounded = Math.floor(scaled + 0.5 + DISPLAY_ROUND_EPSILON * Math.max(1, scaled));
+  const text = (rounded / scale).toFixed(digits);
+  return value < 0 && rounded !== 0 ? `-${text}` : text;
+}
+
 /** 분 표기. 자릿수를 값의 크기가 아니라 **읽어야 하는 정밀도**로 정한다. */
 export function display_format_minutes(minutes) {
   if (!Number.isFinite(minutes)) return '—';
-  const digits = Math.abs(minutes) < MINUTE_SMALL_THRESHOLD ? MINUTE_SMALL_DIGITS : MINUTE_DIGITS;
-  return minutes.toFixed(digits);
+  // 문턱도 허용오차로 본다 — 정확히 1분인 값이 0.999…로 떨어져 두 자리로 찍히지 않게.
+  const digits = Math.abs(minutes) < MINUTE_SMALL_THRESHOLD - DISPLAY_ROUND_EPSILON ? MINUTE_SMALL_DIGITS : MINUTE_DIGITS;
+  return display_format_fixed(minutes, digits);
 }
 
 /** 두 교차 시점의 간격. 1분 아래에서는 초로 읽어 준다. */
 export function display_format_gap(minutes) {
   if (!Number.isFinite(minutes)) return '—';
   const size = Math.abs(minutes);
-  if (size < GAP_SECONDS_THRESHOLD_MINUTES) {
-    return `${Math.round(size * SECONDS_PER_MINUTE)} s`;
+  if (size < GAP_SECONDS_THRESHOLD_MINUTES - DISPLAY_ROUND_EPSILON) {
+    return `${display_format_fixed(size * SECONDS_PER_MINUTE, 0)} s`;
   }
-  return `${size.toFixed(MINUTE_DIGITS)} min`;
+  return `${display_format_fixed(size, MINUTE_DIGITS)} min`;
 }
 
 export function display_format_litres(litres) {
   if (!Number.isFinite(litres)) return '—';
-  return litres.toFixed(LITRE_DIGITS);
+  return display_format_fixed(litres, LITRE_DIGITS);
 }
 
 export function display_format_kwh(kwh) {
   if (!Number.isFinite(kwh)) return '—';
-  const digits = Math.abs(kwh) < KWH_SMALL_THRESHOLD ? KWH_SMALL_DIGITS : KWH_DIGITS;
-  return kwh.toFixed(digits);
+  const digits = Math.abs(kwh) < KWH_SMALL_THRESHOLD - DISPLAY_ROUND_EPSILON ? KWH_SMALL_DIGITS : KWH_DIGITS;
+  return display_format_fixed(kwh, digits);
 }
 
-/** 부호를 붙인 차이. 0에는 부호를 붙이지 않는다. */
+/**
+ * 부호를 붙인 차이. **정확히 0인 차이**에는 부호를 붙이지 않는다 — 부동소수 오차로
+ * −1e-16이 된 0이 "−0.000"으로 찍히지 않게 허용오차 안을 0으로 본다.
+ * 0이 아닌 작은 차이는 반올림해 0이 찍혀도 부호로 방향을 남긴다("+0.0").
+ */
 export function display_format_signed(value, formatValue) {
   if (!Number.isFinite(value)) return '—';
-  if (value > 0) return `+${formatValue(value)}`;
-  if (value < 0) return `${MINUS}${formatValue(-value)}`;
-  return formatValue(0);
+  if (Math.abs(value) < DISPLAY_ROUND_EPSILON) return formatValue(0);
+  const sizeText = formatValue(Math.abs(value));
+  return value > 0 ? `+${sizeText}` : `${MINUS}${sizeText}`;
 }
 
 export function display_format_cost(cost) {
   if (cost === null || !Number.isFinite(cost)) return '—';
-  return cost.toFixed(COST_DIGITS);
+  return display_format_fixed(cost, COST_DIGITS);
 }
 
 /**
@@ -214,7 +254,7 @@ export function display_format_cost(cost) {
 export function display_format_axis(value, step) {
   if (!Number.isFinite(value)) return '—';
   const digits = Math.min(num_calculate_decimal_digits(step), AXIS_DIGITS_MAX);
-  return value.toFixed(digits);
+  return display_format_fixed(value, digits);
 }
 
 /**
@@ -526,19 +566,19 @@ export function widget_mount(rootEl) {
   const flowSlider = control_build_slider(
     'shower-flow',
     'Showerhead flow rate',
-    'How many litres the head puts out every minute. It is the number printed on the box, and the preset buttons above are the standards ceilings.',
+    'How many litres the head puts out every minute. The flow preset buttons above are the ceilings in the sources listed at the foot of this page.',
     { min: SHOWER_FLOW_MIN_LPM, max: SHOWER_FLOW_MAX_LPM, step: SHOWER_FLOW_STEP_LPM, value: state.flow },
   );
   const minutesSlider = control_build_slider(
     'shower-minutes',
     'How long the shower runs',
-    'Minutes with the water on. This is the only thing that moves along the bottom axis of both panels.',
+    'Minutes with the water on. It sets the dotted marker on the bottom axis of both panels.',
     { min: SHOWER_MINUTES_MIN, max: SHOWER_MINUTES_MAX, step: SHOWER_MINUTES_STEP, value: state.minutes },
   );
   const bathSlider = control_build_slider(
     'shower-bath',
     'Water drawn for the bath',
-    'Litres put into the tub. No standards body sets this number, so it is yours to choose.',
+    'Litres put into the tub. None of the sources on this page sets this number, so it is yours to choose.',
     { min: BATH_LITRES_MIN, max: BATH_LITRES_MAX, step: BATH_LITRES_STEP, value: state.bathLitres },
   );
   const riseShowerSlider = control_build_slider(
@@ -708,7 +748,7 @@ export function widget_mount(rootEl) {
     }
     // 슬라이더가 표의 다섯 값 중 하나와 맞아떨어질 때만 강조 행이 생긴다 —
     // 대부분의 위치에서는 아무 행도 강조되지 않으므로 문장이 그 사실을 따라간다.
-    tableNote.textContent = TABLE_NOTE_BASE + (rowMarked ? TABLE_NOTE_ROW_MARKED : TABLE_NOTE_ROW_UNMARKED);
+    tableNote.textContent = TABLE_NOTE_BASE + display_describe_table_row(rowMarked, current.flow);
   }
 
   /** 상태 하나를 받아 화면 전체를 맞춘다. 계산 경로는 여기 하나뿐이다. */

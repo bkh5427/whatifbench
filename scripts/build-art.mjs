@@ -113,3 +113,31 @@ ${panel(40, false)}${panel(310, true)}  <path d="M270 175H296" style="fill:none;
 `;
   writeFileSync("src/art/scale.svg", svg);
 }
+
+// ── Energy: 위 칸은 물, 아래 칸은 데우는 에너지. 평평한 선(욕조)과 기울어진 선(샤워)이 칸마다 다른 x에서 만난다 ──
+// 2026-10-03 energy 분류를 열며 더했다. 색 뜻은 위젯과 같다 — 욕조 = --series-2 실선, 교차 = 중립색 점선 세로선.
+{
+  const W = 560, H = 360, X0 = 40, X1 = 520;
+  // 기울어진 선은 제 칸 꼭대기(top)에서 멈춘다 — 다른 칸으로 넘어가지 않게.
+  const pair = (y0, flatY, slope, top, bottom) => {
+    const xc = X0 + (y0 - flatY) / slope;
+    const xEnd = Math.min(X1, X0 + (y0 - top) / slope);
+    return {
+      xc,
+      markup: `  <path d="M${f(xc)} ${top}V${bottom}" style="fill:none;stroke:var(--steel-400);stroke-width:2;stroke-dasharray:6 5"/>
+  <path d="M${X0} ${flatY}H${X1}" style="fill:none;stroke:var(--series-2);stroke-width:3"/>
+  <path d="M${X0} ${y0}L${f(xEnd)} ${f(y0 - slope * (xEnd - X0))}" style="fill:none;stroke:var(--steel-200);stroke-width:3.5;stroke-linecap:round"/>
+`,
+    };
+  };
+  const water = pair(170, 80, 0.3, 30, 170);
+  const energy = pair(330, 250, 0.42, 190, 330);
+  const band = `  <rect x="${f(energy.xc)}" y="30" width="${f(water.xc - energy.xc)}" height="300" style="fill:var(--steel-500);fill-opacity:0.25"/>\n`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+  <!-- Energy: 위 칸 = 물, 아래 칸 = 데우는 에너지. 주황 실선 = 욕조(평평), 밝은 실선 = 샤워(기울어짐), 점선 세로선 = 교차. 두 교차가 다른 x에 서고 그 사이 회색 띠가 '물로는 아직, 에너지로는 이미'인 구간이다. 글자·숫자 없음 -->
+${grid(W, H, 20)}
+  <path d="M${X0} 30V170M${X0} 190V330" style="fill:none;stroke:var(--steel-500);stroke-width:1.5"/>
+${band}${water.markup}${energy.markup}</svg>
+`;
+  writeFileSync("src/art/energy.svg", svg);
+}

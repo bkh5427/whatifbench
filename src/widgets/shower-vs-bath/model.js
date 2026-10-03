@@ -88,10 +88,17 @@ export const PRICE_MIN = 0;
 export const PRICE_MAX = 100;
 
 /**
- * 두 교차 시점이 이보다 가까우면 **화면에 같은 숫자로 찍힌다** (표시는 0.1분 단위).
- * 그보다 더 조이는 대신 모델이 "같은 분에 떨어진다"고 말한다.
+ * (2026-10-03 폐기) 예전에는 두 교차 시점이 0.05분보다 가까우면 "같은 분"으로 묶었다.
+ * 그러면 상승폭이 1 K 다를 때 "both at 2.2 … energy at 2.1"처럼 판정문이 스스로 어긋나고,
+ * 두 파선이 12 px 떨어져 보이는데도 "같은 분"이라고 썼다(B6 대조). 이제 **두 상승폭이
+ * 정확히 같을 때만** 묶는다 — 그때 비가 정확히 1이라 두 시점이 수학적으로 같다.
  */
-export const CROSSOVER_MERGE_MINUTES = 0.05;
+/**
+ * 판정 경계의 허용오차(분). 간격이 정확히 0.05분이거나 지금 시간이 교차 시점과
+ * 정확히 같을 때, 부동소수 오차(…4999·…0001)가 판정을 뒤집지 않게 한다.
+ * 2026-10-03 오라클(shown.test.js)이 잡았다 — Q 20, V 40, 상승 40/41 K에서 hold로 찍혔다.
+ */
+export const VERDICT_BOUNDARY_EPSILON_MINUTES = 1e-9;
 
 /** 판정 상태 — 사이트 공통 3색. "물과 에너지가 같은 말을 하는가"가 여기서 갈린다. */
 export const VERDICT_HOLD = 'hold';
@@ -302,13 +309,17 @@ export function model_calculate_result(flow, minutes, bathLitres, riseShower, ri
   const waterCrossoverMinutes = model_calculate_water_crossover(bathLitres, flow);
   const energyCrossoverMinutes = model_calculate_energy_crossover(bathLitres, flow, riseShower, riseBath);
   const crossoverGapMinutes = waterCrossoverMinutes - energyCrossoverMinutes;
-  const merged = Math.abs(crossoverGapMinutes) < CROSSOVER_MERGE_MINUTES;
+  // 두 상승폭이 정확히 같을 때만 같은 분이다(비 = 1). 슬라이더 눈금이 1 K라 정수 비교로 충분하다.
+  const merged = riseShower === riseBath;
 
   // 두 교차 시점 사이에 지금 시간이 들어와 있으면, 모델은 한 축에서 앞서고
   // 다른 축에서 뒤진다고 동시에 말한다. 이 페이지가 찾는 상태다.
   const lowMinutes = Math.min(waterCrossoverMinutes, energyCrossoverMinutes);
   const highMinutes = Math.max(waterCrossoverMinutes, energyCrossoverMinutes);
-  const split = !merged && minutes > lowMinutes && minutes < highMinutes;
+  const split =
+    !merged &&
+    minutes > lowMinutes + VERDICT_BOUNDARY_EPSILON_MINUTES &&
+    minutes < highMinutes - VERDICT_BOUNDARY_EPSILON_MINUTES;
 
   return {
     flow,
