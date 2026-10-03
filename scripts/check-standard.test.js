@@ -10,7 +10,7 @@ import { describe, it, expect, afterAll } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
-import { standard_run, standard_measure, STANDARD_LIMITS } from "./check-standard.mjs";
+import { standard_run, standard_warn, standard_measure, standard_read_pending, STANDARD_LIMITS, STYLE_REVISED_ALL } from "./check-standard.mjs";
 import { fixture_format_article } from "./_fixtures.js";
 
 const FIXTURE_BASE = join(tmpdir(), "whatifbench-standard-fixtures");
@@ -44,8 +44,9 @@ function standard_fixture(over = {}) {
 
 const TOOLS = { TOOLS: [{ slug: SLUG, name: NAME, published: true }] };
 
+/** 문체 규칙까지 막는 상태(모든 편이 전환 목록에 든 것)로 돌린다. 전환 자체는 G1이 시험한다. */
 function standard_report(over) {
-  return standard_run(standard_fixture(over), TOOLS)
+  return standard_run(standard_fixture(over), TOOLS, { revised: STYLE_REVISED_ALL })
     .map((v) => `${v.file} ${v.message}`)
     .join("\n");
 }
@@ -277,6 +278,47 @@ describe("집필 규약 게이트", () => {
       .toContain("퍼센트를 띄어 썼다");
   });
 
+  // ── D') 문체 — 규약 §6 절대규칙 0·1·2 ─────────────────────
+  it.each(["Here is how to read it.", "All of it rests on four rules.", "That makes it easier to trust."])(
+    "D4: 절 끝 연결 틀 문구 %s를 잡는다",
+    (line) => {
+      expect(standard_report({ article: { lead: `A finished page. ${line}` } })).toContain("틀 문구");
+    }
+  );
+
+  it("D5: 캡션이 In this model로 시작하면 잡는다 — 굵은 제목 뒤여도 잡는다", () => {
+    const plain = fixture_format_article().replace("The rule, drawn once.", "In this model, the rule.");
+    expect(standard_report({ html: plain })).toContain("캡션이");
+    const titled = fixture_format_article().replace("The rule, drawn once.", "<b>The rule.</b> In this model the host picks.");
+    expect(standard_report({ html: titled })).toContain("캡션이");
+  });
+
+  it("D6: 6단어 이하 문장이 셋 잇따르면 잡는다 — 둘까지는 통과", () => {
+    expect(standard_report({ article: { lead: "Three doors. One car. Two goats. Pick one and see what the host does next." } }))
+      .toContain("잇따른다");
+    expect(standard_report({ article: { lead: "Three doors. One car. Then the host opens an empty door and offers a swap." } }))
+      .toBe("");
+  });
+
+  it("D7: 한 문단에 the model puts가 두 번이면 잡는다", () => {
+    expect(standard_report({ article: { lead: "The model puts men at 62.1% in the first department. For the second it puts them at 5.9% instead." } }))
+      .toContain("the model puts");
+  });
+
+  it("D8: 발행 편 둘이 같은 절 제목을 쓰면 잡는다 — About this page는 예외", () => {
+    const root = standard_fixture({});
+    const other = "other-tool";
+    const dist = join(root, "dist", other);
+    mkdirSync(dist, { recursive: true });
+    writeFileSync(join(dist, "index.html"), fixture_format_article());
+    mkdirSync(join(root, "src/pages", other), { recursive: true });
+    writeFileSync(join(root, "src/pages", other, "index.astro"), `---\nconst CRUMB = "Other Tool";\n---\n`);
+    const tools = { TOOLS: [...TOOLS.TOOLS, { slug: other, name: "Other Tool", published: true }] };
+    const report = standard_run(root, tools, { revised: STYLE_REVISED_ALL }).map((v) => v.message).join("\n");
+    expect(report).toContain("절 제목");
+    expect(report).not.toContain('"About this page"');
+  });
+
   // ── E) 이름 ──────────────────────────────────────────────
   it("E1: CRUMB가 tools.js의 name과 다르면 잡는다", () => {
     expect(standard_report({ crumb: "Clean tool" }))
@@ -293,6 +335,121 @@ describe("집필 규약 게이트", () => {
 
   it("E2: CRUMB 상수가 아예 없으면 잡는다", () => {
     expect(standard_report({ source: "---\n---\n<p>x</p>\n" })).toContain("CRUMB 상수가 없다");
+  });
+
+  // ── G) 전환 목록 — 개정 편만 문체 규칙으로 막는다 ─────────
+  it("G1: 전환 목록 밖의 편은 문체 위반을 막지 않고 경고([전환 대기])로 낸다", () => {
+    const root = standard_fixture({ article: { lead: "A finished page. Here is how to read it." } });
+    expect(standard_run(root, TOOLS).map((v) => v.message).join("\n")).not.toContain("틀 문구");
+    expect(standard_run(root, TOOLS, { revised: new Set([SLUG]) }).map((v) => v.message).join("\n")).toContain("틀 문구");
+    const warned = standard_warn(root, TOOLS).map((w) => w.message).join("\n");
+    expect(warned).toContain("[전환 대기] 틀 문구");
+  });
+
+  it("G3: [전환 대기]는 발행됐고 목록에 없는 편만 센다 — 미발행·목록 안 편은 빠진다", () => {
+    const tools = { ...TOOLS, TOOLS: [
+      { slug: "a-tool", published: true }, { slug: "b-tool", published: true }, { slug: "c-tool", published: false },
+    ] };
+    expect(standard_read_pending(tools, { revised: new Set() })).toEqual(["a-tool", "b-tool"]);
+    expect(standard_read_pending(tools, { revised: new Set(["a-tool"]) })).toEqual(["b-tool"]);
+    expect(standard_read_pending(tools, { revised: new Set(["a-tool", "b-tool"]) })).toEqual([]);
+    expect(standard_read_pending(tools, { revised: STYLE_REVISED_ALL })).toEqual([]);
+  });
+
+  it("G2: rest on … rules 변형을 잡는다 — wifi 432행이 includes 비교를 빠져나간 경로(f)", () => {
+    expect(standard_report({ article: { lead: "A finished page. Every figure the model produces rests on these five rules." } }))
+      .toContain("rest on … rules");
+    expect(standard_report({ article: { lead: "A finished page. The model keeps five things fixed." } })).toBe("");
+  });
+
+  // ── W) 경고 — 막지 않고 사람에게 보인다 ───────────────────
+  const WARN_CLEAN_SOURCE = '<li>A source, <a href="https://example.org/a">example.org</a>.</li>';
+  /** 깨끗한 출처 목록으로 바꾼 페이지에서 경고 메시지만 모은다. */
+  function warn_report(edit = (html) => html, over = {}) {
+    const html = edit(fixture_format_article(over.article ?? {}).replace("<li>A source.</li>", WARN_CLEAN_SOURCE));
+    const root = standard_fixture({ html, files: over.files });
+    return standard_warn(root, TOOLS, { revised: STYLE_REVISED_ALL }).map((w) => `[${w.rule}] ${w.message}`).join("\n");
+  }
+  const section_add = (html, extra) => html.replace('<h2 data-block="limits">', `${extra}<h2 data-block="limits">`);
+
+  it("W0: 규약을 지킨 페이지는 경고가 없다", () => {
+    expect(warn_report()).toBe("");
+  });
+
+  it("Wa: 같은 4낱말 줄이 다른 편에 두 번 넘게 나오면 경고 — 두 번까지는 통과", () => {
+    const line = "<p>The red counter wins twice over the evening.</p>";
+    const page = (n) => fixture_format_article().replace("<li>A source.</li>", WARN_CLEAN_SOURCE)
+      .replace('<h2 data-block="about">', `${line.repeat(n)}<h2 data-block="about">`);
+    for (const [others, expected] of [[3, true], [2, false]]) {
+      const root = standard_fixture({ html: page(1) });
+      const second = "other-tool";
+      mkdirSync(join(root, "dist", second), { recursive: true });
+      writeFileSync(join(root, "dist", second, "index.html"), page(others));
+      const tools = { TOOLS: [...TOOLS.TOOLS, { slug: second, name: "Other Tool", published: true }] };
+      const warned = standard_warn(root, tools, { revised: STYLE_REVISED_ALL }).filter((w) => w.rule === "ngram" && w.message.includes("red counter"));
+      expect(warned.length > 0).toBe(expected);
+    }
+  });
+
+  it("Wb: 절이 두 박자 격언(짧은 마침표 문장 둘)으로 끝나면 경고, 경구형 두 문장 H2도 경고", () => {
+    expect(warn_report((h) => section_add(h, "<p>The long line held for every setting the sliders allow. The simulation agreed. It did not explain.</p>")))
+      .toContain("[aphorism]");
+    expect(warn_report((h) => h.replace("Where the model stops", "Doors do not help. Opening does.")))
+      .toContain("두 문장 경구형");
+    expect(warn_report((h) => section_add(h, "<p>The simulation agreed with the formula at every setting it ran.</p>")))
+      .not.toContain("[aphorism]");
+  });
+
+  it("Wc: 굵은 머리말·Label. 문단이 절당 셋이면 경고 — 둘까지는 통과", () => {
+    const leads = (n) => Array.from({ length: n }, (_, i) => `<p><strong>Rule ${i}.</strong> The host opens a door at random.</p>`).join("");
+    expect(warn_report((h) => section_add(h, leads(3)))).toContain("[bold-lead]");
+    expect(warn_report((h) => section_add(h, leads(2)))).not.toContain("[bold-lead]");
+    const plain = ["The slab.", "The walls.", "The spread."].map((l) => `<p>${l} Each one is counted on its own line here.</p>`).join("");
+    expect(warn_report((h) => section_add(h, plain))).toContain("[bold-lead]");
+  });
+
+  it("Wd: H2가 A, B and C 나열형이면 경고", () => {
+    expect(warn_report((h) => h.replace("Reading the chart", "The bars, the strip and the banner"))).toContain("[heading-list]");
+    expect(warn_report((h) => h.replace("Reading the chart", "Reading the bars and the strip"))).not.toContain("[heading-list]");
+  });
+
+  it("We1: UI 라벨이 “ ” 없이 나오면 경고 — 곧은 따옴표도 경고, “ ”는 통과", () => {
+    const files = { "src/widgets/clean-tool/widget.js": "const LABEL = 'Number of doors';\nconst X = `The model puts ${n}`;\n" };
+    const say = (text) => warn_report((h) => section_add(h, `<p>${text}</p>`), { files });
+    expect(say("Move the Number of doors slider to the right.")).toContain('UI 라벨 "Number of doors"');
+    expect(say('Move the "Number of doors" slider to the right.')).toContain("곧은");
+    expect(say("Move the “Number of doors” slider to the right.")).not.toContain("UI 라벨");
+    expect(say("The model puts the edge at two games in three.")).not.toContain("UI 라벨");
+  });
+
+  it("We2: 출처 항목에 링크·No DOI가 없거나 1인칭이 있으면 경고", () => {
+    const edit = (li) => (h) => h.replace(WARN_CLEAN_SOURCE, li);
+    expect(warn_report(edit("<li>Smith, J., 1990, A Book, Press.</li>"))).toContain("[source]");
+    expect(warn_report(edit("<li>Smith, J., 1990, A Book, Press. No DOI; official text linked.</li>"))).not.toContain("[source]");
+    expect(warn_report(edit('<li><a href="https://x.org">Smith</a>, which I could not open.</li>'))).toContain("1인칭");
+  });
+
+  it("We3: 천 단위 쉼표를 경고 — 공백 표기는 통과", () => {
+    expect(warn_report((h) => section_add(h, "<p>The stack is 439,805 km tall at that fold.</p>"))).toContain("[number]");
+    expect(warn_report((h) => section_add(h, "<p>The stack is 439 805 km tall at that fold.</p>"))).not.toContain("[number]");
+  });
+
+  it("We4: 사이트 자칭(workbench·toys·this widget)을 경고", () => {
+    expect(warn_report((h) => section_add(h, "<p>This workbench draws each curve once.</p>"))).toContain("[self-name]");
+    expect(warn_report((h) => section_add(h, "<p>Toys for thinking with, each drawn once.</p>"))).toContain("[self-name]");
+    expect(warn_report((h) => section_add(h, "<p>The tool draws each curve once.</p>"))).not.toContain("[self-name]");
+  });
+
+  it("Wg: 캡션이 옆 문단과 6낱말 넘게 겹치면 경고", () => {
+    const fig = (cap) => `<p>The pooled bar is a weighted average of the two groups here.</p><figure class="fig"><svg viewBox="0 0 420 120"></svg><figcaption>${cap}</figcaption></figure>`;
+    expect(warn_report((h) => section_add(h, fig("Each pooled bar is a weighted average of the two groups.")))).toContain("[caption-overlap]");
+    expect(warn_report((h) => section_add(h, fig("The weight is the strip below the bars.")))).not.toContain("[caption-overlap]");
+  });
+
+  it("Wh: About 절 밖의 1인칭 헤지를 경고 — About 절 안은 통과", () => {
+    expect(warn_report((h) => section_add(h, "<p>I could not open the 1676 original.</p>"))).toContain("[hedge]");
+    expect(warn_report((h) => h.replace('<ul class="sources">', "<p>I could not open the 1676 original.</p><ul class=\"sources\">")))
+      .not.toContain("[hedge]");
   });
 
   // ── 자(measure) ──────────────────────────────────────────

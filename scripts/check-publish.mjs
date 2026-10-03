@@ -38,7 +38,7 @@ import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { standard_run } from "./check-standard.mjs";
+import { standard_run, standard_warn, standard_read_pending } from "./check-standard.mjs";
 import { audit_run } from "./audit/check-audit.mjs";
 
 // ── 상수 ───────────────────────────────────────────────────
@@ -691,6 +691,18 @@ const isMain =
 
 if (isMain) {
   const violations = await gate_run();
+  // 경고(사람 판정). 막지 않는다 — 규약 §9 "게이트가 표시만 한다".
+  const toolsModule = await import(pathToFileURL(join(REPO_ROOT, TOOLS_MODULE)).href);
+  const warnings = standard_warn(REPO_ROOT, toolsModule);
+  if (warnings.length > 0) {
+    console.log(`문체 경고 ${warnings.length}건 (막지 않음 — 사람이 판정한다):\n`);
+    for (const w of warnings) console.log(`  ⚠ [${w.rule}] ${w.file} — ${w.message}`);
+    console.log("");
+  }
+  // 전환 목록이 남아 있는 동안 찍는다. 목록 삭제가 PR-6 완료 조건이다.
+  const pendingSlugs = standard_read_pending(toolsModule);
+  console.log(`[전환 대기] ${pendingSlugs.length}편${pendingSlugs.length > 0 ? ` — ${pendingSlugs.join(", ")}` : ""}`);
+  console.log("  (STYLE_REVISED_SLUGS 목록 삭제가 PR-6 완료 조건)\n");
   if (violations.length === 0) {
     console.log("  ✓ 배선 / 데이터 / 소스 페이지 / 산출물 / 집필 규약 — 위반 없음");
     console.log("\n푸시 가능.");
