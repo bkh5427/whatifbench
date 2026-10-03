@@ -3,6 +3,7 @@ import Base from "@layouts/Base.astro";
 import { prose_format_separator, prose_format_period } from "@components/prose.js";
 import Avatar from "@components/Avatar.astro";
 import { CATEGORIES, tools_read_published } from "@data/tools.js";
+import { MONTY_DOOR_MAX } from "@widgets/monty-hall-n-doors/model.js";
 
 const AVATAR_SIZE_ABOUT = 96;
 
@@ -13,11 +14,38 @@ const published = tools_read_published();
 // 하나씩 발행되는 순간이 그렇다. 그때 "The rest of the sections:" 문구 자체가
 // 나오면 안 된다. 안 그러면 화면에 "… . The rest of the sections: ." 이 찍힌다.
 const remaining = CATEGORIES.filter((c) => published.every((t) => t.category !== c.key));
+
+// "Where to start"는 목록이 아니라 **한 편**을 권한다. 권하는 이유 문장이 이 도구의
+// 화면(세 문에서 시작, 문 수 슬라이더 상한, 여는 문 수 슬라이더)에 기대므로 slug를 고정한다.
+// 이 도구가 발행 목록에 없으면 옛 방식(발행 목록 전부)으로 돌아간다 — 거짓 추천을 하지 않는다.
+const START_SLUG = "monty-hall-n-doors";
+const start = published.find((t) => t.slug === START_SLUG);
+// 나머지 도구가 사는 곳. 도구가 하나라도 있는 카테고리만.
+const stocked = CATEGORIES.filter((c) => published.some((t) => t.category === c.key));
+
+// "What I could not check" — 편마다 흩어져 있던 출처 헤지를 한곳에 모은다(규약 §6 절대규칙 2).
+// 각 줄은 그 페이지의 About 절이 적은 사실 그대로다(무엇을 못 열었고, 대신 무엇에 기댔나).
+// **발행된 도구만** 찍는다 — 초안의 줄이 나가면 미공개 도구가 노출된다.
+const NOT_CHECKED = {
+  "monty-hall-n-doors":
+    "the original behind the Ferguson credit for the N-door version (taken from Wikipedia); John Tierney's report and the Parade column (reader figures taken from secondary accounts); the text of Selvin's two 1975 letters (records checked)",
+  "simpsons-paradox":
+    "the 1975 paper's own table (department counts taken from R's UCBAdmissions); the 1973 totals and applicant counts (taken from Wikipedia); the article texts behind the 1975 and 1986 links (Crossref records checked); the no-lawsuit claim and the account of the associate dean's concern (secondary, not checked against a court record)",
+  "one-line-or-many":
+    "Erlang's 1909 and 1917 papers (titles, places of publication, pages and the 1917 attribution taken from secondary sources); the contents of Smith and Whitt (record checked); the joint credit to Allen and Cunneen (reported, not checked against an original)",
+  "folding-paper-moon":
+    "Gallivan's booklet (its length formula reported, not checked against a copy); ISO/IEC 7810, ISO 216 and ISO 534 (taken from published descriptions); ISO 14688-1 (read in its free preview only); the Everest height (taken from news reports of the 2020 announcement)",
+  "solar-system-light-delay":
+    "Rømer's 1676 original and its 22-minute figure (the record of the 1677 English rendering checked); the texts of the three radar papers of 1961–62 (records checked; their groups and observation dates are reported, not verified)",
+  "wifi-through-walls":
+    "Friis's 1946 paper and the IEEE 802.11-1997 standard (records checked; what Friis wrote is reported from secondary descriptions)",
+};
+const notChecked = published.filter((t) => NOT_CHECKED[t.slug]);
 ---
 
 <Base
   title="About"
-  description="Who I am, why I make these small interactive model tools, and how I check the numbers."
+  description="Who I am, why I make these small interactive model tools, and how I check things."
 >
   <h1>About</h1>
 
@@ -26,11 +54,11 @@ const remaining = CATEGORIES.filter((c) => published.every((t) => t.category !==
     <div>
       <p class="author-name">Planimeter</p>
       <p class="author-line">
-        A pen name. I build and validate numerical models, and these are the same
-        habit at hobby scale.
+        A pen name. I build and validate numerical models for a living; the tools
+        here are the same habit at hobby scale.
       </p>
       <ul class="author-facts">
-        <li>Each tool page names its model and what that model assumes.</li>
+        <li>Each tool page lists what its model leaves out, and that list is usually the useful part.</li>
         <li>The maths sits in its own file, with unit tests on it.</li>
         <li>No page here tells you which choice to make.</li>
       </ul>
@@ -38,81 +66,95 @@ const remaining = CATEGORIES.filter((c) => published.every((t) => t.category !==
   </div>
 
   <p>
-    I make small interactive tools here. You move the parameter that matters, a
-    chart moves, and you get to see the shape of the thing instead of one number.
-  </p>
-
-  <p>
-    Most of that work is finding out where a model stops being trustworthy, which
-    is more or less what this whole site is about.
+    I make small interactive tools. Most of the work is finding out where a model
+    stops being trustworthy.
   </p>
 
   <p>
     A planimeter is a mechanical instrument that measures the area of a flat
     shape by tracing its outline. You move it by hand and read the answer off the
-    scale on its measuring wheel. That is roughly what these
-    tools are, and the name is a reminder that the reading is only as good as the
-    instrument.
+    scale on its measuring wheel. These tools work in roughly the same way, and
+    the name is a reminder that a reading is only as good as the instrument.
   </p>
 
   <h2>What these are</h2>
 
   <p>
-    Toys for thinking with. Each one runs a simple model and draws what it says.
-    A hobby, mostly — I make them because I want to see the curve myself, and
-    putting them online costs little. There is no company behind it.
+    Tools for thinking with. Each one runs a simple model and draws what it says.
+    I make them because I want to see the curve myself, and putting them online
+    costs little.
   </p>
 
-  <p>
-    If you are going to act on a number from one of these, check it somewhere
-    else too.
-  </p>
-
-  <h2>How I check the numbers</h2>
+  <h2 id="how-i-check">How I check things</h2>
 
   <p>
     Each tool either works out its formula on the page or cites it to something
-    you can open. Where I could not
-    verify a source, the page says so instead of linking to a good guess.
+    you can open. Where I can, I also check a formula against a second version I
+    wrote separately, because running the same model twice is not a check.
   </p>
 
-  <p>
-    Where I can, I check a formula against a second version I wrote separately,
-    because running the same model twice is not a check.
-  </p>
-
-  <p>
-    Each tool page also lists what its model leaves out. That is usually the most
-    useful part.
-  </p>
+  {notChecked.length > 0 && (
+    <>
+      <h3 id="not-checked">What I could not check</h3>
+      <p>
+        Some sources I could not open or verify myself. Where a page leans on one
+        of those, I name it here rather than link to a good guess. In brackets is
+        what I relied on instead: where a figure was taken from, “records checked”
+        where I found the catalogue entry but not the text, or how much of it I
+        could read.
+      </p>
+      <ul class="not-checked">
+        {notChecked.map((t) => (
+          <li><a href={`/${t.slug}`}>{t.name}</a>: {NOT_CHECKED[t.slug]}.</li>
+        ))}
+      </ul>
+    </>
+  )}
 
   <h2>Getting things wrong</h2>
 
   <p>
-    I will. If you find an error I would genuinely like to know — the <a
-    href="/contact">contact page</a> has my email. I fix them, and each tool page
-    shows a review date in its byline. Typos I just fix quietly.
+    I will, and the <a href="/contact">contact page</a> has my email for when you
+    spot one. I fix errors, and each tool page shows a review date in its byline.
+  </p>
+
+  <p class="note">
+    Everything here is provided as is, with no promise that it is accurate or
+    working. If you are going to act on a number from one of these tools, check
+    it somewhere else too.
   </p>
 
   <h2>Copying</h2>
 
   <p>
     The writing, the diagrams and the code are mine. Read them, link to them,
-    quote a bit with credit, use the tools for whatever you like. Please don't
+    quote a bit with credit, and use the tools for whatever you like. Please don't
     republish the articles wholesale or lift the calculators onto another site.
-    If you want to do something bigger with them, just ask.
-  </p>
-
-  <p>
-    I claim nothing over the maths itself. Where a formula comes from a published source it
-    is cited on the page that uses it; where it is worked out on the page, the
-    working is there instead.
+    If you want to do something bigger with them, ask. I claim nothing over the
+    maths itself.
   </p>
 
   <h2>Where to start</h2>
 
   <p>
-    {published.length > 0 && (
+    {start && (
+      <>
+        <a href={`/${start.slug}`}>{start.name}</a> makes a good first page. It
+        opens on the three-door puzzle you may already know, and then one slider
+        takes it up to {MONTY_DOOR_MAX} doors while another sets how many of them
+        the host opens.{published.length > 1 && (
+          <>
+            {" "}The rest are on the <a href="/">home page</a> and in the{stocked.map((c, i) => (
+              <>
+                {prose_format_separator(i, stocked.length)}
+                <a href={c.href}>{c.name}</a>
+              </>
+            ))}{" "}{stocked.length === 1 ? "section" : "sections"}.
+          </>
+        )}
+      </>
+    )}
+    {!start && published.length > 0 && (
       <>
         Finished so far:
         {published.map((t, i) => (
@@ -127,7 +169,7 @@ const remaining = CATEGORIES.filter((c) => published.every((t) => t.category !==
       <>
         {published.length > 0
           ? " The rest of the sections: "
-          : "The sections, each with its own writing: "}
+          : "The sections, each with its own articles: "}
         {remaining.map((c, i) => (
           <>
             {i > 0 && (i === remaining.length - 1 ? " and " : ", ")}
@@ -136,10 +178,5 @@ const remaining = CATEGORIES.filter((c) => published.every((t) => t.category !==
         ))}.
       </>
     )}
-  </p>
-
-  <p class="note">
-    Everything here is provided as is, with no promise that it's accurate or
-    working. It's a hobby site.
   </p>
 </Base>

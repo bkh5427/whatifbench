@@ -9,89 +9,88 @@
 export const INTROS = {
   chance: {
     description:
-      "Probability puzzles where the arithmetic is short and the answer is one you want to argue with.",
+      "Puzzles you can finish on a napkin and still refuse to believe.",
+    // 2026-09-27: 네 문단 중 셋이 몬티홀이던 것을 도구별로 한 문단씩 나눴다
+    // (몬티홀 · 심슨 · 줄서기). 예로 든 수치·가정은 각 도구 페이지에 적힌 것 그대로다.
+    // 2026-10-03 (운영자 결정 6): 1문단 첫 두 문장과 4문단 줄서기 문장을 운영자 문장으로 바꿨다.
+    // "leaves out"은 허브에서 홈 1회·About 1회만 둔다 — 여기서는 "does not count".
+    // 4문단은 운영자 문장에서 "only" 하나를 뺐다 — CV를 옮겨도 창구별 줄 평균은 정확하다
+    // (one-line 페이지 339~341행). 바이라인 gradeNote(_meta.js:16)와 같은 범위다.
     paragraphs: [
-      `The probability puzzles this site builds tools for have something
-       uncomfortable in common: the arithmetic is short enough to do on paper, and
-       the answer still feels wrong once you get it. That pair is the test for
-       getting built here — no advanced probability, and the difficulty all in
-       giving up an assumption you did not know you were making.`,
-      `That is why they are worth a slider rather than a paragraph. When a magazine
-       column said in 1990 that switching doors wins two games in three, thousands
-       of letters told the columnist she was wrong. Watching a simulation run ten thousand games and close in on
-       0.667 does something a proof does not. And once the parameter is on a
-       slider you can push it well past the three-door case the puzzle is usually
-       told with, and find out whether the result you just accepted actually
-       generalises. Here it holds and thins out at
-       once: switching stays the better move at every setting the slider allows,
-       and by a hundred doors with one opened the edge is about one game in ten
-       thousand.`,
-      `The tools here keep two things apart that are easy to conflate: what the
-       model computes, and what the model assumes. In Monty Hall with N doors the
-       exact value is drawn as a dashed line and the score so far as a solid one. Given
-       enough games the solid line settles onto its dashed one; at settings where
-       the two exact values nearly touch, the longest run the slider allows is not
-       enough, and the page says so instead of letting the picture promise it. The
-       writing there also says which rule was
-       fixed to get that number — who knows what, what is chosen at random, what is
-       held constant — because in problems like these the surprising answer
-       depends on a rule that gets stated once and then forgotten.`,
+      `What these puzzles have in common is that the sums fit on a napkin and
+       the answer still refuses to sit right. None of them needs
+       advanced probability; the difficulty lies in giving up an assumption you
+       did not know you were making.`,
+      `A slider earns its place because it lets you push past the case a puzzle
+       is usually told with. In 1990 a magazine column said switching doors wins
+       two games in three, and thousands of letters told the columnist she was
+       wrong. Monty Hall with N doors plays that game and then keeps going, to see
+       whether the answer you just accepted generalises. It holds and thins out at
+       once. In the model, switching stays the better move at every setting the sliders allow. By a hundred doors with one opened, though, the edge is
+       about one game in ten thousand.`,
+      `Each tool keeps apart two things that are easy to blur: what its model
+       computes and what it assumes. Simpson's Paradox Mixer computes very little,
+       a division and a weighted sum. Press its Berkeley preset and the model
+       puts women ahead in both departments and 19.4 percentage points behind
+       once the departments are added together. Its assumptions sit on the page
+       in plain view. Every rate is treated as exact, with no confidence interval,
+       and the data is split only one way, into two groups. Nothing in that
+       arithmetic says why the two mixtures differ, and the page says so.`,
       `The tools here are the arithmetic kind of model: given the stated rules,
-       the answers are true or false rather than matters of judgement. One of them
-       steps outside that in one setting, and says so on its own page — the
-       queueing tool leaves its exact formula behind when the service time stops
-       being exponential. Where a variant changes the answer — a host who might
-       open the prize door, for one — I name it rather than leave it as an
-       exercise.`,
+       each answer is true or false rather than a matter of judgement. One Line or
+       Many? is the exception: its queueing formulas are exact while
+       transaction times keep their default spread, and the page says where that
+       stops. Customers who switch lines, which the model does not count, would
+       shrink the gap it reports.`,
     ],
   },
 
   scale: {
     description:
-      "Orders of magnitude, and the axis you draw them on. What a number does when the exponent moves.",
+      "Orders of magnitude, and the log axis that keeps them on one page.",
     // 2026-09-26: 두 편(folding-paper-moon · solar-system-light-delay)으로 다시 연다.
     // 같은 날 wifi-through-walls가 셋째로 들어와 첫·셋째·넷째 문단에 그 도구를 넣었다.
+    // 2026-09-27: 문체 개정. 끝 문단의 단순화 서술은 각 페이지의 가정 목록 글자에 맞췄다.
+    // 2026-10-03: 끝 문단 앞뒤의 "names what it simplifies / no term for" 두 문장을 지웠다
+    // (허브 "leaves out" 류 축소). 가운데 단순화 세 가지는 그대로다.
     paragraphs: [
       `Arithmetic that adds and arithmetic that multiplies run away from each
        other fast. Start at one: twenty steps of adding one leaves you at 21, and
-       twenty steps of doubling at 1,048,576.
-       Folding Paper to the Moon lives on the multiplying side of that gap — a
-       thickness that doubles with every fold. Talking Across the Solar System
-       deals in a distance so large that light needs real minutes to cross it.
-       Wi-Fi Through Walls counts in decibels, where every factor of ten in
-       power is another ten on the scale.`,
-      `The recurring device here is the axis. A doubling process on a linear axis
-       looks like nothing happening, then a wall. The same process on a
-       logarithmic axis is a straight line with no drama in it at all. Neither
-       picture is wrong, and the disagreement between them is the whole point —
-       when a headline says something grew tenfold, which axis you imagine can change
-       whether that sounds alarming or ordinary.`,
-      `Two of the models are deliberately thin — a doubling is one
-       multiplication, a light delay one division. Keeping the arithmetic trivial
-       makes the result easy to check, and it moves the interesting question from
-       "is this calculated correctly" to "why does the correct answer feel
-       wrong". The Wi-Fi model is heavier: a published formula for one flat
-       wall, repeated for each wall and added to the free-space loss. Its page
+       twenty steps of doubling at 1 048 576. Folding Paper to the Moon lives on
+       the multiplying side of that gap, with a thickness that doubles at every
+       fold. Talking Across the Solar System deals in distances so large that
+       light needs real minutes to cross them. Wi-Fi Through Walls counts in
+       decibels, where each tenfold step in power adds ten to the scale.`,
+      `The device that keeps coming back is the axis. A doubling process on a
+       linear axis looks like nothing happening, then a wall. On a logarithmic
+       axis the same process is a straight line with no drama in it. Neither
+       picture is wrong. When a headline says something grew tenfold, the axis
+       you imagine can change whether that sounds alarming or ordinary.`,
+      `Two of the models are deliberately thin: a doubling is one multiplication,
+       a light delay one division. Arithmetic that small is easy to check, which
+       leaves the more interesting question of why a correct answer can feel
+       wrong. The Wi-Fi model is heavier: a published formula for one flat wall,
+       repeated for each wall and added to what distance alone takes. Its page
        works one case through by hand, as the other two do.`,
-      `A question belongs here when the answer depends on a setting and how much
-       it depends is the interesting part. A single figure quoted for the distance
-       to another planet is one moment's value, an average, or one end of a range; the
-       light-delay model puts Mars nearly five times farther from Earth at one end
-       of its band than at the other, and saying which kind a figure is makes up
-       most of the honesty in the answer. A
-       number of folds is the opposite case: across its whole range the
-       thickness slider moves the Moon answer by only three folds, and that
-       narrowness is the finding. Each
-       page names what it simplifies — circular orbits on one, perfect layers with
-       no air and no loss at the crease on another, one straight path through flat,
-       single-material walls on the third — and what its formula has no term for
-       at all.`,
+      `What earns a question a place here is how much its answer depends on a
+       setting. A figure quoted for the distance to another planet might be one
+       moment's value, an average, or one end of a range. They can be far apart:
+       the light-delay model puts Mars at its farthest nearly five times as
+       far from Earth as at its closest. Folding is the opposite case. Across its
+       whole range the thickness slider moves the Moon answer by only three
+       folds, and that narrowness is the finding.`,
+      `The light-delay model puts each body
+       on a circle around the Sun, with all the circles in one plane. The folding
+       model stacks perfect layers, with no trapped air, no squashing and no
+       paper lost to the curve at a crease. The Wi-Fi model sends one straight
+       path through empty space and treats each wall as one flat slab of a single
+       material, met square on.`,
     ],
   },
 
   motion: {
     description:
-      "Vehicles, mechanics and the arithmetic of getting somewhere — each formula drawn with the range where it holds.",
+      "Vehicles and the formulas behind them, each chart marking where the formula stops holding.",
     paragraphs: [
       `This section is about things that move, and about how badly the intuition
        for them scales. A bicycle drivetrain, a thrown ball, a car on an open
@@ -129,7 +128,7 @@ export const INTROS = {
 
   energy: {
     description:
-      "Power, heat, water and fuel — what a habit actually costs once the two halves of the bill are drawn apart.",
+      "Power, heat, water and fuel: what a habit costs once water and heat are counted separately.",
     paragraphs: [
       `Energy questions get argued about in the wrong unit. Someone says a bath
        uses more than a shower, someone else says it depends how long you stand

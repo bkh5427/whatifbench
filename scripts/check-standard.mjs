@@ -16,7 +16,7 @@
 // A) 구조   — 블록 역할(`data-block`)의 존재와 순서, 위젯이 첫 H2보다 앞인가
 // B) 분량   — 절당 본문 글자 수, 리드 3문단 합계
 // C) 도해   — 장수, viewBox 가로, SVG 글자 크기
-// D) 문장   — 금지어, 퍼센트 띄어쓰기
+// D) 문장   — 금지어, 퍼센트 띄어쓰기, 문체(틀 문구·캡션 시작어·단문 연타·model puts 밀도·편간 같은 절 제목)
 // E) 이름   — `CRUMB` ↔ `tools.js`의 `name` 대조
 //
 // ── 왜 `data-block`인가 ────────────────────────────────────
@@ -117,6 +117,97 @@ const BANNED_WORDS = [
   "unconditional", "monte carlo", "symmetry", "derivation",
   "redistribute", "standard error", "editorial cut-off",
 ];
+
+/**
+ * 규약 §6 절대규칙 2의 금지 목록 — 절 끝 연결 문장·예고·틀 문구.
+ * 2026-09-27 문체 점검에서 6편 모두에 같은 자리에 같은 문장이 나와 대량생산 지문이 됐다.
+ * 소문자로 비교한다.
+ */
+const STYLE_BANNED_PHRASES = [
+  "here is how to read", "here is the surprise", "all of it rests on",
+  "easier to trust", "drop any one", "stop meaning what they say",
+  "comes next", "the whole point", "the whole idea", "load-bearing",
+  "the gap is enormous", "two routes, one answer", "settling is not explaining",
+];
+/** 캡션을 이 말로 시작하지 않는다(§6 절대규칙 1) — 20개 중 18개가 그랬다. */
+const STYLE_CAPTION_BANNED_START = /^in this model\b/i;
+/** 이 이하 단어 수의 문장이 연속으로 이만큼 오면 스타카토다(§6 절대규칙 0). */
+const STYLE_SHORT_SENTENCE_WORDS = 6;
+const STYLE_SHORT_RUN_MAX = 2;
+/** 문단 하나에 "the model puts"를 이 횟수보다 많이 쓰지 않는다(§6 절대규칙 1). */
+const STYLE_MODEL_PUTS_PER_PARAGRAPH_MAX = 1;
+const STYLE_MODEL_PUTS_PATTERN = /\b(?:the model|it) puts\b/gi;
+/** 편마다 새로 쓰는 절 제목의 예외 — 웹 관례 이름(§7). */
+const STYLE_SHARED_HEADINGS = new Set(["about this page"]);
+
+/**
+ * 금지 목록 중 낱말 사이가 벌어지는 변형(§6 절대규칙 2 "rest on … rules").
+ * `STYLE_BANNED_PHRASES`는 `includes`로 비교해 말줄임 자리를 못 메운다 — 그래서
+ * wifi의 "Every figure the model produces rests on these five rules."가 그대로 지나갔다
+ * (2026-10-01 확인: 규약 문서에만 있고 코드 목록에는 이 항목이 아예 없었다).
+ */
+const STYLE_BANNED_PATTERNS = [
+  { label: "rest on … rules", pattern: /\brests? on (?:these|those|its|the)\b[^.!?]{0,80}?\brules\b/i },
+];
+
+/**
+ * 2차 문체 개정(2026-10-01 작업지시서 D3)의 **전환 목록**.
+ * 09-27 이후의 문체 규칙(틀 문구·캡션 시작어·단문 연타·model puts·편간 같은 절 제목·
+ * 위 변형 금지)은 이 목록에 든 편에서만 **막는다**. 목록 밖의 발행 편은 같은 검사를
+ * **경고**로만 받는다 — 라이브 판이 아직 옛 문장이라, 규칙을 한꺼번에 막으면 편 하나씩
+ * 내보내는 PR마다 나머지 다섯 편 때문에 게이트가 깨진다.
+ * 편 PR이 그 편의 slug를 여기에 더한다. 여섯 편이 다 들어오면 목록을 지우고 전부 막는다.
+ * **목록 삭제가 PR-6 완료 정의에 들어간다**(운영자 결정 2026-10-03). 목록이 남아 있는 동안
+ * check:full은 `[전환 대기] N편`을 찍는다 — 0편이 되어도 목록을 지울 때까지 찍는다.
+ */
+const STYLE_REVISED_SLUGS = new Set([]);
+/** 시험용: 모든 편을 개정 편으로 본다. */
+export const STYLE_REVISED_ALL = "all";
+
+/**
+ * 전환 대기 편 = 발행됐는데 전환 목록에 아직 없는 편. check-publish가 개수와 slug를 찍는다.
+ * 목록을 지우는 날(PR-6) 이 함수도 같이 지운다.
+ */
+export function standard_read_pending(tools, { revised = STYLE_REVISED_SLUGS } = {}) {
+  if (revised === STYLE_REVISED_ALL) return [];
+  return tools.TOOLS.filter((tool) => tool.published && !revised.has(tool.slug)).map((tool) => tool.slug);
+}
+
+// ── 경고(사람 판정) — 2026-10-01 작업지시서 PR-0 ─────────────
+/** (a) 사이트 전체 n-gram. 이 길이의 낱말 줄이 다른 편에 이 횟수보다 많이 나오면 경고. */
+const WARN_NGRAM_WORDS = 4;
+const WARN_NGRAM_OTHER_MAX = 2;
+/** 낱말이 전부 이 목록이면 틀 문구가 아니라 영어의 뼈다. n-gram에서 뺀다. */
+const WARN_NGRAM_STOPWORDS = new Set([
+  "a", "an", "the", "of", "to", "in", "on", "at", "by", "for", "and", "or", "is", "are",
+  "it", "its", "that", "this", "as", "with", "from", "be", "one", "two", "each", "what",
+]);
+/** n-gram 경고를 이 줄 수까지만 찍는다(나머지는 개수만). */
+const WARN_NGRAM_REPORT_MAX = 40;
+/** (b) 격언 결구 — 절의 마지막 두 문장이 둘 다 이 낱말 수 이하. */
+const WARN_APHORISM_WORDS_MAX = 8;
+/** 절 끝의 이동 단추("Back to the sliders ↑"). 문장이 아니다. */
+const WARN_NAV_PARAGRAPH = /^Back to the sliders\b/;
+/** (c) 굵은 머리말 문단 — 절당 이 수보다 많으면 경고. "Label. 문장"의 Label 최대 낱말 수. */
+const WARN_BOLD_LEAD_PER_SECTION_MAX = 2;
+const WARN_LABEL_LEAD_WORDS_MAX = 4;
+/** (g) 캡션과 옆 문단이 이 낱말 수만큼 잇따라 겹치면 경고. */
+const WARN_CAPTION_OVERLAP_WORDS = 6;
+/** (h) About 절 밖의 1인칭 헤지. */
+const WARN_HEDGE_PATTERNS = [/\bI could not\b/i, /\breported rather than verified\b/i];
+/** (e) 규약 4종. 숫자: 쉼표 천 단위. 자칭: 사이트를 tool 말고 다른 말로 부른 자리. */
+const WARN_COMMA_THOUSANDS = /\b\d{1,3}(?:,\d{3})+\b/g;
+const WARN_SELF_NAME = /\b(?:(?:this|these|our|my|the site's)\s+(?:workbench(?:es)?|toys?|instruments?|widgets?)|workbench(?:es)?|toys? for)\b/gi;
+const WARN_SOURCE_LINK_OK = /<a\b|No DOI|No stable link/i;
+const WARN_SOURCE_FIRST_PERSON = /(?:^|[\s(])(?:I|I'm|I've|my|me)(?=[\s,.;:)])/;
+/** (e) UI 라벨 — 위젯 소스의 문자열 리터럴에서 뽑는 라벨 사전의 모양. */
+const WARN_LABEL_WORDS_MAX = 6;
+const WARN_LABEL_CHARS_MIN = 3;
+const WARN_LABEL_SHAPE = /^[A-Z][A-Za-z0-9 ,()’'×/–-]*$/;
+const WIDGETS_DIR = "src/widgets";
+const WIDGET_FILE = "widget.js";
+/** 허브 페이지 — n-gram·자칭 경고의 말뭉치에 넣는다(도구 페이지 규칙은 안 건다). */
+const HUB_ROUTES = ["index.html", "about/index.html"];
 
 /** 도해 글자에 허용하는 class의 접두사. 크기는 `global.css`가 정한다. */
 const FIGURE_TEXT_CLASS_PREFIX = "fig-";
@@ -446,6 +537,83 @@ function standard_check_prose(route, html) {
   return violations;
 }
 
+/** 문단(<p>)의 읽는 글자 목록. 정의 목록·목록 항목은 뺀다 — 그것들은 원래 짧다. */
+function style_read_paragraphs(html) {
+  let body = html;
+  for (const pattern of PROSE_STRIP_PATTERNS) body = body.replace(pattern, " ");
+  return [...body.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((m) => standard_strip_tags(m[1]).replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+/** 문장 나누기. 마침표·물음표·느낌표 뒤 공백 + 대문자·숫자·따옴표에서 끊는다. */
+function style_split_sentences(text) {
+  return text.split(/(?<=[.!?])\s+(?=[A-Z0-9“"‘'(])/).map((s) => s.trim()).filter(Boolean);
+}
+
+// ── D2) 문체 — 규약 §6 절대규칙 0·1·2 ───────────────────────
+function standard_check_style(route, html) {
+  const violations = [];
+  const say = (message) => violations.push({ file: `${DIST_DIR}/${route}`, message });
+
+  let body = html;
+  for (const pattern of PROSE_STRIP_PATTERNS) body = body.replace(pattern, " ");
+  const lower = standard_strip_tags(body).replace(/\s+/g, " ").toLowerCase();
+  const captions = [...html.matchAll(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/gi)]
+    .map((m) => standard_strip_tags(m[1]).replace(/\s+/g, " ").trim());
+  const captionLower = captions.join(" ").toLowerCase();
+
+  for (const phrase of STYLE_BANNED_PHRASES) {
+    if (lower.includes(phrase) || captionLower.includes(phrase)) {
+      say(`틀 문구 "${phrase}" (규약 §6 절대규칙 2) — 절은 마지막 사실로 끝낸다`);
+    }
+  }
+  for (const { label, pattern } of STYLE_BANNED_PATTERNS) {
+    const hit = pattern.exec(lower) ?? pattern.exec(captionLower);
+    if (hit) say(`틀 문구 "${label}" 변형 (규약 §6 절대규칙 2) — …${hit[0]}…`);
+  }
+  for (const caption of captions) {
+    // 굵은 제목 한 줄("<b>Why …</b> …") 뒤에서 시작해도 같은 틀이다.
+    const text = caption.replace(/^[^.]{1,60}\.\s+/, "");
+    if (STYLE_CAPTION_BANNED_START.test(caption) || STYLE_CAPTION_BANNED_START.test(text)) {
+      say(`캡션이 "In this model"로 시작한다 (규약 §6 절대규칙 1) — …${caption.slice(0, 60)}…`);
+    }
+  }
+  for (const paragraph of style_read_paragraphs(html)) {
+    const sentences = style_split_sentences(paragraph);
+    let run = 0;
+    for (const sentence of sentences) {
+      run = sentence.split(/\s+/).length <= STYLE_SHORT_SENTENCE_WORDS ? run + 1 : 0;
+      if (run > STYLE_SHORT_RUN_MAX) {
+        say(`${STYLE_SHORT_SENTENCE_WORDS}단어 이하 문장이 ${run}개 잇따른다 (규약 §6 절대규칙 0) — …${paragraph.slice(0, 80)}…`);
+        break;
+      }
+    }
+    const puts = paragraph.match(STYLE_MODEL_PUTS_PATTERN)?.length ?? 0;
+    if (puts > STYLE_MODEL_PUTS_PER_PARAGRAPH_MAX) {
+      say(`한 문단에 "the model puts"가 ${puts}회 (규약 §6 절대규칙 1: 문단당 ${STYLE_MODEL_PUTS_PER_PARAGRAPH_MAX}회) — …${paragraph.slice(0, 80)}…`);
+    }
+  }
+  return violations;
+}
+
+/** 발행 편끼리 같은 절 제목(§7: 편마다 새로 쓴다). About this page만 예외. */
+function standard_check_shared_headings(pages) {
+  const violations = [];
+  const seen = new Map();
+  for (const { route, blocks } of pages) {
+    for (const block of blocks) {
+      const key = String(block.title ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+      // 컴포넌트가 찍는 Read next 같은 역할은 글쓴이가 쓴 제목이 아니다.
+      if (!key || STYLE_SHARED_HEADINGS.has(key) || BLOCK_IGNORED.has(block.role)) continue;
+      if (seen.has(key) && seen.get(key) !== route) {
+        violations.push({ file: `${DIST_DIR}/${route}`, message: `절 제목 "${block.title}"이 ${seen.get(key)}와 같다 (규약 §7 — 편마다 새로 쓴다)` });
+      } else seen.set(key, route);
+    }
+  }
+  return violations;
+}
+
 // ── E) 이름 ────────────────────────────────────────────────
 /** `CRUMB` ↔ `tools.js`의 `name`. 규약 §7은 "글자 하나까지 같아야" 한다고 못박는다. */
 function standard_check_crumb(root, slug, tool) {
@@ -487,9 +655,11 @@ function standard_check_crumb(root, slug, tool) {
  * 발행된 도구 페이지만 검사한다. 초안은 아직 규약에 맞지 않는 것이 정상이고,
  * 맞추기 전에는 `published: false`라 배포되지 않는다.
  */
-export function standard_run(root, tools) {
+export function standard_run(root, tools, { revised = STYLE_REVISED_SLUGS } = {}) {
   const violations = [];
+  const isRevised = (slug) => revised === STYLE_REVISED_ALL || revised.has(slug);
   const fontSizes = standard_read_figure_font_sizes(root);
+  const pages = [];
   for (const tool of tools.TOOLS) {
     if (!tool.published) continue;
     const slug = tool.slug;
@@ -504,8 +674,12 @@ export function standard_run(root, tools) {
     violations.push(...standard_check_figures(route, html));
     violations.push(...standard_check_figure_sources(root, slug, fontSizes));
     violations.push(...standard_check_prose(route, html));
+    // 09-27 이후 문체 규칙은 전환 목록의 편만 막는다(나머지는 standard_warn이 경고).
+    if (isRevised(slug)) violations.push(...standard_check_style(route, html));
     violations.push(...standard_check_crumb(root, slug, tool));
+    if (isRevised(slug)) pages.push({ route, blocks });
   }
+  violations.push(...standard_check_shared_headings(pages));
   return violations;
 }
 
@@ -518,7 +692,274 @@ export const STANDARD_LIMITS = {
   FIGURE_FONT_PX_MIN,
   BLOCK_ORDER,
   BANNED_WORDS,
+  STYLE_BANNED_PHRASES,
 };
+
+// ── F) 경고 — 사람이 판정한다(게이트를 막지 않는다) ────────────
+// 2026-10-01 작업지시서 PR-0. 편을 나란히 놓으면 보이는 틀(같은 낱말 줄·격언 결구·
+// 굵은 머리말 문단·"A, B and C" 제목)과 사이트 공통 규약 4종(UI 라벨·출처·숫자·자칭)은
+// 기계가 **후보**만 찾을 수 있다. 판정은 사람이 한다 — 그래서 막지 않고 찍는다.
+
+/** `<main>` 안에서 독자가 읽는 본문만. 반복 부품(바이라인·카드·Read next)과 그림 속 글자는 뺀다. */
+function warn_read_main(html) {
+  const main = /<main\b[^>]*>([\s\S]*?)<\/main>/i.exec(html)?.[1] ?? html;
+  return main
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+    .replace(/<noscript\b[\s\S]*?<\/noscript>/gi, " ")
+    .replace(/<svg\b[\s\S]*?<\/svg>/gi, " ")
+    .replace(/<article\b[^>]*\bclass="[^"]*\b(?:tool-card|feature)\b[\s\S]*?<\/article>/gi, " ")
+    .replace(/<div\b[^>]*\bclass="[^"]*\bbyline\b[^"]*"[^>]*>[\s\S]*?<\/div>/gi, " ")
+    .replace(/<h2\b[^>]*data-block="related"[\s\S]*$/i, " ");
+}
+
+/** 본문 HTML을 절(H2) 단위로 나눈다. 첫 덩어리는 리드(role "lead"). */
+function warn_split_sections(main) {
+  const sections = [];
+  const scanner = /<h2\b([^>]*)>([\s\S]*?)<\/h2>/gi;
+  let last = 0;
+  let current = { role: "lead", title: "", start: 0 };
+  let found;
+  while ((found = scanner.exec(main)) !== null) {
+    sections.push({ ...current, html: main.slice(last, found.index) });
+    current = {
+      role: /\bdata-block="([^"]+)"/.exec(found[1])?.[1] ?? null,
+      title: standard_strip_tags(found[2]),
+    };
+    last = scanner.lastIndex;
+  }
+  sections.push({ ...current, html: main.slice(last) });
+  return sections;
+}
+
+/** 덩어리 안 `<p>`의 읽는 글자(출처 목록 제외). */
+function warn_read_paragraphs(html) {
+  const body = html.replace(/<ul\b[^>]*\bclass="[^"]*\bsources\b[\s\S]*?<\/ul>/gi, " ");
+  return [...body.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)].map((m) => ({
+    raw: m[1],
+    text: standard_strip_tags(m[1]),
+  })).filter((p) => p.text);
+}
+
+/** 낱말 목록. 소문자, 따옴표·구두점 제거. */
+function warn_read_words(text) {
+  return text.toLowerCase().replace(/[“”"‘’']/g, "").match(/[a-z0-9]+(?:[.-][a-z0-9]+)*/g) ?? [];
+}
+
+/** 위젯 소스의 문자열 리터럴에서 UI 라벨 후보를 뽑는다. 화면 글자는 위젯이 그리므로 dist에 없다. */
+function warn_read_labels(root, slug) {
+  const path = join(root, WIDGETS_DIR, slug, WIDGET_FILE);
+  if (!existsSync(path)) return [];
+  const source = readFileSync(path, "utf8").replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, " ");
+  const labels = new Set();
+  for (const m of source.matchAll(/'([^'\n\\]*)'|"([^"\n\\]*)"|`([^`\\]*)`/g)) {
+    const literal = m[1] ?? m[2] ?? m[3] ?? "";
+    // " — " 앞 조각이 제목이고 뒤는 값 설명이다. 자리표시자(${…})가 든 조각은 문장 틀이지 라벨이 아니다
+    // ("The model puts ${…}"를 라벨로 잡으면 본문의 귀속 문장이 전부 걸린다).
+    for (const piece of literal.split(/\s—\s/)) {
+      if (piece.includes("${")) continue;
+      const label = piece.trim().replace(/[.:]$/, "");
+      const words = label.split(/\s+/).length;
+      if (label.length < WARN_LABEL_CHARS_MIN || words > WARN_LABEL_WORDS_MAX) continue;
+      if (!WARN_LABEL_SHAPE.test(label) || /\bpx\b|\bsans\b/i.test(label)) continue;
+      labels.add(label);
+    }
+  }
+  return [...labels];
+}
+
+/** (e) UI 라벨이 “ ” 없이 본문에 나오는 자리. 한 낱말 라벨은 문장 첫머리면 넘긴다. */
+function warn_check_labels(file, paragraphs, labels) {
+  const out = [];
+  const seen = new Set();
+  for (const label of labels) {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const scanner = new RegExp(`(^|[^A-Za-z0-9])${escaped}(?![A-Za-z0-9])`, "g");
+    for (const { text } of paragraphs) {
+      for (const m of text.matchAll(scanner)) {
+        const at = m.index + m[1].length;
+        const before = text.slice(Math.max(0, at - 1), at);
+        const after = text.slice(at + label.length, at + label.length + 2);
+        if (before === "“" && /^[.,]?”/.test(after)) continue;
+        const single = !/\s/.test(label);
+        if (single && /(^|[.!?:]\s+)$/.test(text.slice(Math.max(0, at - 3), at))) continue;
+        const key = `${label}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const quote = before === '"' || before === "'" || before === "‘" ? "곧은·작은따옴표" : "따옴표 없음";
+        out.push({ file, rule: "label", message: `UI 라벨 "${label}"이 ${quote}로 나온다 — “ ”로 감싼다 (규약 §6 사이트 공통 규약) — …${text.slice(Math.max(0, at - 30), at + label.length + 30)}…` });
+      }
+    }
+  }
+  return out;
+}
+
+/** 한 도구 페이지의 경고 (b)(c)(d)(e)(g)(h). */
+function warn_check_page(root, slug, route, html, revisedCheck) {
+  const file = `${DIST_DIR}/${route}`;
+  const out = [];
+  const say = (rule, message) => out.push({ file, rule, message });
+  const main = warn_read_main(html);
+  const sections = warn_split_sections(main);
+
+  for (const section of sections) {
+    // (d) H2가 "A, B and C" 3항 나열형
+    if (section.title && /,[^,]*\band\b/.test(section.title)) {
+      say("heading-list", `H2 "${section.title}"이 "A, B and C" 나열형이다 (규약 §7)`);
+    }
+    const paragraphs = warn_read_paragraphs(section.html).filter((p) => !WARN_NAV_PARAGRAPH.test(p.text));
+    // (b') 경구형 두 문장 제목("X. Y.") — 규약 §7: 사이트에 한두 번만
+    if (section.title && style_split_sentences(section.title).length >= 2) {
+      say("aphorism", `H2 "${section.title}"이 두 문장 경구형이다 (규약 §7 — 사이트에 한두 번만)`);
+    }
+    // (b) 격언 결구 — 절의 마지막 두 문장이 둘 다 짧은 마침표 문장
+    const lastParagraph = paragraphs[paragraphs.length - 1];
+    if (lastParagraph && section.role !== "about") {
+      const sentences = style_split_sentences(lastParagraph.text);
+      const tail = sentences.slice(-2);
+      if (tail.length === 2 && tail.every((s) => s.endsWith(".") && s.split(/\s+/).length <= WARN_APHORISM_WORDS_MAX)) {
+        say("aphorism", `절 "${section.title || "리드"}"이 두 박자 격언으로 끝난다 — …${tail.join(" ")} (규약 §6 절대규칙 2)`);
+      }
+    }
+    // (c) 굵은 머리말 문단
+    const leads = paragraphs.filter(({ raw, text }) => {
+      if (/^\s*<(?:strong|b)\b/i.test(raw)) return true;
+      const first = style_split_sentences(text)[0] ?? "";
+      return first !== text && first.endsWith(".") && first.split(/\s+/).length <= WARN_LABEL_LEAD_WORDS_MAX;
+    });
+    if (leads.length > WARN_BOLD_LEAD_PER_SECTION_MAX) {
+      say("bold-lead", `절 "${section.title || "리드"}"에 굵은 머리말·"Label." 문단이 ${leads.length}개 — 절당 ${WARN_BOLD_LEAD_PER_SECTION_MAX}개까지 (${leads.map((l) => `"${style_split_sentences(l.text)[0]}"`).join(", ")})`);
+    }
+    // (h) About 절 밖의 1인칭 헤지
+    if (section.role !== "about") {
+      for (const { text } of paragraphs) {
+        const hedge = WARN_HEDGE_PATTERNS.find((p) => p.test(text));
+        if (hedge) say("hedge", `About 절 밖의 헤지 "${hedge.source.replace(/\\b/g, "")}" — About 페이지 "What I could not check"로 옮긴다 — …${text.slice(0, 80)}…`);
+      }
+    }
+  }
+
+  // (g) 캡션이 바로 앞·뒤 문단과 낱말 줄로 겹침
+  for (const m of main.matchAll(/(<p\b[^>]*>[\s\S]*?<\/p>)?\s*<figure\b[\s\S]*?<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>[\s\S]*?<\/figure>\s*(<p\b[^>]*>[\s\S]*?<\/p>)?/gi)) {
+    const caption = warn_read_words(standard_strip_tags(m[2]));
+    const grams = new Set();
+    for (let i = 0; i + WARN_CAPTION_OVERLAP_WORDS <= caption.length; i += 1) grams.add(caption.slice(i, i + WARN_CAPTION_OVERLAP_WORDS).join(" "));
+    for (const neighbour of [m[1], m[3]].filter(Boolean)) {
+      const words = warn_read_words(standard_strip_tags(neighbour));
+      for (let i = 0; i + WARN_CAPTION_OVERLAP_WORDS <= words.length; i += 1) {
+        const gram = words.slice(i, i + WARN_CAPTION_OVERLAP_WORDS).join(" ");
+        if (grams.has(gram)) {
+          say("caption-overlap", `캡션이 옆 문단과 ${WARN_CAPTION_OVERLAP_WORDS}낱말 넘게 겹친다 — "${gram}" (규약 §6: 캡션은 옆 본문에 없는 정보만)`);
+          break;
+        }
+      }
+    }
+  }
+
+  const prose = warn_read_paragraphs(main);
+  // (e) 숫자 — 쉼표 천 단위
+  for (const { text } of prose) {
+    for (const n of text.matchAll(WARN_COMMA_THOUSANDS)) {
+      say("number", `천 단위를 쉼표로 썼다 "${n[0]}" — 공백으로(1 259.3, 101 325) (규약 §6 사이트 공통 규약)`);
+    }
+  }
+  // (e) 출처 — 링크 또는 "No DOI"·"No stable link", 1인칭 금지
+  const sources = /<ul\b[^>]*\bclass="[^"]*\bsources\b[^"]*"[^>]*>([\s\S]*?)<\/ul>/i.exec(main)?.[1] ?? "";
+  for (const li of sources.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)) {
+    const text = standard_strip_tags(li[1]);
+    if (!WARN_SOURCE_LINK_OK.test(li[1])) say("source", `출처 항목에 링크도 "No DOI"·"No stable link"도 없다 — …${text.slice(0, 70)}…`);
+    if (WARN_SOURCE_FIRST_PERSON.test(text)) say("source", `출처 항목에 1인칭 문장 — 검증 메모는 About으로 — …${text.slice(0, 70)}…`);
+  }
+  // (e) UI 라벨
+  out.push(...warn_check_labels(file, prose.concat(
+    [...main.matchAll(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/gi)].map((c) => ({ raw: c[1], text: standard_strip_tags(c[1]) }))
+  ), warn_read_labels(root, slug)));
+  // 전환 목록 밖의 편: 막는 문체 규칙을 경고로
+  if (revisedCheck) {
+    for (const v of standard_check_style(route, html)) out.push({ ...v, rule: "style-pending", message: `[전환 대기] ${v.message}` });
+  }
+  return out;
+}
+
+/** (e) 자칭 — 허브·도구 페이지 모두. */
+function warn_check_self_name(file, html) {
+  const out = [];
+  for (const { text } of warn_read_paragraphs(warn_read_main(html))) {
+    for (const m of text.matchAll(WARN_SELF_NAME)) {
+      out.push({ file, rule: "self-name", message: `사이트 자칭 "${m[0]}" — "tool"로 통일 ("widget"은 화면 부품만) — …${text.slice(Math.max(0, m.index - 30), m.index + 40)}…` });
+    }
+  }
+  return out;
+}
+
+/** (a) 사이트 전체 n-gram. 한 편의 낱말 줄이 **다른** 편에 WARN_NGRAM_OTHER_MAX회 넘게 나오면. */
+function warn_check_ngrams(pages) {
+  const counts = new Map(); // gram → Map(route → count)
+  for (const { route, words } of pages) {
+    for (let i = 0; i + WARN_NGRAM_WORDS <= words.length; i += 1) {
+      const slice = words.slice(i, i + WARN_NGRAM_WORDS);
+      if (slice.every((w) => WARN_NGRAM_STOPWORDS.has(w) || /^\d/.test(w))) continue;
+      const gram = slice.join(" ");
+      const byRoute = counts.get(gram) ?? new Map();
+      byRoute.set(route, (byRoute.get(route) ?? 0) + 1);
+      counts.set(gram, byRoute);
+    }
+  }
+  const hits = [];
+  for (const [gram, byRoute] of counts) {
+    if (byRoute.size < 2) continue;
+    const total = [...byRoute.values()].reduce((a, b) => a + b, 0);
+    if ([...byRoute.values()].some((c) => total - c > WARN_NGRAM_OTHER_MAX)) hits.push({ gram, byRoute, total });
+  }
+  hits.sort((a, b) => b.byRoute.size - a.byRoute.size || b.total - a.total);
+  const out = hits.slice(0, WARN_NGRAM_REPORT_MAX).map(({ gram, byRoute, total }) => ({
+    file: DIST_DIR,
+    rule: "ngram",
+    message: `"${gram}" ${total}회 · ${[...byRoute.keys()].map((r) => r.replace(/\/?index\.html$/, "") || "/").join(", ")} (편 사이 같은 낱말 줄)`,
+  }));
+  if (hits.length > WARN_NGRAM_REPORT_MAX) out.push({ file: DIST_DIR, rule: "ngram", message: `… 외 ${hits.length - WARN_NGRAM_REPORT_MAX}줄` });
+  return out;
+}
+
+/**
+ * 경고 목록. 게이트(`standard_run`)와 달리 **막지 않는다** — check-publish가 찍기만 한다.
+ * 발행 편 + 허브(홈·About·카테고리)를 본다.
+ */
+export function standard_warn(root, tools, { revised = STYLE_REVISED_SLUGS } = {}) {
+  const warnings = [];
+  const isRevised = (slug) => revised === STYLE_REVISED_ALL || revised.has(slug);
+  const corpus = [];
+  const labelsAll = [];
+  for (const tool of tools.TOOLS) {
+    if (!tool.published) continue;
+    const route = `${tool.slug}/${DIST_PAGE_NAME}`;
+    const distPath = join(root, DIST_DIR, tool.slug, DIST_PAGE_NAME);
+    if (!existsSync(distPath)) continue;
+    const html = readFileSync(distPath, "utf8");
+    warnings.push(...warn_check_page(root, tool.slug, route, html, !isRevised(tool.slug)));
+    warnings.push(...warn_check_self_name(`${DIST_DIR}/${route}`, html));
+    labelsAll.push(...warn_read_labels(root, tool.slug));
+    corpus.push({ route, html });
+  }
+  const hubRoutes = [...HUB_ROUTES, ...(tools.CATEGORIES ?? []).map((c) => `${String(c.href ?? "").replace(/^\//, "")}/${DIST_PAGE_NAME}`)];
+  for (const route of hubRoutes) {
+    const path = join(root, DIST_DIR, route);
+    if (!existsSync(path)) continue;
+    const html = readFileSync(path, "utf8");
+    warnings.push(...warn_check_self_name(`${DIST_DIR}/${route}`, html));
+    corpus.push({ route, html });
+  }
+  // n-gram 말뭉치: 출처·UI 라벨을 지운 본문 낱말.
+  const labelPattern = labelsAll.length
+    ? new RegExp(labelsAll.map((l) => l.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).sort((a, b) => b.length - a.length).join("|"), "g")
+    : null;
+  const pages = corpus.map(({ route, html }) => {
+    const text = warn_read_paragraphs(warn_read_main(html)).map((p) => p.text).join(" ");
+    return { route, words: warn_read_words(labelPattern ? text.replace(labelPattern, " ") : text) };
+  });
+  warnings.push(...warn_check_ngrams(pages));
+  return warnings;
+}
 
 // ── 실측 보고 ──────────────────────────────────────────────
 /**

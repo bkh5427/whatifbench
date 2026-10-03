@@ -6,10 +6,10 @@
 export function fixture_format_article(over = {}) {
   const blocks = over.blocks ?? [
     ["reversal", "The count moves, the answer does not"],
-    ["howto", "How to read what you are looking at"],
+    ["howto", "Reading the chart"],
     ["math", "Why the ratio holds"],
-    ["byhand", "One case, counted by hand"],
-    ["assumptions", "Three rules, all load-bearing"],
+    ["byhand", "One case worked on paper"],
+    ["assumptions", "What the model holds fixed"],
     ["limits", "Where the model stops"],
     ["about", "About this page"],
   ];
@@ -22,12 +22,12 @@ export function fixture_format_article(over = {}) {
     { length: figures },
     (_, i) =>
       `<figure class="fig"><svg viewBox="0 0 420 ${over.figHeight ?? 120}"></svg>` +
-      `<figcaption>In this model, figure ${i + 1}.</figcaption></figure>`
+      `<figcaption>Figure ${i + 1} shows one case.</figcaption></figure>`
   ).join("");
   // 위젯 **앞** 도해 한 장 — 규약 §5.5 S7. 가로 띠여야 한다 (§1.5).
   const leadFig = over.leadFig === null ? "" :
     `<figure class="fig"><svg viewBox="0 0 ${over.leadFigW ?? 420} ${over.leadFigH ?? 120}"></svg>` +
-    `<figcaption>In this model, the rule.</figcaption></figure>`;
+    `<figcaption>The rule, drawn once.</figcaption></figure>`;
   return (
     `<!DOCTYPE html><html><body><main>` +
     `<h1>A clean tool</h1><p class="deck">${over.deck ?? "One line that says why to read."}</p>` +
