@@ -1,0 +1,150 @@
+---
+/**
+ * 도해 3 — 증명. 손계산 절에 놓는다.
+ *
+ * 상위 형태는 규약 §5가 못박은 것 그대로다: **독립된 두 경로가 같은 답에서 만난다.**
+ * 왼쪽은 미터와 초로만 간 길, 오른쪽은 킬로미터와 시간으로만 간 길이다.
+ * 이 모델이 틀릴 수 있는 자리는 단위 환산 하나뿐이라, 두 길이 만나면 그 하나가 맞다.
+ *
+ * 왼쪽 숫자는 모델 함수가 직접 낸다. 오른쪽은 모델을 거치지 않는다 —
+ * 거치면 두 경로가 아니라 한 경로가 된다.
+ */
+import {
+  UNIT_KMH,
+  SPEED_UNITS,
+  MINUTES_PER_HOUR,
+  SECONDS_PER_MINUTE,
+  model_calculate_distance_to_metres,
+  model_calculate_speed_to_ms,
+  model_calculate_travel_seconds,
+} from "@widgets/speed-vs-time-saved/model.js";
+import { display_format_minutes } from "@widgets/speed-vs-time-saved/widget.js";
+
+// ── 손으로 세는 한 경우. 페이지 본문이 쓰는 것과 같은 값이다 ──
+const CASE_DISTANCE = 10;
+const CASE_FROM = 40;
+const CASE_TO = 60;
+
+// ── 자릿수 ─────────────────────────────────────────────────
+const SECOND_DIGITS = 1;
+const HOUR_DIGITS = 4;
+
+// ── 판 크기 ────────────────────────────────────────────────
+const FIG_W = 420;
+const FIG_H = 268;
+
+// ── 두 기둥 ────────────────────────────────────────────────
+const COL_Y = 40;
+const COL_H = 128;
+const COL_W = 186;
+const COL_LEFT_X = 16;
+const COL_RIGHT_X = 218;
+const COL_HEAD_Y = 62;
+const ROW_Y = [92, 118, 148];
+const ROW_LABEL_PAD = 12;
+const ROW_VALUE_PAD = 12;
+const SUM_RULE_Y = 130;
+const SUM_RULE_PAD = 12;
+
+// ── 합류 상자 ──────────────────────────────────────────────
+const JOIN_X = 90;
+const JOIN_Y = 206;
+const JOIN_W = 240;
+const JOIN_H = 46;
+const JOIN_TEXT_Y = 224;
+const JOIN_VALUE_Y = 244;
+const ARROW_HEAD = 6;
+
+const unit = SPEED_UNITS[UNIT_KMH];
+
+// ── 길 1 — 미터와 초. 모델 함수만 쓴다 ──────────────────────
+const distanceMetres = model_calculate_distance_to_metres(CASE_DISTANCE, UNIT_KMH);
+const secondsFrom = model_calculate_travel_seconds(distanceMetres, model_calculate_speed_to_ms(CASE_FROM, UNIT_KMH));
+const secondsTo = model_calculate_travel_seconds(distanceMetres, model_calculate_speed_to_ms(CASE_TO, UNIT_KMH));
+const secondsGap = secondsFrom - secondsTo;
+
+// ── 길 2 — 킬로미터와 시간. 모델을 거치지 않는다 ────────────
+const hoursFrom = CASE_DISTANCE / CASE_FROM;
+const hoursTo = CASE_DISTANCE / CASE_TO;
+const hoursGap = hoursFrom - hoursTo;
+
+const answerText = `${display_format_minutes(secondsGap / SECONDS_PER_MINUTE)} min`;
+const answerCheck = display_format_minutes(hoursGap * MINUTES_PER_HOUR) === display_format_minutes(secondsGap / SECONDS_PER_MINUTE);
+if (!answerCheck) throw new Error("두 경로가 갈라졌다 — 도해가 거짓을 그리게 둘 수 없다");
+
+const seconds_text = (value) => `${value.toFixed(SECOND_DIGITS)} s`;
+const hours_text = (value) => `${value.toFixed(HOUR_DIGITS)} h`;
+
+const COLUMNS = [
+  {
+    x: COL_LEFT_X,
+    head: "metres and seconds",
+    rows: [
+      { label: `at ${CASE_FROM} ${unit.speedLabel}`, value: seconds_text(secondsFrom) },
+      { label: `at ${CASE_TO} ${unit.speedLabel}`, value: seconds_text(secondsTo) },
+      { label: "gap", value: seconds_text(secondsGap) },
+    ],
+  },
+  {
+    x: COL_RIGHT_X,
+    head: `${unit.distanceLabel} and hours`,
+    rows: [
+      { label: `at ${CASE_FROM} ${unit.speedLabel}`, value: hours_text(hoursFrom) },
+      { label: `at ${CASE_TO} ${unit.speedLabel}`, value: hours_text(hoursTo) },
+      { label: "gap", value: hours_text(hoursGap) },
+    ],
+  },
+];
+
+const FIG_ALT =
+  `One trip of ${CASE_DISTANCE} ${unit.distanceLabel}, worked twice by two paths that share no step. ` +
+  `The left column works in metres and seconds: at ${CASE_FROM} ${unit.speedLabel} the trip takes ` +
+  `${seconds_text(secondsFrom)}, at ${CASE_TO} ${unit.speedLabel} it takes ${seconds_text(secondsTo)}, ` +
+  `and the gap between them is ${seconds_text(secondsGap)}. The right column works in ` +
+  `${unit.distanceLabel} and hours and never touches metres: ${hours_text(hoursFrom)}, ` +
+  `${hours_text(hoursTo)}, and a gap of ${hours_text(hoursGap)}. An arrow runs down from each column ` +
+  `into one box at the bottom, which holds a tick mark and the single answer ${answerText}.`;
+---
+
+<svg class="fig-svg" viewBox={`0 0 ${FIG_W} ${FIG_H}`} role="img" aria-label={FIG_ALT}>
+  <text x={FIG_W / 2} y="24" class="fig-label" fill="var(--graphite)" text-anchor="middle">one trip, two ways to work it</text>
+
+  {COLUMNS.map((column) => (
+    <g>
+      <rect x={column.x} y={COL_Y} width={COL_W} height={COL_H} rx="2" fill="var(--surface)" stroke="var(--rule)" stroke-width="1" />
+      <text x={column.x + COL_W / 2} y={COL_HEAD_Y} class="fig-label" fill="var(--graphite)" text-anchor="middle">{column.head}</text>
+      {column.rows.map((row, index) => (
+        <g>
+          <text x={column.x + ROW_LABEL_PAD} y={ROW_Y[index]} class="fig-label-dim" fill="var(--graphite-soft)">{row.label}</text>
+          <text x={column.x + COL_W - ROW_VALUE_PAD} y={ROW_Y[index]} class="fig-value" fill="var(--graphite)" text-anchor="end">{row.value}</text>
+        </g>
+      ))}
+      <line
+        x1={column.x + SUM_RULE_PAD} y1={SUM_RULE_Y} x2={column.x + COL_W - SUM_RULE_PAD} y2={SUM_RULE_Y}
+        stroke="var(--graphite)" stroke-width="1"
+      />
+    </g>
+  ))}
+
+  <!-- 두 길이 아래에서 만난다 -->
+  <path
+    d={`M${COL_LEFT_X + COL_W / 2},${COL_Y + COL_H} L${COL_LEFT_X + COL_W / 2},${JOIN_Y - 22} L${JOIN_X + JOIN_W / 2 - 30},${JOIN_Y - 22} L${JOIN_X + JOIN_W / 2 - 30},${JOIN_Y - ARROW_HEAD}`}
+    fill="none" stroke="var(--graphite-soft)" stroke-width="1.5"
+  />
+  <path
+    d={`M${JOIN_X + JOIN_W / 2 - 30 - ARROW_HEAD},${JOIN_Y - ARROW_HEAD * 2} L${JOIN_X + JOIN_W / 2 - 30},${JOIN_Y} L${JOIN_X + JOIN_W / 2 - 30 + ARROW_HEAD},${JOIN_Y - ARROW_HEAD * 2}`}
+    fill="none" stroke="var(--graphite-soft)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+  />
+  <path
+    d={`M${COL_RIGHT_X + COL_W / 2},${COL_Y + COL_H} L${COL_RIGHT_X + COL_W / 2},${JOIN_Y - 22} L${JOIN_X + JOIN_W / 2 + 30},${JOIN_Y - 22} L${JOIN_X + JOIN_W / 2 + 30},${JOIN_Y - ARROW_HEAD}`}
+    fill="none" stroke="var(--graphite-soft)" stroke-width="1.5"
+  />
+  <path
+    d={`M${JOIN_X + JOIN_W / 2 + 30 - ARROW_HEAD},${JOIN_Y - ARROW_HEAD * 2} L${JOIN_X + JOIN_W / 2 + 30},${JOIN_Y} L${JOIN_X + JOIN_W / 2 + 30 + ARROW_HEAD},${JOIN_Y - ARROW_HEAD * 2}`}
+    fill="none" stroke="var(--graphite-soft)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+  />
+
+  <rect x={JOIN_X} y={JOIN_Y} width={JOIN_W} height={JOIN_H} rx="2" fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+  <text x={JOIN_X + JOIN_W / 2} y={JOIN_TEXT_Y} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">the two paths agree</text>
+  <text x={JOIN_X + JOIN_W / 2} y={JOIN_VALUE_Y} class="fig-num" fill="var(--graphite)" text-anchor="middle">✓ {answerText}</text>
+</svg>

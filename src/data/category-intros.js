@@ -89,8 +89,11 @@ export const INTROS = {
   },
 
   motion: {
+    // 2026-10-03: 세 편(speed·bicycle·projectile)을 함께 내며 연다. 사실 검사로 설명문
+    // ("each chart marking where the formula stops holding" — 차트가 한계를 표시하지 않음)과
+    // 출처·계수·0.536분 서술을 고쳤다.
     description:
-      "Vehicles and the formulas behind them, each chart marking where the formula stops holding.",
+      "Things that move and the formulas behind them, with each page's limits written out.",
     paragraphs: [
       `This section is about things that move, and about how badly the intuition
        for them scales. A bicycle drivetrain, a thrown ball, a car on an open
@@ -99,23 +102,23 @@ export const INTROS = {
       `Take the most familiar of them. Time saved by going faster is governed by
        the reciprocal of speed, not by speed, so a fixed increase returns a
        shrinking amount. The same twenty kilometres an hour is worth fifteen
-       minutes over ten kilometres at 20 km/h and half a minute at 140 — a factor
+       minutes over ten kilometres at 20 km/h and just over half a minute at 140 — a factor
        of twenty-eight across one slider. Reciprocals do that quietly, which is why
        a question about speed is worth a dial rather than a worked example.`,
-      `Some of what belongs here runs a standard formula over coefficients taken
-       from published tables, which makes it a different sort of thing from the
+      `Some of what belongs here runs a standard formula over coefficients that
+       no derivation fixes, which makes it a different sort of thing from the
        probability pages. A probability model is true or false given its rules. A
        drag model is an approximation fitted to measurements that scatter, and it
        can be applied perfectly correctly and still miss the real number by a wide
-       margin. So every coefficient is sourced to the document it came from, and
-       each page names what its formula has no term for.`,
+       margin. So the coefficients that come from a document are sourced to it, and
+       each page names what its formula leaves out.`,
       `A drag model gets built accordingly: integrate a quadratic drag term, draw
        the vacuum solution behind it as a ghost line, and put the textbook 45° and
        the model's own optimum on one pair of axes — along with how much range
        is lost by throwing at 45° instead: about 1% for a baseball at 40 m/s,
        close to 10% for a beach ball at the same speed, and more for both as the
        launch speed rises. Not everything here is fitted, though. A drivetrain is one
-       ratio of tooth counts multiplied by one length, so no measured coefficient
+       ratio of tooth counts scaled by fixed lengths of wheel and crank, so no measured coefficient
        enters at all — and even then a geometric assumption does, and calling two
        gears duplicates is a threshold somebody has to choose rather than a fact
        about the bicycle. What such a model carries no term for is effort:

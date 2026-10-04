@@ -141,3 +141,38 @@ ${band}${water.markup}${energy.markup}</svg>
 `;
   writeFileSync("src/art/energy.svg", svg);
 }
+
+// ── Motion: 같은 출발 속도·각도로 진공 포물선(점선)과 이차 항력 궤적(실선)을 수치로 적분해 그린다 ──
+// 2026-10-03 motion 분류를 열며 더했다. 사실 검사(E16): 손으로 그린 곡선은 출발각이 점선과 달랐다 —
+// 이제 두 경로 모두 같은 출발각에서 시작하고, 항력 경로는 꼭짓점이 사거리 절반 너머에, 착지가 출발보다 가파르다.
+// 색은 중립 강철 톤만 쓴다(계열 색의 뜻이 도구마다 다르다). 글자·숫자 없음.
+{
+  const W = 560, H = 360, X0 = 40, Y0 = 300, X1 = 520, TOP = 40;
+  const G = 9.81, V0 = 30, ANGLE = (55 * Math.PI) / 180, K = 0.02, DT = 0.002;
+  const path = (k) => {
+    let x = 0, y = 0, vx = V0 * Math.cos(ANGLE), vy = V0 * Math.sin(ANGLE);
+    const pts = [[0, 0]];
+    while (y >= 0) {
+      const v = Math.hypot(vx, vy);
+      vx += -k * v * vx * DT;
+      vy += (-G - k * v * vy) * DT;
+      x += vx * DT; y += vy * DT;
+      if (y >= 0) pts.push([x, y]);
+    }
+    return pts;
+  };
+  const vac = path(0), drag = path(K);
+  const xMax = Math.max(...vac.map((p) => p[0])), yMax = Math.max(...vac.map((p) => p[1]));
+  const s = Math.min((X1 - X0) / xMax, (Y0 - TOP) / yMax);
+  const d = (pts, step) => pts.filter((_, i) => i % step === 0).map(([x, y], i) => `${i ? "L" : "M"}${f(X0 + x * s)} ${f(Y0 - y * s)}`).join("");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+  <!-- Motion: 같은 출발 속도·각도(55°)에서 진공 포물선(점선, 대칭)과 이차 항력 궤적(실선, 낮고 짧고 내리막이 가파름). 수치 적분으로 그림. 글자·숫자 없음 -->
+${grid(W, H, 20)}
+  <path d="M${X0} 30V${Y0}H${X1}" style="fill:none;stroke:var(--steel-500);stroke-width:1.5"/>
+  <path d="${d(vac, 40)}" style="fill:none;stroke:var(--steel-400);stroke-width:2.5;stroke-dasharray:7 6"/>
+  <path d="${d(drag, 40)}" style="fill:none;stroke:var(--steel-200);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round"/>
+  <circle cx="${X0}" cy="${Y0}" r="7" style="fill:var(--steel-300)"/>
+</svg>
+`;
+  writeFileSync("src/art/motion.svg", svg);
+}

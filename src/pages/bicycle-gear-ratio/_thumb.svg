@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
+  <!-- 기어 사다리(로그 가로축)를 줄인 그림. 위젯과 같은 색 뜻: 위 줄 = 첫 앞 링(50T) --series-1, 아래 줄 = 둘째 앞 링(34T) --series-2. 속 빈 점 = 허용오차 안에 짝이 있는 조합, 회색 점선 = 그 짝(기본 50/34·11–28·5%에서 계산한 위치). 글자·숫자 없음 -->
+  <rect width="320" height="200" style="fill:var(--steel-100)"/>
+  <path d="M0 20H320M0 40H320M0 60H320M0 80H320M0 100H320M0 120H320M0 140H320M0 160H320M0 180H320M20 0V200M40 0V200M60 0V200M80 0V200M100 0V200M120 0V200M140 0V200M160 0V200M180 0V200M200 0V200M220 0V200M240 0V200M260 0V200M280 0V200M300 0V200" style="fill:none;stroke:var(--steel-200);stroke-width:1"/>
+  <path d="M24 168H296" style="fill:none;stroke:var(--steel-400);stroke-width:1.5"/>
+  <path d="M203.6 76L196.3 132M182.0 76L180.8 132M162.6 76L166.4 132M144.9 76L153.1 132M128.8 76L128.8 132M106.8 76L107.2 132" style="fill:none;stroke:var(--steel-500);stroke-width:1.5;stroke-dasharray:4 4"/>
+  <circle cx="288.0" cy="76" r="7" style="fill:var(--series-1);stroke:var(--series-1);stroke-width:0"/>
+  <circle cx="271.1" cy="76" r="7" style="fill:var(--series-1);stroke:var(--series-1);stroke-width:0"/>
+  <circle cx="255.6" cy="76" r="7" style="fill:var(--series-1);stroke:var(--series-1);stroke-width:0"/>
+  <circle cx="241.2" cy="76" r="7" style="fill:var(--series-1);stroke:var(--series-1);stroke-width:0"/>
+  <circle cx="227.8" cy="76" r="7" style="fill:var(--series-1);stroke:var(--series-1);stroke-width:0"/>
+  <circle cx="203.6" cy="76" r="7" style="fill:var(--steel-100);stroke:var(--series-1);stroke-width:2.5"/>
+  <circle cx="182.0" cy="76" r="7" style="fill:var(--steel-100);stroke:var(--series-1);stroke-width:2.5"/>
+  <circle cx="162.6" cy="76" r="7" style="fill:var(--steel-100);stroke:var(--series-1);stroke-width:2.5"/>
+  <circle cx="144.9" cy="76" r="7" style="fill:var(--steel-100);stroke:var(--series-1);stroke-width:2.5"/>
+  <circle cx="128.8" cy="76" r="7" style="fill:var(--steel-100);stroke:var(--series-1);stroke-width:2.5"/>
+  <circle cx="106.8" cy="76" r="7" style="fill:var(--steel-100);stroke:var(--series-1);stroke-width:2.5"/>
+  <circle cx="213.2" cy="132" r="7" style="fill:var(--series-2);stroke:var(--series-2);stroke-width:0"/>
+  <circle cx="196.3" cy="132" r="7" style="fill:var(--steel-100);stroke:var(--series-2);stroke-width:2.5"/>
+  <circle cx="180.8" cy="132" r="7" style="fill:var(--steel-100);stroke:var(--series-2);stroke-width:2.5"/>
+  <circle cx="166.4" cy="132" r="7" style="fill:var(--steel-100);stroke:var(--series-2);stroke-width:2.5"/>
+  <circle cx="153.1" cy="132" r="7" style="fill:var(--steel-100);stroke:var(--series-2);stroke-width:2.5"/>
+  <circle cx="128.8" cy="132" r="7" style="fill:var(--steel-100);stroke:var(--series-2);stroke-width:2.5"/>
+  <circle cx="107.2" cy="132" r="7" style="fill:var(--steel-100);stroke:var(--series-2);stroke-width:2.5"/>
+  <circle cx="87.8" cy="132" r="7" style="fill:var(--series-2);stroke:var(--series-2);stroke-width:0"/>
+  <circle cx="70.2" cy="132" r="7" style="fill:var(--series-2);stroke:var(--series-2);stroke-width:0"/>
+  <circle cx="54.0" cy="132" r="7" style="fill:var(--series-2);stroke:var(--series-2);stroke-width:0"/>
+  <circle cx="32.0" cy="132" r="7" style="fill:var(--series-2);stroke:var(--series-2);stroke-width:0"/>
+</svg>

@@ -105,7 +105,23 @@ const LOG_VALUE_SIGNIFICANT_DIGITS = 6;
  * 스텝을 바꿔도 표시 자릿수 안에서 변하지 않는 자리까지 내려야 한다.
  */
 export const PROJECTILE_STEP_SECONDS = 0.005;
-/** 폭주 방지. 유효범위 안에서는 닿지 않는다(v₀ 80 m/s·90°가 16.3초). */
+/**
+ * 항력이 큰 쪽의 스텝 상한 — **2026-10-03 추가.** 스텝은 min(위 기본 스텝, 이 값/(k·v₀))이다.
+ *
+ * 왜: 항력항을 선형화하면 속도 방향 고유값이 2k|v|이고, RK4는 2k|v|·Δt가 약 2.8을 넘으면
+ * 발산한다. 0.005초 고정 스텝은 m = 0.01 kg·Cd 1.2·A 0.2 m²·ρ 1.5(k = 18 /m)에서
+ * 2k·v₀·Δt = 7.2라, v₀ 40 m/s에서 사거리 0.00 m·착지 속력 101.9 m/s(발사보다 빠르다)를
+ * 화면에 냈다(shown.test.js가 독립 오라클로 잡았다). 이 모델에서 속력은 v₀를 넘지 못하므로
+ * (에너지가 줄기만 한다) k·v₀가 비행 내내 가장 빠른 감쇠율의 상한이다.
+ *
+ * k·v₀·Δt를 0.1 이하로 묶는다 — 안정 한계보다 수십 배 안쪽이라 표시 자릿수 안에서 정확하다.
+ * k·v₀ ≤ 20 /s(기본값 0.33 /s, 프리셋 전부 포함)에서는 기본 스텝이 그대로 남아 화면이 바뀌지 않는다.
+ */
+export const PROJECTILE_STEP_DRAG_LIMIT = 0.1;
+/**
+ * 폭주 방지. 유효범위 안에서는 닿지 않는다 — 기본 스텝에서는 v₀ 80 m/s·90°가 16.3초(3,300스텝),
+ * 항력 스텝이 가장 잘게 잘리는 구석(k = 18 /m, v₀ 80 m/s)도 0.52초에 약 7,500스텝이다.
+ */
 const STEP_MAX_COUNT = 40000;
 /** 착지·정점을 스텝 경계에서 자르지 않고 보간해 찾을 때의 허용오차(m, m/s). */
 const CROSSING_TOLERANCE = 1e-12;
@@ -191,6 +207,11 @@ export function model_calculate_log_value(axis, index) {
 /** 실제 값 → 가장 가까운 칸 번호. 값이 눈금 밖이면 끝 칸. */
 export function model_calculate_log_index(axis, value) {
   if (!(value > 0) || !Number.isFinite(value)) return 0;
+  // 양 끝은 끝 칸으로 — 2026-10-03 추가. 끝 칸의 값은 범위 밖으로 넘친 것을 클립한 값이라
+  // 가장 가까운 칸을 고르면 안쪽 칸이 걸린다. 최대 질량 칸이 URL에 m=5를 쓰고 다시 읽으면
+  // 123번 칸(4.999 kg), 최대 면적 a=0.2는 134번 칸(0.198 m²)으로 되돌아왔다.
+  if (value >= axis.maxValue) return axis.indexMax;
+  if (value <= axis.minValue) return axis.indexMin;
   const raw = Math.log10(value / axis.defaultValue) * axis.perDecade;
   return num_clamp_value(Math.round(raw), axis.indexMin, axis.indexMax);
 }
@@ -200,8 +221,34 @@ export function model_clamp_mass(value) {
   return model_calculate_log_value(PROJECTILE_MASS_AXIS, model_calculate_log_index(PROJECTILE_MASS_AXIS, value));
 }
 
+/**
+ * 눈금 위로 맞추되 **값 이상인 첫 칸**으로 — 2026-10-03 추가.
+ * 규정이 최소 질량으로 정해진 물체(투포환 4 kg)는 가장 가까운 칸으로 내리면 규정 밖이 된다
+ * (4 kg → 3.971 kg). 그래서 그 프리셋만 위쪽 칸으로 올린다.
+ */
+export function model_clamp_mass_at_least(value) {
+  let index = model_calculate_log_index(PROJECTILE_MASS_AXIS, value);
+  while (index < PROJECTILE_MASS_AXIS.indexMax && model_calculate_log_value(PROJECTILE_MASS_AXIS, index) < value) {
+    index += 1;
+  }
+  return model_calculate_log_value(PROJECTILE_MASS_AXIS, index);
+}
+
 export function model_clamp_area(value) {
   return model_calculate_log_value(PROJECTILE_AREA_AXIS, model_calculate_log_index(PROJECTILE_AREA_AXIS, value));
+}
+
+/**
+ * 면적 눈금 위로 맞추되 **값 이상인 첫 칸**으로 — 2026-10-03(B6 3회차) 추가.
+ * 규정이 최소 지름으로 정해진 물체(투포환 여자 95 mm)는 가장 가까운 칸으로 내리면 규정 밖이 된다
+ * (95 mm → 94.58 mm인데 화면은 "d = 95 mm"로 반올림해 보였다). 면적은 지름에 단조라 면적으로 올려도 같다.
+ */
+export function model_clamp_area_at_least(value) {
+  let index = model_calculate_log_index(PROJECTILE_AREA_AXIS, value);
+  while (index < PROJECTILE_AREA_AXIS.indexMax && model_calculate_log_value(PROJECTILE_AREA_AXIS, index) < value) {
+    index += 1;
+  }
+  return model_calculate_log_value(PROJECTILE_AREA_AXIS, index);
 }
 
 // ── 물체 프리셋 ─────────────────────────────────────────────
@@ -214,7 +261,10 @@ export function model_clamp_area(value) {
 const PRESET_SHAPES = [
   { key: 'baseball', label: 'Baseball', massKg: 0.145, diameterM: 0.073 },
   { key: 'tennis', label: 'Tennis ball', massKg: 0.058, diameterM: 0.067 },
-  { key: 'shot', label: 'Shot put', massKg: 4, diameterM: 0.095 },
+  // 투포환(여자) 4 kg·지름 95–110 mm — 출처 캐시 audit/sources/wiki-shot-put-p1003.md(4 kg),
+  // audit/sources/wiki-de-kugelstossen-p4.md(4 kg, 95–110 mm). 둘 다 규정 **최소**라 위쪽 칸으로 맞춘다:
+  // 질량 4.087 kg(가까운 칸 3.971 kg), 지름 95.95 mm(가까운 칸 94.58 mm). 95.95 mm는 상한 110 mm 안이다.
+  { key: 'shot', label: 'Shot put', massKg: 4, diameterM: 0.095, massAtLeast: true, diameterAtLeast: true },
   { key: 'beachball', label: 'Beach ball', massKg: 0.12, diameterM: 0.4 },
 ];
 
@@ -232,8 +282,10 @@ export const PROJECTILE_PRESETS = [
   ...PRESET_SHAPES.map((shape) => ({
     key: shape.key,
     label: shape.label,
-    massKg: model_clamp_mass(shape.massKg),
-    areaM2: model_clamp_area(model_calculate_area(shape.diameterM)),
+    massKg: shape.massAtLeast ? model_clamp_mass_at_least(shape.massKg) : model_clamp_mass(shape.massKg),
+    areaM2: shape.diameterAtLeast
+      ? model_clamp_area_at_least(model_calculate_area(shape.diameterM))
+      : model_clamp_area(model_calculate_area(shape.diameterM)),
     dragCoefficient: PROJECTILE_DRAG_DEFAULT,
   })),
   {
@@ -399,19 +451,30 @@ const model_read_rise = (state) => state.vy;
 const model_read_rise_slope = (state, dragFactor) => model_calculate_derivative(state, dragFactor).vy;
 
 /**
+ * 이 발사에 쓸 RK4 스텝 — 2026-10-03 추가. 기본 스텝과 항력 시간척도 0.1/(k·v₀) 중 작은 쪽.
+ * 각도에 의존하지 않는다 — 스윕의 모든 각도가 같은 스텝으로 적분되어야 사거리 곡선이
+ * 스텝 전환 때문에 꺾이지 않는다.
+ */
+export function model_calculate_step_seconds(dragFactor, speedMs) {
+  const dragRate = dragFactor * speedMs;
+  if (!(dragRate > 0)) return PROJECTILE_STEP_SECONDS;
+  return Math.min(PROJECTILE_STEP_SECONDS, PROJECTILE_STEP_DRAG_LIMIT / dragRate);
+}
+
+/**
  * 적분 경로 하나. 발사에서 착지까지.
  *
- * options.stepSeconds — 스텝 크기. 기본값은 표시 정밀도보다 훨씬 아래.
+ * options.stepSeconds — 스텝 크기. 없으면 model_calculate_step_seconds(기본 스텝, 항력이 크면 더 잘게).
  * options.samplePoints — 궤적 점을 남길지. **요약값은 이 옵션과 무관하다** —
  *   모델이 규정하지 않은 자유도를 바꿔도 답이 같아야 한다.
  */
 export function model_calculate_flight(params, options = {}) {
   model_read_checked_parameters(params);
-  const stepSeconds = options.stepSeconds ?? PROJECTILE_STEP_SECONDS;
+  const dragFactor = model_calculate_drag_factor(params);
+  const stepSeconds = options.stepSeconds ?? model_calculate_step_seconds(dragFactor, params.speedMs);
   if (!(stepSeconds > 0)) throw new RangeError('적분 스텝은 0보다 커야 한다.');
   const samplePoints = options.samplePoints === true;
 
-  const dragFactor = model_calculate_drag_factor(params);
   const radians = params.angleDeg / DEGREES_PER_RADIAN;
   let state = {
     t: 0,
@@ -525,6 +588,9 @@ export function model_calculate_summary(params, options = {}) {
     vacuumPoints: model_build_vacuum_path(params, drag.points.length),
     rangeRatio: vacuum.rangeMetres > 0 ? drag.rangeMetres / vacuum.rangeMetres : 1,
     rangeLostMetres: vacuum.rangeMetres - drag.rangeMetres,
+    // 두 경로가 얼마나 떨어져 있는가는 사거리 차만으로 못 잰다 — 90°에서는 사거리 차가 0이어도
+    // 정점이 수십 m 갈린다. 화면의 "구분 불가" 판정은 이 둘 중 큰 쪽을 쓴다.
+    apexLostMetres: vacuum.apexHeightMetres - drag.apexHeightMetres,
   };
 }
 

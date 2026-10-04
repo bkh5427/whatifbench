@@ -132,18 +132,31 @@ function reference_calculate_speed_via_angular(chainring, sprocket, beadSeatMm, 
   return (metresPerSecond * 3600) / METRES_PER_KM;
 }
 
-/** 세 정의 중 ①을 전수 대조하는 독립 경로. 정렬 없이 O(n²)로 훑는다. */
-function reference_count_removable(ratios, toleranceFraction) {
-  const order = ratios.slice().sort((a, b) => a - b);
+/** 허용오차를 이 배율의 정수로 다룬다(τ 눈금 0.5%p → 0.1%p 단위 정수면 충분하다). */
+const REFERENCE_TOLERANCE_PER_MILLE = 1000;
+
+/**
+ * 세 정의 중 ①을 전수 대조하는 독립 경로. 정렬 없이 O(n²)로 훑는다.
+ *
+ * 2026-10-03 개정: 예전에는 부동소수 비에 `<`를 걸어 모델과 **같은 오차**를 공유했다 —
+ * 상대차가 정확히 τ인 쌍(예: 22/20 = 1.1)을 둘 다 중복으로 셌으므로 대조가 아니라 재탕이었다.
+ * 이제 톱니 수 정수의 교차곱으로 판정한다: (C₁/S₁)/(C₂/S₂) = C₁S₂/(C₂S₁)이므로
+ * 상대차 < τ ⇔ |a − b|·1000 < τ‰·min(a, b),  a = C₁S₂, b = C₂S₁. 같으면 중복이 아니다.
+ */
+function reference_count_removable(combinations, tolerancePercent) {
+  const tolerancePerMille = Math.round(tolerancePercent * (REFERENCE_TOLERANCE_PER_MILLE / PERCENT_SCALE));
+  const order = combinations.slice().sort((x, y) => x.chainring * y.sprocket - y.chainring * x.sprocket);
   const kept = [];
   let removed = 0;
-  for (const ratio of order) {
+  for (const item of order) {
     let hasTwin = false;
     for (const other of kept) {
-      if (Math.abs(ratio - other) / Math.min(ratio, other) < toleranceFraction) hasTwin = true;
+      const a = item.chainring * other.sprocket;
+      const b = other.chainring * item.sprocket;
+      if (Math.abs(a - b) * REFERENCE_TOLERANCE_PER_MILLE < tolerancePerMille * Math.min(a, b)) hasTwin = true;
     }
     if (hasTwin) removed += 1;
-    else kept.push(ratio);
+    else kept.push(item);
   }
   return { removed, kept: kept.length };
 }
@@ -374,10 +387,7 @@ describe('중복 판정의 성질', () => {
   it('전수 대조 경로가 정의 ①과 같은 수를 센다', () => {
     for (const tolerancePercent of [GEAR_TOLERANCE_MIN, 3.5, GEAR_TOLERANCE_DEFAULT, 8, GEAR_TOLERANCE_MAX]) {
       const result = model_calculate_result(fixture_build_state({ tolerancePercent }));
-      const reference = reference_count_removable(
-        result.combinations.map((combination) => combination.ratio),
-        tolerancePercent / PERCENT_SCALE,
-      );
+      const reference = reference_count_removable(result.combinations, tolerancePercent);
       expect(result.removableCount).toBe(reference.removed);
       expect(result.distinctCount).toBe(reference.kept);
       expect(result.removableCount + result.distinctCount).toBe(result.combinationCount);

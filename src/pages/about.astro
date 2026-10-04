@@ -41,6 +41,12 @@ const NOT_CHECKED = {
     "Friis's 1946 paper and the IEEE 802.11-1997 standard (records checked; what Friis wrote is reported from secondary descriptions)",
   "shower-vs-bath":
     "the IAPWS-95 article (DOI record checked; the paywalled text not read); EN 232:2012 (catalogue entry only, so its silence on how much water a bath holds is taken from that description)",
+  "speed-vs-time-saved":
+    "Larrick and Soll's 2008 Science paper (not opened; the design of their first study is taken from Larrick's own summary, listed in the sources)",
+  "bicycle-gear-ratio":
+    "ISO 5775-1:2023 and ISO 5775-2:2021 (catalogue entries checked; the paid-for texts not read, so what the page says about the tyre marking and the rim diameter is reported, not verified against the standards); gear inches and development (no standard defining either was found, so the page defines them without a citation); the name “gain ratio” (no standard defines it, and no source for the name is cited); the crank length range, rolling circumference under load and the 5% duplicate threshold (no source; stated on the page as its own choices)",
+  "projectile-with-drag":
+    "ISO 2533:1975 (paywalled, so its sea-level figures are reported, not verified); Robins's 1742 New Principles of Gunnery and Johnson's 1986 article on it (neither text read, only the article's bibliographic record checked, so the account of his pendulum measurements is reported, not verified); Achenbach's 1972 sphere measurements (abstract only, which gives no size for the drop, so the sharp fall in the coefficient is reported, not verified)",
 };
 const notChecked = published.filter((t) => NOT_CHECKED[t.slug]);
 ---
@@ -102,8 +108,8 @@ const notChecked = published.filter((t) => NOT_CHECKED[t.slug]);
         Some sources I could not open or verify myself. Where a page leans on one
         of those, I name it here rather than link to a good guess. In brackets is
         what I relied on instead: where a figure was taken from, “records checked”
-        where I found the catalogue entry but not the text, or how much of it I
-        could read.
+        where I found the catalogue entry but not the text, how much of it I
+        could read, or, where the page cites no source, why it does not.
       </p>
       <ul class="not-checked">
         {notChecked.map((t) => (

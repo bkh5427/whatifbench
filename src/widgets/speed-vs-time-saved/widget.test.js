@@ -390,7 +390,10 @@ describe('첫 렌더', () => {
     expect(keys.length).toBe(2);
     // `.legend-key`는 다른 위젯도 쓰는 클래스다. 견본에 그대로 붙어 있어야 한다.
     for (const name of keys) expect(name.startsWith('legend-key ')).toBe(true);
-    expect(keys.filter((name) => name.includes('legend-tail-')).length).toBe(1);
+    // 천장 견본은 흑연색 점선(.legend-reference)이다. 주황(series-2) 견본은 쓰지 않는다 —
+    // 이 위젯에서 주황은 고정 지연(막대 빗금) 전용이다.
+    expect(keys.filter((name) => name.includes('legend-reference')).length).toBe(1);
+    expect(keys.filter((name) => name.includes('-2')).length).toBe(0);
     expect(dom.root.querySelector('.widget-legend').textContent).toContain('Ceiling');
   });
 
@@ -571,6 +574,33 @@ describe('축과 캡션 — 캡션은 렌더가 쓴 축만 인용한다', () => 
     }
     // 네 링크가 서로 다른 축을 그렸다. 같은 축만 나오면 이 테스트는 아무것도 못 지킨다.
     expect(seen.size).toBe(searches.length);
+  });
+
+  it('단위 토글도 가로축 범위를 바꾸므로 캡션이 토글을 화면의 라벨 그대로 함께 꼽는다', () => {
+    // 같은 SI 여행을 두 단위로 그린다. 가로축 위 끝이 m/s로도 다르면 토글이 범위를 바꾼 것이다.
+    const dom = fixture_create_dom({ search: '?d=10&v1=40&v2=60&t=0&u=kmh', width: 720 });
+    openDom = dom;
+    dom.install();
+    const widget_reset = widget_mount(dom.root);
+    const unitLabel = dom.root.querySelector('[id="speed-unit-label"]').textContent;
+    expect(unitLabel).toBe('Units on screen');
+
+    const trip = AXIS_CASES[0];
+    const tops = [UNIT_KMH, UNIT_MPH].map((unit) => {
+      const { drawn, caption } = fixture_render_axes(dom, { ...trip, unit });
+      expect(caption).toContain(
+        `the horizontal axis with the starting-speed slider and the “${unitLabel}” setting, so read them`,
+      );
+      return drawn.speedHigh * SPEED_UNITS[unit].msPerSpeed;
+    });
+    expect(Math.abs(tops[0] - tops[1])).toBeGreaterThan(1);
+
+    const notes = dom.root.querySelectorAll('.legend-note').map((el) => el.textContent);
+    expect(notes.some((text) => text.includes(`the “${unitLabel}” setting`))).toBe(true);
+
+    widget_reset();
+    dom.restore();
+    openDom = null;
   });
 });
 

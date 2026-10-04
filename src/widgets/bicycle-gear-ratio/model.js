@@ -87,6 +87,16 @@ export const GEAR_VERDICT_BREAK_MIN_SHARE = 0.35;
 /** 로그 폭이 이보다 좁으면 "구간"이라고 부를 수 없다. 0으로 나누는 것도 막는다. */
 export const GEAR_SPAN_EPSILON = 1e-12;
 
+/**
+ * 중복 판정의 경계 허용오차(절대, 비율 단위). "τ보다 작다"의 경계는 **열려 있다** —
+ * 상대차가 정확히 τ(예: 22/20 = 1.1, τ 10%)이면 중복이 아니다. 그런데 부동소수로 잰
+ * 상대차는 0.0999…로 떨어져 `<`가 참이 되곤 했다. 톱니 수는 60 이하·52 이하의 정수라
+ * 상대차는 분모 3,120 이하의 유리수이고 τ는 0.5%p 눈금이라, 둘이 다르면 최소 3×10⁻⁷
+ * 떨어진다. 그보다 훨씬 작고 부동소수 오차(10⁻¹⁵)보다 훨씬 큰 값을 둔다.
+ * 2026-10-03 오라클(shown.test.js)이 잡았다 — 같으면 중복으로 세어 판정 색까지 뒤집혔다.
+ */
+export const GEAR_DUPLICATE_EPSILON = 1e-9;
+
 /** 소수 자릿수 반올림 자리. 스텝 스냅에서 부동소수 꼬리를 잘라낸다. */
 const SNAP_DIGITS = 6;
 
@@ -406,10 +416,17 @@ export function model_calculate_relative_gap(ratioA, ratioB) {
   return Math.abs(ratioA - ratioB) / low;
 }
 
-/** 허용오차(비율)보다 가까우면 중복. 경계는 열려 있다 — "차이가 τ보다 작다". */
+/**
+ * 허용오차(비율)보다 가까우면 중복. 경계는 열려 있다 — "차이가 τ보다 작다".
+ * 정확히 τ인 쌍이 부동소수 꼬리로 안쪽에 떨어지지 않게 경계를 허용오차만큼 안으로 당긴다
+ * (2026-10-03, `GEAR_DUPLICATE_EPSILON` 참조). 판정은 **이 함수 하나만** 한다.
+ */
+export function model_check_duplicate_gap(gap, toleranceFraction) {
+  return gap !== null && gap < toleranceFraction - GEAR_DUPLICATE_EPSILON;
+}
+
 export function model_check_duplicate_pair(ratioA, ratioB, toleranceFraction) {
-  const gap = model_calculate_relative_gap(ratioA, ratioB);
-  return gap !== null && gap < toleranceFraction;
+  return model_check_duplicate_gap(model_calculate_relative_gap(ratioA, ratioB), toleranceFraction);
 }
 
 /**
@@ -446,7 +463,8 @@ export function model_pick_paired_duplicates(combinations, toleranceFraction) {
   for (let first = 0; first < combinations.length; first += 1) {
     for (let second = first + 1; second < combinations.length; second += 1) {
       const gap = model_calculate_relative_gap(combinations[first].ratio, combinations[second].ratio);
-      if (gap === null || !(gap < toleranceFraction)) continue;
+      // 경계 판정을 따로 적지 않는다 — 정의 ①과 같은 함수를 쓴다(2026-10-03).
+      if (!model_check_duplicate_gap(gap, toleranceFraction)) continue;
       pairs.push({ first, second, gap });
       paired.add(first);
       paired.add(second);

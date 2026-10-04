@@ -15,6 +15,8 @@ import {
   PROJECTILE_SPEED_STEP_MS,
   PROJECTILE_SPEED_DEFAULT_MS,
   PROJECTILE_MASS_DEFAULT_KG,
+  PROJECTILE_MASS_MIN_KG,
+  PROJECTILE_MASS_MAX_KG,
   PROJECTILE_DRAG_MIN,
   PROJECTILE_DRAG_MAX,
   PROJECTILE_DRAG_STEP,
@@ -87,8 +89,14 @@ const PERCENT_SCALE = 100;
 /** 빼기 부호. ASCII 하이픈과 섞이면 같은 표에 두 글자가 나온다. */
 const MINUS_SIGN = '\u2212';
 const PERCENT_DIGITS = 0;
+/** 십진 자릿수의 밑. 표시 해상도(0.01 s, 1%, 0.1°)를 자릿수 상수에서 만든다. */
+const DECIMAL_BASE = 10;
 /**
- * 두 곡선이 이보다 가까우면 "그림으로는 구분되지 않는다"고 적는다(m).
+ * 사거리 차와 정점 높이 차가 **둘 다** 이보다 작으면 barely로 나눈다(m).
+ * 2026-10-03(B6 2회차) — "그림으로는 구분되지 않는다"는 주장은 뺐다. 이 문턱 아래에서도
+ * 화면상 3~9 px 떨어져 보이는 상태가 있었고, 두 경로 사이 최대 거리는 이 두 차이보다
+ * 클 수 있다(85°·80 m/s·1 kg·A 4×10⁻⁴·ρ 0.005에서 사거리 차 0.026 m·정점 차 0.050 m 미만인데
+ * 경로 간 하우스도르프 거리 0.051 m). 그래서 캡션은 이 문턱이 실제로 재는 두 값만 말한다.
  * **"공기가 없다"는 판정에는 쓰지 않는다** — θ=0°·90°에서는 항력이 있어도
  * 수평 사거리가 우연히 0에 가까워진다. 그 판정은 model.js의 `hasDrag`로 한다.
  */
@@ -122,6 +130,18 @@ const CHART_RIGHT_PAD_RATIO = 1.02;
 const CHART_MIN_SPAN_M = 1;
 /** 각도 축 눈금 간격(도). 1-2-5 자동 눈금은 20°를 골라 45°가 눈금에서 빠진다. */
 const SWEEP_TICK_STEP_DEG = 15;
+/**
+ * 궤적 그림의 "호의 모양" 문장 판정 — 2026-10-03(B6 3회차) 추가. **그려진 것**으로 판정한다.
+ * 정점이 그림에서 이 높이(px) 미만이면 호가 아니라 수평 선분으로 보인다(1°·5~6 m/s에서 0.09 px).
+ * 그때는 "호의 모양이 참모양이 아니다"를 붙이지 않는다.
+ */
+export const CHART_ARC_MIN_HEIGHT_PX = 1;
+/**
+ * 가로·세로 축척(px/m)의 차이가 이 비율 이상일 때만 "두 축의 축척이 다르다"고 적는다.
+ * 큰 쪽/작은 쪽 − 1로 잰다. 폰 폭(그림 222×230 px)에서 두 축이 다 1 m이면 차이가 3.5%뿐이라
+ * 그 문장이 사실상 거짓이었다. 10%는 편집 판단이다 — 이 아래면 화면의 호가 참모양에 가깝다.
+ */
+export const CHART_SCALE_MISMATCH_MIN = 0.1;
 
 // ── 색 토큰 ────────────────────────────────────────────────
 const COLOR_VAR_DRAG = '--series-1';
@@ -144,7 +164,7 @@ const SWEEP_TITLE_X = 'Launch angle, degrees (linear)';
 const SWEEP_TITLE_Y = 'Range, m (linear)';
 const LEGEND_KEYS = [
   { swatch: 'legend-mean-1', label: 'Solid — the path this model integrates' },
-  { swatch: 'legend-tail-2', label: 'Dotted — the same launch with the air taken out' },
+  { swatch: 'legend-tail-2', label: 'Dashed — the same launch with the air taken out' },
 ];
 const TABLE_HEADINGS = ['What', NAME_DRAG, NAME_VACUUM, 'Difference'];
 const VERDICT_HEADLINE = {
@@ -208,12 +228,49 @@ export function display_format_gap(value, format_value) {
   return Number(text) === 0 ? text : `${MINUS_SIGN}${text}`;
 }
 
+/**
+ * 표시 해상도 — 자릿수 digits로 찍을 때 0이 아닌 가장 작은 값("0.01", "1", "0.1").
+ * 반올림해 0이 된 차이를 "0.00 s sooner"·"0% gone"이라고 단정하지 않고
+ * "이 해상도보다 작다"고 적을 때 쓴다.
+ */
+export function display_format_resolution(digits) {
+  return (DECIMAL_BASE ** -digits).toFixed(digits);
+}
+
+/** 이 값을 digits자리로 찍으면 0(또는 −0)이 되는가. */
+function display_check_rounds_to_zero(value, digits) {
+  return Number(value.toFixed(digits)) === 0;
+}
+
 /** 축 눈금 라벨. 범위가 좁아지면 자릿수를 늘린다 (1 m 단위로는 뭉개진다). */
 export function display_format_axis(value, spanValue) {
   if (!Number.isFinite(value)) return '—';
   if (spanValue >= 20) return String(Math.round(value));
   if (spanValue >= 2) return value.toFixed(1);
   return value.toFixed(2);
+}
+
+/**
+ * 이 발사가 화면에서 어떤 경우인가 — 2026-10-03 추가. 판정문과 궤적 캡션이 같은 분기를 읽는다.
+ *   merged   — 공기항이 정확히 0(hasDrag false). 두 경로가 같은 경로다
+ *   flat     — 0° 발사. 발사 즉시 착지해 공기가 있든 없든 사거리가 0이다(항력 크기와 무관)
+ *   vertical — 90° 발사. 수평 사거리는 0이지만 높이·시간·착지 속력은 공기가 바꾼다
+ *   barely   — 사거리 차와 정점 높이 차가 **둘 다** 문턱 아래. 사거리 차만 보면 90°에서
+ *              정점이 30 m 갈려도 "구분 불가"라고 적는다
+ *   apart    — 그 밖
+ */
+export function display_pick_launch_case(summary) {
+  if (!summary.drag.hasDrag) return 'merged';
+  const angleDeg = summary.params.angleDeg;
+  if (angleDeg <= PROJECTILE_ANGLE_MIN_DEG) return 'flat';
+  if (angleDeg >= PROJECTILE_ANGLE_MAX_DEG) return 'vertical';
+  const separation = Math.max(summary.rangeLostMetres, summary.apexLostMetres);
+  return separation < CURVE_MERGE_LIMIT_M ? 'barely' : 'apart';
+}
+
+/** 90°에서 두 경로가 그림으로 갈리는가. 정점 높이 차로만 본다(사거리는 둘 다 0). */
+function display_check_vertical_apart(summary) {
+  return Math.max(summary.rangeLostMetres, summary.apexLostMetres) >= CURVE_MERGE_LIMIT_M;
 }
 
 /**
@@ -224,53 +281,125 @@ export function display_describe_verdict(summary, sweep) {
   const optimumDeg = sweep.optimum.angleDeg;
   const verdict = model_calculate_verdict(optimumDeg);
   // "공기가 없다"는 항력항 자체(hasDrag)로만 판정한다 — 사거리 차이로는 안 된다.
-  const merged = !summary.drag.hasDrag;
-  // 항력은 있지만 이 각도·속력에서는 그림으로 두 곡선을 구분할 수 없는 경우.
-  const barelyVisible = summary.drag.hasDrag && summary.rangeLostMetres < CURVE_MERGE_LIMIT_M;
+  const launchCase = display_pick_launch_case(summary);
+  const merged = launchCase === 'merged';
+  const dragRange = display_format_metres(summary.drag.rangeMetres);
+  const vacuumRange = display_format_metres(summary.vacuum.rangeMetres);
 
   const headline = merged
     ? 'With no air in the model, both paths are the same path.'
     : `${VERDICT_HEADLINE[verdict]} It puts the longest shot at ${display_format_angle(optimumDeg)}.`;
 
   const shiftDeg = PROJECTILE_VACUUM_OPTIMUM_ANGLE_DEG - optimumDeg;
-  const detail = merged
-    ? `The drag coefficient is ${summary.params.dragCoefficient.toFixed(DRAG_DIGITS)} and the air density is ` +
+  let detail;
+  if (merged) {
+    detail =
+      `The drag coefficient is ${summary.params.dragCoefficient.toFixed(DRAG_DIGITS)} and the air density is ` +
       `${summary.params.densityKgM3.toFixed(DENSITY_DIGITS)} kg/m³, so the integrator is solving the vacuum problem: ` +
       `it peaks at ${display_format_angle(sweep.optimum.angleDeg)} and returns ` +
       `${display_format_metres(sweep.optimum.rangeMetres)} m, against ` +
       `${display_format_metres(sweep.vacuumOptimum.rangeMetres)} m from the closed form v₀²sin2θ/g. ` +
-      `Those two numbers come from code that shares nothing, and they agree.`
-    : barelyVisible
-      ? `At the angle set below the model gives ${display_format_metres(summary.drag.rangeMetres)} m, against ` +
-        `${display_format_metres(summary.vacuum.rangeMetres)} m with the air taken out — a gap under ` +
-        `${CURVE_MERGE_LIMIT_M} m at this launch. The drag term has not dropped to zero here; it is just too ` +
-        `small at this angle and speed to move the range by much.`
-      : `At the angle set below the model gives ${display_format_metres(summary.drag.rangeMetres)} m, against ` +
-        `${display_format_metres(summary.vacuum.rangeMetres)} m for the same launch with the air taken out — ` +
-        `${display_format_percent(1 - summary.rangeRatio)} of the distance gone. The peak has moved ` +
-        `${shiftDeg.toFixed(ANGLE_DIGITS)} ${num_format_plural(Number(shiftDeg.toFixed(ANGLE_DIGITS)), 'degree')} ` +
-        `off the vacuum answer of 45°, and the model puts ` +
-        `${display_format_metres(sweep.optimum.rangeMetres)} m there.`;
+      `Those two numbers come from separate code — a step-by-step integrator and a one-line formula that share ` +
+      `only the input check, the degree-to-radian conversion and the value of g — and they agree.`;
+  } else if (launchCase === 'flat') {
+    detail =
+      `At 0° the launch never leaves the ground, so the model gives ${dragRange} m with the air and ` +
+      `${vacuumRange} m without it: at this angle the range cannot show the drag, however strong it is.`;
+  } else if (launchCase === 'vertical') {
+    detail =
+      `At 90° the launch goes straight up and comes straight down, so the model gives ${dragRange} m with the air ` +
+      `and ${vacuumRange} m without it: at this angle the range cannot show the drag. The table below shows what ` +
+      `the air does to the height, the time in the air and the landing speed.`;
+  } else if (launchCase === 'barely') {
+    // 차이는 표의 차이 칸과 같은 자릿수로 적는다 — 문턱 문구("under 0.05 m")는 표가 −0.05로
+    // 반올림해 보여 줄 때 서로 어긋나 보였다.
+    detail =
+      `At the angle set above the model gives ${dragRange} m, against ${vacuumRange} m with the air taken out — ` +
+      `a gap of ${display_format_metres(summary.rangeLostMetres)} m at this launch. The drag term has not dropped ` +
+      `to zero here; it is just too small at this angle and speed to move the range by much.`;
+  } else {
+    // 2026-10-03(B6 2회차) — 반올림해 0이 되는 비율·각도를 "0% gone"·"moved 0.0 degrees"로
+    // 단정하지 않는다. 표시 해상도(1%, 0.1°)보다 작다는 사실로 적는다.
+    const lostFraction = (1 - summary.rangeRatio) * PERCENT_SCALE;
+    const lostText = display_check_rounds_to_zero(lostFraction, PERCENT_DIGITS)
+      ? `less than ${display_format_resolution(PERCENT_DIGITS)}%`
+      : display_format_percent(1 - summary.rangeRatio);
+    const shiftText = display_check_rounds_to_zero(shiftDeg, ANGLE_DIGITS)
+      ? `less than ${display_format_resolution(ANGLE_DIGITS)} degrees`
+      : `${shiftDeg.toFixed(ANGLE_DIGITS)} ${num_format_plural(Number(shiftDeg.toFixed(ANGLE_DIGITS)), 'degree')}`;
+    detail =
+      `At the angle set above the model gives ${dragRange} m, against ` +
+      `${vacuumRange} m for the same launch with the air taken out — ` +
+      `${lostText} of the distance gone. The peak has moved ${shiftText} ` +
+      `off the vacuum answer of 45°, and the model puts ` +
+      `${display_format_metres(sweep.optimum.rangeMetres)} m there.`;
+  }
 
   return { verdict, headline, detail, merged };
 }
 
+/**
+ * 축 캡션에 "두 축의 축척이 달라 화면의 호가 참모양이 아니다"를 붙일 것인가 — 2026-10-03(B6 3회차).
+ * 판정 순서(서로 겹치지 않는다):
+ *   ① 0°·90°는 각도로 먼저 뺀다(B6 2회차) — 0°는 호가 없고 90°는 세로 선분이다. 90°는 두 축의 축척이
+ *      크게 달라도 선분의 모양은 왜곡되지 않으므로 아래 ②·③보다 앞에 둔다.
+ *   ② 그려진 정점 높이 = 진공 정점 / 세로 축 끝 × 그림 높이(px)가 CHART_ARC_MIN_HEIGHT_PX 미만이면 뺀다 —
+ *      화면에 보이는 것은 높이 0 px의 수평 선분이다(항력 경로는 진공보다 낮으므로 더 낮다).
+ *   ③ 두 축의 px/m 비가 CHART_SCALE_MISMATCH_MIN 미만으로 다르면 뺀다 — 문장이 거짓이 된다.
+ * drawn에는 렌더가 실제로 쓴 축 끝(spanX·spanY)과 그림 크기(plotWidth·plotHeight)가 있어야 한다.
+ */
+export function display_check_shape_distorted(summary, drawn) {
+  if (!drawn) return false;
+  const angleDeg = summary.params.angleDeg;
+  if (angleDeg <= PROJECTILE_ANGLE_MIN_DEG || angleDeg >= PROJECTILE_ANGLE_MAX_DEG) return false;
+  const pxPerMetreX = drawn.plotWidth / drawn.spanX;
+  const pxPerMetreY = drawn.plotHeight / drawn.spanY;
+  if (!(pxPerMetreX > 0) || !(pxPerMetreY > 0)) return false;
+  const apexPx = summary.vacuum.apexHeightMetres * pxPerMetreY;
+  if (apexPx < CHART_ARC_MIN_HEIGHT_PX) return false;
+  const mismatch = Math.max(pxPerMetreX, pxPerMetreY) / Math.min(pxPerMetreX, pxPerMetreY) - 1;
+  return mismatch >= CHART_SCALE_MISMATCH_MIN;
+}
+
 /** 궤적 그림이 무엇을 말하는지. 캡션은 **그림이 실제로 쓴 축만** 인용한다. */
 export function display_describe_path(summary, drawn) {
+  // "호의 모양" 문장은 그려진 것으로 판정한다 — display_check_shape_distorted(0°·90°·납작한 호·같은 축척).
+  const shapeNote = display_check_shape_distorted(summary, drawn)
+    ? ' They are not to the same scale as each other, so the arc on screen is not its true shape.'
+    : '';
   const axes = drawn
     ? `The axes run to ${display_format_metres(drawn.spanX)} m across and ` +
-      `${display_format_metres(drawn.spanY)} m up, and they rescale with every slider — ` +
-      `read them before comparing two settings. They are not to the same scale as each other, ` +
-      `so the arc is stretched upward.`
+      `${display_format_metres(drawn.spanY)} m up. They are fitted to the airless path, so only the angle and ` +
+      `speed sliders rescale them — read them before comparing two settings.${shapeNote}`
     : '';
-  const gap = !summary.drag.hasDrag
-    ? `The two paths sit on top of each other here: the drag coefficient and air density multiply to zero, ` +
-      `so the integrated path and the closed-form vacuum path cannot be told apart.`
-    : summary.rangeLostMetres < CURVE_MERGE_LIMIT_M
-      ? `The two paths sit within ${CURVE_MERGE_LIMIT_M} m of each other here and cannot be told apart at this ` +
-        `scale, but the model still has an air term at this launch — it is just too small to draw apart.`
-      : `The model lands the solid path ${display_format_metres(summary.rangeLostMetres)} m short of the dotted one ` +
-        `and ${display_format_seconds(summary.vacuum.flightSeconds - summary.drag.flightSeconds)} s sooner.`;
+  // 착지 시간 차. 표시 자릿수 아래로 내려가면 "0.00 s sooner"라고 쓰지 않는다 — 2026-10-03(B6 2회차).
+  const timeSaved = summary.vacuum.flightSeconds - summary.drag.flightSeconds;
+  const timeBelow = display_check_rounds_to_zero(timeSaved, SECOND_DIGITS);
+  const timeBelowNote = `the two landing times differ by less than ${display_format_resolution(SECOND_DIGITS)} s.`;
+  const launchCase = display_pick_launch_case(summary);
+  let gap;
+  if (launchCase === 'merged') {
+    gap =
+      `The two paths sit on top of each other here: the drag coefficient and air density multiply to zero, ` +
+      `so the integrated path and the closed-form vacuum path cannot be told apart.`;
+  } else if (launchCase === 'flat') {
+    gap = 'At 0° neither path leaves the ground, so there is nothing to draw apart.';
+  } else if (launchCase === 'vertical' && display_check_vertical_apart(summary)) {
+    gap =
+      `At 90° both paths run up and down the same vertical line: the solid one tops out ` +
+      `${display_format_metres(summary.apexLostMetres)} m lower` +
+      (timeBelow ? `; ${timeBelowNote}` : ` and lands ${display_format_seconds(timeSaved)} s sooner.`);
+  } else if (launchCase === 'barely' || launchCase === 'vertical') {
+    // 이 분기가 실제로 잰 것(사거리 차·정점 높이 차)만 말한다. 화면에서 구분되는지,
+    // 두 경로가 통째로 0.05 m 안에 있는지는 주장하지 않는다(CURVE_MERGE_LIMIT_M 주석).
+    gap =
+      `The model still has an air term at this launch, but here it moves the range and the highest point by ` +
+      `less than ${CURVE_MERGE_LIMIT_M} m each.`;
+  } else {
+    gap =
+      `The model lands the solid path ${display_format_metres(summary.rangeLostMetres)} m short of the dashed one` +
+      (timeBelow ? `; ${timeBelowNote}` : ` and ${display_format_seconds(timeSaved)} s sooner.`);
+  }
   return `${gap} ${axes}`.trim();
 }
 
@@ -285,7 +414,7 @@ export function display_describe_sweep(sweep, currentAngleDeg, drawn) {
   return (
     `Every point on the solid curve is one full integration at that angle, everything else held. ` +
     `The model puts its highest point at ${display_format_angle(optimumDeg)} — the vertical line — where the range is ` +
-    `${display_format_metres(sweep.optimum.rangeMetres)} m. The dotted vacuum curve is symmetric about ` +
+    `${display_format_metres(sweep.optimum.rangeMetres)} m. The dashed vacuum curve is symmetric about ` +
     `${display_format_angle(PROJECTILE_VACUUM_OPTIMUM_ANGLE_DEG)}, where it reaches ` +
     `${display_format_metres(sweep.vacuumOptimum.rangeMetres)} m. The dot marks the angle set on the slider, ` +
     `${display_format_angle(currentAngleDeg)}, worth about ${display_format_metres(currentRange.dragRangeMetres)} m.` +
@@ -403,12 +532,10 @@ export function chart_render_path(canvasEl, summary) {
 
   const plotWidth = Math.max(1, width - CHART_PAD_LEFT - CHART_PAD_RIGHT);
   const plotHeight = Math.max(1, height - CHART_PAD_TOP - CHART_PAD_BOTTOM);
-  const spanX = chart_calculate_span(
-    [summary.drag.rangeMetres, summary.vacuum.rangeMetres], CHART_RIGHT_PAD_RATIO,
-  );
-  const spanY = chart_calculate_span(
-    [summary.drag.apexHeightMetres, summary.vacuum.apexHeightMetres], CHART_TOP_PAD_RATIO,
-  );
+  // 축은 진공 경로에 맞춘다 — 항력 경로는 진공보다 멀리·높이 가지 않으므로 그림이 잘리지 않고,
+  // 질량·Cd·면적·밀도 슬라이더가 축을 움직이지 않는다(캡션이 그렇게 말한다).
+  const spanX = chart_calculate_span([summary.vacuum.rangeMetres], CHART_RIGHT_PAD_RATIO);
+  const spanY = chart_calculate_span([summary.vacuum.apexHeightMetres], CHART_TOP_PAD_RATIO);
 
   const colorDrag = chart_read_color(canvasEl, COLOR_VAR_DRAG, COLOR_FALLBACK_DRAG);
   const colorVacuum = chart_read_color(canvasEl, COLOR_VAR_VACUUM, COLOR_FALLBACK_VACUUM);
@@ -459,7 +586,8 @@ export function chart_render_path(canvasEl, summary) {
   chart_draw_titles(context, plotWidth, plotHeight, colorText, CHART_TITLE_X, CHART_TITLE_Y);
   context.restore();
 
-  return { spanX, spanY };
+  // 그림 크기도 돌려준다 — 캡션의 "호의 모양" 판정이 그려진 정점 높이·축척을 이것으로 잰다.
+  return { spanX, spanY, plotWidth, plotHeight };
 }
 
 /**
@@ -650,8 +778,18 @@ export function widget_mount(rootEl) {
   const massSlider = control_build_slider(
     'projectile-mass',
     'Mass',
-    'Only the drag term is divided by mass, so a heavier object of the same size is a less-drag object. ' +
-      'Try sliding from a few grams to several kilograms and watch the optimal angle in the lower chart creep back toward 45°.',
+    // 2026-10-03(B6 2회차) — "공기가 있으면 최적각이 45°로 돌아온다"는 공기항이 작은 상태
+    // (공기가 있는 659상태 중 436상태)에서 거짓이었다: 10 g에서 이미 45.0°라 움직이지 않는다.
+    // 그래서 조건을 시작 공기(Cd·지름·ρ 기본값)로 못박는다. 그 조건에서는 v₀ 5~80 m/s 전부
+    // 10 g → 5 kg에 표시 최적각이 1.6° 이상 45° 쪽으로 움직인다(독립 scipy 검산, 시험이 양 끝을 본다).
+    'Only the drag term is divided by mass, so a heavier object of the same size is slowed less by the same drag. ' +
+      `With the drag coefficient at ${PROJECTILE_DRAG_DEFAULT.toFixed(DRAG_DIGITS)}, the cross-section at ` +
+      `d = ${Math.round(model_calculate_diameter(PROJECTILE_AREA_DEFAULT_M2) * MM_PER_M)} mm and the air density at ` +
+      `${PROJECTILE_DENSITY_DEFAULT_KGM3.toFixed(DENSITY_DIGITS)} kg/m³, sliding from ` +
+      `${PROJECTILE_MASS_MIN_KG * GRAMS_PER_KG} g to ${PROJECTILE_MASS_MAX_KG} kg moves the optimal angle in the ` +
+      `lower chart back toward ${PROJECTILE_VACUUM_OPTIMUM_ANGLE_DEG}° at every launch speed; with a smaller air ` +
+      `term it can already read ${display_format_angle(PROJECTILE_VACUUM_OPTIMUM_ANGLE_DEG)} at ` +
+      `${PROJECTILE_MASS_MIN_KG * GRAMS_PER_KG} g and stay there.`,
     {
       min: PROJECTILE_MASS_AXIS.indexMin,
       max: PROJECTILE_MASS_AXIS.indexMax,

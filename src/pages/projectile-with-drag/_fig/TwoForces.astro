@@ -1,0 +1,124 @@
+---
+/*
+  ** 이 파일이 `---`로 시작하는 이유 **
+  `<svg`로 시작하는 `.astro`는 전송 중 콘텐츠 서명(C2PA)이 붙어 파일이 깨진다.
+  프런트매터가 맨 앞에 있으면 붙지 않는다 (규약 §5).
+
+  도해 1 — **설정**. 위젯 앞에 놓인다(§5.5 S7: 규칙을 모르면 슬라이더를 만질 수 없다).
+  무엇을 재는 상황인가만 말한다. **숫자 결과를 담지 않는다.**
+
+  ** 왜 가로 띠인가 **
+  이 자리는 §1.5가 치수를 정해 둔 자리다 — "가로형 짧은 띠, viewBox 420 × 110 이하".
+  처음에는 세 순간을 **세로로** 쌓아 420 × 530으로 그렸고, 폰(390×844) 실측에서
+  위젯 상단이 1,651px까지 내려갔다(본보기 몬티홀 1,324px). 원인의 전부가 이 그림
+  하나였다 — 브레드크럼·H1·덱·바이라인·리드는 본보기와 거의 같았다. 그래서 눕혔다.
+
+  세 순간을 가로로 나란히: 떠나는 순간 · 꼭대기 · 내려오는 길.
+  칸마다 화살표 셋 — 움직임(점선) · 항력(운동 반대) · 중력(언제나 아래·언제나 같은 길이).
+  항력 화살표 길이는 그 순간의 항력에 비례한다(속력의 제곱). 숫자는 적지 않는다.
+  실루엣 없음 — 원과 화살표뿐이다(§5 제작 표준).
+*/
+const W = 420;
+const H = 124;
+
+/** 세 칸의 중심 x와 공통 중심 y. 화살표는 전부 이 점에서 나간다. */
+const COL_X = [82, 212, 342];
+const CY = 60;
+
+const BALL_R = 6;
+const HEAD = 6.5;          // 화살촉 크기
+
+/**
+ * 길이 척도. 중력 9.80665 m/s²를 36단위로 잡는다 — **세 칸 모두 같은 길이**이고,
+ * 그것이 이 그림이 말하는 규칙이다.
+ */
+const GRAVITY_LEN = 36;
+/**
+ * 항력 화살표 길이. 속력의 제곱을 따르므로 칸마다 다르다. 숫자는 적지 않는다.
+ * 세 번째 칸(내려오는 길)은 하강 구간의 최댓값을 넘으면 안 된다. 기본 야구공
+ * 최적각 발사에서 하강 중 속력이 가장 큰 곳은 착지 순간이고, 그때 항력은 이 척도로
+ * 약 16.1단위다(모델 출력: k·v²/g × 36). 17은 그 최댓값을 넘어 하강 중 어디에도
+ * 없는 항력을 그렸으므로 15로 낮춘다 — 꼭대기(약 11.5)보다는 길게 남는다.
+ */
+const DRAG_LEN = [49, 12, 15];
+const MOTION_LEN = 34;
+/** 화면 좌표(아래가 +)에서 잰 운동 방향. */
+const MOTION_DEG = [-40, 0, 52];
+
+const TITLE_Y = 20;
+const COL_TITLE = ["1 · leaving", "2 · the top", "3 · coming down"];
+
+/** 칸 사이 세로 구분선. */
+const DIVIDER_X = [148, 276];
+
+const RAD = Math.PI / 180;
+function tip(cx, deg, len) {
+  return { x: cx + len * Math.cos(deg * RAD), y: CY + len * Math.sin(deg * RAD) };
+}
+function head(cx, deg, len) {
+  const end = tip(cx, deg, len);
+  const a = (deg + 152) * RAD;
+  const b = (deg - 152) * RAD;
+  return [
+    `${end.x.toFixed(1)},${end.y.toFixed(1)}`,
+    `${(end.x + HEAD * Math.cos(a)).toFixed(1)},${(end.y + HEAD * Math.sin(a)).toFixed(1)}`,
+    `${(end.x + HEAD * Math.cos(b)).toFixed(1)},${(end.y + HEAD * Math.sin(b)).toFixed(1)}`,
+  ].join(" ");
+}
+
+const columns = COL_X.map((cx, i) => ({
+  cx,
+  motionTip: tip(cx, MOTION_DEG[i], MOTION_LEN),
+  motionHead: head(cx, MOTION_DEG[i], MOTION_LEN),
+  dragTip: tip(cx, MOTION_DEG[i] + 180, DRAG_LEN[i]),
+  dragHead: head(cx, MOTION_DEG[i] + 180, DRAG_LEN[i]),
+  gravityTip: tip(cx, 90, GRAVITY_LEN),
+  gravityHead: head(cx, 90, GRAVITY_LEN),
+  title: COL_TITLE[i],
+}));
+---
+<svg
+  class="fig-svg"
+  viewBox={`0 0 ${W} ${H}`}
+  role="img"
+  aria-label="A wide band showing three moments of one throw side by side, with the two forces this model puts on the ball. In each panel a small circle is the ball, a dashed arrow points the way it is moving, a thick arrow for drag points exactly the opposite way, and a plain arrow for gravity points straight down. The gravity arrow is drawn the same length in all three panels. Panel one, leaving the ground: the ball moves up and to the right, and the drag arrow is longer than the gravity arrow. Panel two, the top of the arc: the ball moves level, and the drag arrow is much shorter than the gravity arrow. Panel three, coming down: the ball moves down and to the right, and the drag arrow is short but longer than it was at the top. Only the first panel carries the words motion, drag and gravity; the other two repeat the same arrangement."
+>
+  {DIVIDER_X.map((x) => (
+    <line x1={x} y1="30" x2={x} y2={H - 8} stroke="var(--rule)" stroke-width="1" />
+  ))}
+
+  {columns.map((col) => (
+    <g>
+      <text x={col.cx} y={TITLE_Y} class="fig-label" fill="var(--graphite)" text-anchor="middle">
+        {col.title}
+      </text>
+
+      <line
+        x1={col.cx} y1={CY} x2={col.motionTip.x} y2={col.motionTip.y}
+        stroke="var(--graphite-soft)" stroke-width="1.4" stroke-dasharray="4 3"
+      />
+      <polygon points={col.motionHead} fill="var(--graphite-soft)" />
+
+      {/* 색 뜻은 위젯과 같게 — series-1 = 공기가 있는 쪽, series-2(주황)는 위젯에서 "공기 뺀 경로"라
+          항력에 쓰지 않는다 (2026-10-03 검수 L-COLOR). 중력은 중립색. */}
+      <line
+        x1={col.cx} y1={CY} x2={col.dragTip.x} y2={col.dragTip.y}
+        stroke="var(--series-1)" stroke-width="3.6"
+      />
+      <polygon points={col.dragHead} fill="var(--series-1)" />
+
+      <line
+        x1={col.cx} y1={CY} x2={col.gravityTip.x} y2={col.gravityTip.y}
+        stroke="var(--graphite)" stroke-width="2"
+      />
+      <polygon points={col.gravityHead} fill="var(--graphite)" />
+
+      <circle cx={col.cx} cy={CY} r={BALL_R} fill="var(--paper)" stroke="var(--graphite)" stroke-width="1.8" />
+    </g>
+  ))}
+
+  <text x={columns[0].motionTip.x + 6} y={columns[0].motionTip.y - 4} class="fig-label-dim">motion</text>
+  <text x={columns[0].dragTip.x - 2} y={columns[0].dragTip.y + 13} class="fig-label-dim" text-anchor="middle">drag</text>
+  <text x={columns[0].cx + 8} y={columns[0].gravityTip.y - 2} class="fig-label-dim">gravity</text>
+
+</svg>

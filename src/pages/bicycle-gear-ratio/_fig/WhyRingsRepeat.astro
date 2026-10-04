@@ -1,0 +1,138 @@
+---
+/**
+ * 도해 2 — **메커니즘.** 반전 절에 놓는다. 규약 §5.
+ *
+ * 위젯의 사다리·표를 재탕하지 않는다 (규약 §5 금지 조항). 사다리는 조합 22개를
+ * 점으로 찍고 중복 쌍을 점선으로 잇는다. 이 그림에는 조합도 점도 점선 연결도
+ * 없다 — **길이 두 개를 나란히 놓고 어느 쪽이 짧은지만** 보인다.
+ *
+ * 왜 길이로 비교하나: 기어비는 곱셈이다. 곱셈 인자를 로그 길이로 그리면
+ * 1.47 × 1.73 = 2.55가 **막대 두 토막이 하나로 이어지는 그림**이 된다.
+ * 겹침은 링 간격이 카세트 폭보다 짧을 때만 생기고, 그것이 이 페이지의 뒤집힘이다.
+ *
+ * 치수는 전부 톱니 수에서 계산한다. 막대 길이를 손으로 적으면 산수와 그림이 갈린다.
+ *
+ * **이 파일이 `---`로 시작하는 이유**: `<svg`로 시작하는 `.astro`는 전송 중
+ * C2PA 서명이 붙어 파일이 깨진다 (규약 §5).
+ */
+
+// ── 재료 — 톱니 수. 나머지는 전부 여기서 나온다 ─────────────
+const SPROCKET_SMALL = 11;
+const SPROCKET_LARGE = 28;
+const CASE_A_RINGS = [50, 34];
+const CASE_B_RINGS = [60, 20];
+
+const CASSETTE_SPAN = SPROCKET_LARGE / SPROCKET_SMALL;
+const gap_of = (rings) => rings[0] / rings[1];
+const shared_of = (rings) => CASSETTE_SPAN / gap_of(rings);
+/** 위젯의 배수 표기와 같은 형식 — 소수 둘째 자리에 `×` (규약 §6 S4). */
+const factor_text = (value) => `${value.toFixed(2)}×`;
+
+// ── 판 크기 ────────────────────────────────────────────────
+const FIG_W = 420;
+const FIG_H = 384;
+
+// ── 막대 — 곱셈 인자를 로그 길이로 ──────────────────────────
+const BAR_X = 62;
+const BAR_SPAN_PX = 240;                       // 카세트 폭이 차지하는 길이
+const PX_PER_LOG = BAR_SPAN_PX / Math.log(CASSETTE_SPAN);
+const bar_width = (factor) => Math.log(factor) * PX_PER_LOG;
+const BAR_H = 18;
+const BAR_END = BAR_X + BAR_SPAN_PX;
+const VALUE_GAP = 8;                           // 막대 끝과 값 사이
+
+// ── 두 블록의 세로 자리 ─────────────────────────────────────
+const BLOCK_Y = [0, 196];
+const TITLE_DY = 26;
+const CAPTION_DY = 52;
+const BAR_TOP_DY = 60;
+const BAR_SPLIT_DY = 86;
+const PIECE_LABEL_DY = 124;
+const PIECE_VALUE_DY = 142;
+const VERDICT_DY = 170;
+const RULE_Y = 182;
+const RULE_X1 = 14;
+const RULE_X2 = 406;
+
+// ── A: 링 간격이 카세트 폭보다 짧다 → 겹친다 ────────────────
+const A_GAP_PX = bar_width(gap_of(CASE_A_RINGS));
+const A_SHARED_PX = bar_width(shared_of(CASE_A_RINGS));
+const A_SPLIT_X = BAR_X + A_GAP_PX;
+
+// ── B: 링 간격이 카세트 폭보다 길다 → 겹치지 않는다 ─────────
+const B_GAP_PX = bar_width(gap_of(CASE_B_RINGS));
+
+const STROKE_BAR = 2;
+const DASH_EDGE = "4 4";
+
+const FIG_ALT =
+  "Two stacked comparisons of two lengths. In each one, the top bar is how far " +
+  "the cassette reaches, from the 28-tooth sprocket to the 11-tooth sprocket, a " +
+  "factor of 2.55 times. The bar below it is the gap between the two front " +
+  "rings. In the first comparison the rings are 50 and 34, a factor of 1.47 " +
+  "times, which is shorter than the cassette bar; the leftover piece, 1.73 " +
+  "times, is the part both rings reach, and the case is marked with a tick and " +
+  "the words the rings repeat each other. In the second comparison the rings " +
+  "are 60 and 20, a factor of 3.00 times, and that bar runs past the end of the " +
+  "cassette bar, leaving no leftover piece; the case is marked with a cross and " +
+  "the words nothing is reached twice.";
+---
+
+<svg class="fig-svg" viewBox={`0 0 ${FIG_W} ${FIG_H}`} role="img" aria-label={FIG_ALT}>
+  <!-- ── A · 링 간격이 짧은 경우 ─────────────────────────── -->
+  <text x={FIG_W / 2} y={BLOCK_Y[0] + TITLE_DY} class="fig-label" text-anchor="middle">
+    front rings {CASE_A_RINGS[0]} and {CASE_A_RINGS[1]}
+  </text>
+
+  <text x={BAR_X} y={BLOCK_Y[0] + CAPTION_DY} class="fig-label-dim">
+    what the cassette covers, {SPROCKET_LARGE} down to {SPROCKET_SMALL}
+  </text>
+  <rect x={BAR_X} y={BLOCK_Y[0] + BAR_TOP_DY} width={BAR_SPAN_PX} height={BAR_H} rx="2"
+        fill="var(--surface)" stroke="var(--graphite)" stroke-width={STROKE_BAR} />
+  <text x={BAR_END + VALUE_GAP} y={BLOCK_Y[0] + BAR_TOP_DY + BAR_H - 4} class="fig-value"
+        fill="var(--graphite)">{factor_text(CASSETTE_SPAN)}</text>
+
+  <!-- 같은 길이를 두 토막으로 가른다. 가른 자리가 이 그림의 전부다 -->
+  <rect x={BAR_X} y={BLOCK_Y[0] + BAR_SPLIT_DY} width={A_GAP_PX} height={BAR_H} rx="2"
+        fill="var(--steel-200)" stroke="var(--steel-700)" stroke-width={STROKE_BAR} />
+  <rect x={A_SPLIT_X} y={BLOCK_Y[0] + BAR_SPLIT_DY} width={A_SHARED_PX} height={BAR_H} rx="2"
+        fill="var(--steel-400)" stroke="var(--steel-700)" stroke-width={STROKE_BAR} />
+
+  <text x={BAR_X + A_GAP_PX / 2} y={BLOCK_Y[0] + PIECE_LABEL_DY} class="fig-label-dim" text-anchor="middle">ring gap</text>
+  <text x={BAR_X + A_GAP_PX / 2} y={BLOCK_Y[0] + PIECE_VALUE_DY} class="fig-value" fill="var(--graphite)" text-anchor="middle">
+    {factor_text(gap_of(CASE_A_RINGS))}
+  </text>
+  <text x={A_SPLIT_X + A_SHARED_PX / 2} y={BLOCK_Y[0] + PIECE_LABEL_DY} class="fig-label-dim" text-anchor="middle">both rings reach</text>
+  <text x={A_SPLIT_X + A_SHARED_PX / 2} y={BLOCK_Y[0] + PIECE_VALUE_DY} class="fig-value" fill="var(--graphite)" text-anchor="middle">
+    {factor_text(shared_of(CASE_A_RINGS))}
+  </text>
+
+  <text x={BAR_X} y={BLOCK_Y[0] + VERDICT_DY} class="fig-label">✓ the rings repeat each other</text>
+
+  <line x1={RULE_X1} y1={RULE_Y} x2={RULE_X2} y2={RULE_Y} stroke="var(--rule)" stroke-width="1" />
+
+  <!-- ── B · 링 간격이 카세트 폭보다 긴 경우 ─────────────── -->
+  <text x={FIG_W / 2} y={BLOCK_Y[1] + TITLE_DY} class="fig-label" text-anchor="middle">
+    front rings {CASE_B_RINGS[0]} and {CASE_B_RINGS[1]}
+  </text>
+
+  <text x={BAR_X} y={BLOCK_Y[1] + CAPTION_DY} class="fig-label-dim">
+    the same cassette, {SPROCKET_LARGE} down to {SPROCKET_SMALL}
+  </text>
+  <rect x={BAR_X} y={BLOCK_Y[1] + BAR_TOP_DY} width={BAR_SPAN_PX} height={BAR_H} rx="2"
+        fill="var(--surface)" stroke="var(--graphite)" stroke-width={STROKE_BAR} />
+  <text x={BAR_END + VALUE_GAP} y={BLOCK_Y[1] + BAR_TOP_DY + BAR_H - 4} class="fig-value"
+        fill="var(--graphite)">{factor_text(CASSETTE_SPAN)}</text>
+
+  <rect x={BAR_X} y={BLOCK_Y[1] + BAR_SPLIT_DY} width={B_GAP_PX} height={BAR_H} rx="2"
+        fill="var(--steel-200)" stroke="var(--steel-700)" stroke-width={STROKE_BAR} />
+  <text x={BAR_X + B_GAP_PX + VALUE_GAP} y={BLOCK_Y[1] + BAR_SPLIT_DY + BAR_H - 4} class="fig-value"
+        fill="var(--graphite)">{factor_text(gap_of(CASE_B_RINGS))}</text>
+
+  <!-- 카세트 막대가 끝나는 자리. 아래 막대가 여기를 지나치는 것이 요지다 -->
+  <line x1={BAR_END} y1={BLOCK_Y[1] + BAR_TOP_DY - 6} x2={BAR_END} y2={BLOCK_Y[1] + BAR_SPLIT_DY + BAR_H + 6}
+        stroke="var(--graphite-soft)" stroke-width="1.5" stroke-dasharray={DASH_EDGE} />
+
+  <text x={BAR_X} y={BLOCK_Y[1] + PIECE_LABEL_DY + 4} class="fig-label-dim">the gap runs past the whole cassette</text>
+  <text x={BAR_X} y={BLOCK_Y[1] + VERDICT_DY} class="fig-label">✕ nothing is reached twice</text>
+</svg>

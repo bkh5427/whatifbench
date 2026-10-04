@@ -1,0 +1,73 @@
+---
+/*
+  ** 이 파일이 `---`로 시작하는 이유 ** — C2PA 전송 사고 방지 (규약 §5).
+
+  도해 3 — **증명**. 손계산 절에 놓인다.
+  규약 §5: "독립된 두 경로가 같은 답에서 만나는 그림."
+  이 페이지의 두 경로는 ① 손으로 푸는 닫힌형 ② 코드를 한 줄도 공유하지 않는
+  RK4 적분기다. 공기를 뺀 한 발사에서 둘은 같은 숫자에 앉는다.
+  만나는 자리에 ✓와 글자를 함께 둔다 — 색만으로 말하지 않는다.
+*/
+const W = 420;
+const H = 400;
+
+const COL_W = 172;
+const LEFT_X = 22;
+const RIGHT_X = W - COL_W - 22;
+const LEFT_CX = LEFT_X + COL_W / 2;
+const RIGHT_CX = RIGHT_X + COL_W / 2;
+
+const ROLE_Y = 44;
+const ROLE_H = 52;
+const BOX_Y = 114;
+const BOX_H = 84;
+
+const JOIN_Y = 248;
+const JOIN_H = 74;
+const JOIN_X = 84;
+const JOIN_W = W - JOIN_X * 2;
+
+const FOOT_Y = [352, 376];
+---
+<svg
+  class="fig-svg"
+  viewBox={`0 0 ${W} ${H}`}
+  role="img"
+  aria-label="Two columns that meet at one number. The left column is headed by hand, with the note no stepping, and under it a box holding the closed-form range formula v-nought squared times sine of two theta, divided by g, worked out as 1 600 divided by 9.80665. The right column is headed the integrator, with the note no formula, and under it a box holding 1 154 Runge-Kutta steps of 0.005 seconds each. An arrow runs down and inward from each box into a single wide box in the middle, which reads 163.154594 metres, with a tick mark and the words the same number. Below that the figure notes that the two routes share only the input check, the degree-to-radian conversion and the value of g, and that the tests hold them within a relative error of one times ten to the minus twelve."
+>
+  <text x={W / 2} y={22} class="fig-label" fill="var(--graphite)" text-anchor="middle">
+    one airless launch, two routes
+  </text>
+
+  <rect x={LEFT_X} y={ROLE_Y} width={COL_W} height={ROLE_H} rx="3" fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+  <text x={LEFT_CX} y={ROLE_Y + 22} class="fig-label" fill="var(--graphite)" text-anchor="middle">by hand</text>
+  <text x={LEFT_CX} y={ROLE_Y + 42} class="fig-label-dim" text-anchor="middle">no stepping</text>
+
+  <rect x={RIGHT_X} y={ROLE_Y} width={COL_W} height={ROLE_H} rx="3" fill="var(--surface)" stroke="var(--graphite)" stroke-width="2" />
+  <text x={RIGHT_CX} y={ROLE_Y + 22} class="fig-label" fill="var(--graphite)" text-anchor="middle">the integrator</text>
+  <text x={RIGHT_CX} y={ROLE_Y + 42} class="fig-label-dim" text-anchor="middle">no formula</text>
+
+  <rect x={LEFT_X} y={BOX_Y} width={COL_W} height={BOX_H} rx="3" fill="var(--paper-sunk)" stroke="var(--rule)" stroke-width="1.4" />
+  <text x={LEFT_CX} y={BOX_Y + 32} class="fig-value" text-anchor="middle">v₀² sin2θ ÷ g</text>
+  <text x={LEFT_CX} y={BOX_Y + 62} class="fig-value" text-anchor="middle">1 600 ÷ 9.80665</text>
+
+  <rect x={RIGHT_X} y={BOX_Y} width={COL_W} height={BOX_H} rx="3" fill="var(--paper-sunk)" stroke="var(--rule)" stroke-width="1.4" />
+  <text x={RIGHT_CX} y={BOX_Y + 32} class="fig-value" text-anchor="middle">1 154 steps</text>
+  <text x={RIGHT_CX} y={BOX_Y + 62} class="fig-value" text-anchor="middle">0.005 s each</text>
+
+  <path d={`M ${LEFT_CX},${BOX_Y + BOX_H} L ${LEFT_CX},${JOIN_Y - 22} L ${JOIN_X + 42},${JOIN_Y - 8}`}
+        fill="none" stroke="var(--graphite-soft)" stroke-width="2" />
+  <polygon points={`${JOIN_X + 46},${JOIN_Y - 6} ${JOIN_X + 32},${JOIN_Y - 12} ${JOIN_X + 34},${JOIN_Y - 1}`} fill="var(--graphite-soft)" />
+
+  <path d={`M ${RIGHT_CX},${BOX_Y + BOX_H} L ${RIGHT_CX},${JOIN_Y - 22} L ${W - JOIN_X - 42},${JOIN_Y - 8}`}
+        fill="none" stroke="var(--graphite-soft)" stroke-width="2" />
+  <polygon points={`${W - JOIN_X - 46},${JOIN_Y - 6} ${W - JOIN_X - 32},${JOIN_Y - 12} ${W - JOIN_X - 34},${JOIN_Y - 1}`} fill="var(--graphite-soft)" />
+
+  <rect x={JOIN_X} y={JOIN_Y} width={JOIN_W} height={JOIN_H} rx="3" fill="var(--surface)" stroke="var(--graphite)" stroke-width="2.4" />
+  <text x={W / 2} y={JOIN_Y + 32} class="fig-num" text-anchor="middle">163.154594 m</text>
+  <path d={`M ${JOIN_X + 46},${JOIN_Y + 54} l 7,8 l 15,-18`} fill="none" stroke="var(--graphite)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+  <text x={JOIN_X + 80} y={JOIN_Y + 60} class="fig-label" fill="var(--graphite)">the same number</text>
+
+  <text x={W / 2} y={FOOT_Y[0]} class="fig-label-dim" text-anchor="middle">they share only the input check, degrees-to-radians and g</text>
+  <text x={W / 2} y={FOOT_Y[1]} class="fig-label-dim" text-anchor="middle">the tests hold them within 1 × 10⁻¹² relative</text>
+</svg>

@@ -1,0 +1,487 @@
+---
+import Base from "@layouts/Base.astro";
+import Byline from "@components/Byline.astro";
+import RelatedTools from "@components/RelatedTools.astro";
+import Figure from "@components/Figure.astro";
+// 도해 셋. 설정(위젯 앞) → 메커니즘(반전 절) → 증명(손계산 절). 규약 §5.
+import TheDrivetrain from "./_fig/TheDrivetrain.astro";
+import WhyRingsRepeat from "./_fig/WhyRingsRepeat.astro";
+import TwoRoutesToSpeed from "./_fig/TwoRoutesToSpeed.astro";
+import { tools_read_category } from "@data/tools.js";
+import {
+  GEAR_CASSETTE_DEFAULT,
+  GEAR_CHAINRING_DEFAULT_LARGE,
+  GEAR_CHAINRING_DEFAULT_SMALL,
+  GEAR_CADENCE_DEFAULT,
+  GEAR_CRANK_DEFAULT,
+  GEAR_TOLERANCE_MIN,
+  GEAR_TOLERANCE_MAX,
+  GEAR_TOLERANCE_DEFAULT,
+  GEAR_BEAD_SEAT_DEFAULT,
+  GEAR_TYRE_WIDTH_DEFAULT,
+  model_calculate_result,
+  model_calculate_combinations,
+  model_calculate_wheel_diameter,
+  model_check_duplicate_pair,
+} from "@widgets/bicycle-gear-ratio/model.js";
+
+const SLUG = "bicycle-gear-ratio";
+const CATEGORY = "motion";
+const cat = tools_read_category(CATEGORY);
+
+// 브레드크럼 이름. 화면과 구조화 데이터가 **같은 상수 하나**를 읽는다.
+const CRUMB = "Bicycle Gear Ratios";
+
+// ── 본문의 숫자는 전부 모델이 낸다 ───────────────────────────
+// 규약: "본문의 모든 숫자는 이 모델이 실제로 내는 값이어야 한다." 하드코딩하면
+// 모델이 바뀌는 날 본문만 조용히 낡는다. 자릿수는 위젯 출력 형식에 맞춘다(§6 S4):
+// 기어인치 1자리 · 게인비 2자리 · 발전량 2자리 · 속도 1자리 · 배수 2자리 ·
+// 지분은 정수 퍼센트 · 허용오차 1자리.
+const DEFAULT_STATE = {
+  chainrings: [GEAR_CHAINRING_DEFAULT_LARGE, GEAR_CHAINRING_DEFAULT_SMALL],
+  cassette: GEAR_CASSETTE_DEFAULT.slice(),
+  tyreWidthMm: GEAR_TYRE_WIDTH_DEFAULT,
+  beadSeatMm: GEAR_BEAD_SEAT_DEFAULT,
+  crankMm: GEAR_CRANK_DEFAULT,
+  cadenceRpm: GEAR_CADENCE_DEFAULT,
+  tolerancePercent: GEAR_TOLERANCE_DEFAULT,
+};
+const with_state = (patch) => model_calculate_result({ ...DEFAULT_STATE, ...patch });
+const pick_gear = (state, ring, sprocket) =>
+  model_calculate_combinations(state).find((item) => item.chainring === ring && item.sprocket === sprocket);
+// 조합 이름은 "50/25"로 적는다. "50 × 25"는 곱셈으로 읽힌다(작업지시서 §8).
+const gear_name = (gear) => `${gear.chainring}/${gear.sprocket}`;
+
+// "Deletable repeats" 카드는 비 순으로 훑는 탐욕 계산이라 최댓값을 못 찾을 때가 있다.
+// 그 한계를 본문에 적으려고 **지울 수 있는 최대 개수**를 따로 센다. 중복 판정은 모델의
+// 함수를 그대로 쓴다. 중복 관계는 정렬한 비 위의 구간 관계라(a ≤ b ≤ c에서 a~c이면 a~b, b~c),
+// 최소 지배 집합을 왼쪽부터 탐욕으로 고르는 것이 정확하다 — 남길 비 = 아직 안 덮인 가장
+// 왼쪽 비가 닿는 가장 오른쪽 비. 2026-10-03 전수 대조(조합 22개 이하 54가지)에서 일치.
+const most_removable = (result) => {
+  const ratios = result.combinations.map((item) => item.ratio).sort((a, b) => a - b);
+  const near = (a, b) => a === b || model_check_duplicate_pair(a, b, result.toleranceFraction);
+  let keepers = 0;
+  let first = 0;
+  while (first < ratios.length) {
+    let keeper = first;
+    while (keeper + 1 < ratios.length && near(ratios[first], ratios[keeper + 1])) keeper += 1;
+    let next = keeper;
+    while (next < ratios.length && near(ratios[keeper], ratios[next])) next += 1;
+    keepers += 1;
+    first = next;
+  }
+  return ratios.length - keepers;
+};
+
+const base = with_state({});
+const inches = (value) => value.toFixed(1);
+const speed = (value) => value.toFixed(1);
+const factor = (value) => `${value.toFixed(2)}×`;
+const share = (fraction) => `${Math.round(fraction * 100)}%`;
+const tolerance = (percent) => `${percent.toFixed(1)}%`;
+// 천 단위는 좁은 공백(U+202F)으로 끊는다 — 사이트 공통 규약(§6 숫자).
+const THOUSANDS_SPACE = "\u202f";
+const group = (value, digits) => {
+  const [whole, fraction] = value.toFixed(digits).split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, THOUSANDS_SPACE);
+  return fraction ? `${grouped}.${fraction}` : grouped;
+};
+// 위젯이 내지 않는 수라 자릿수를 여기서 정한다. 단 크기는 한 자리로 읽히고,
+// 크랭크·타이어처럼 작은 차이는 두 자리라야 0이 되지 않는다. 규약 §6은 `%`를 붙여 쓴다.
+const step_1 = (from, to) => `${(((to / from) - 1) * 100).toFixed(1)}%`;
+const step_2 = (from, to) => `${(((to / from) - 1) * 100).toFixed(2)}%`;
+const drop_2 = (from, to) => `${(((from - to) / from) * 100).toFixed(2)}%`;
+
+// 리드가 드는 두 조합. 같은 기어인치로 떨어지는 서로 다른 조합이다.
+const TWIN_A = pick_gear(DEFAULT_STATE, 50, 25);
+const TWIN_B = pick_gear(DEFAULT_STATE, 34, 17);
+
+// 반전 절 — 큰 링을 키웠을 때와 링 간격을 벌렸을 때
+const BIG_RING = 53;
+const bigger = with_state({ chainrings: [BIG_RING, GEAR_CHAINRING_DEFAULT_SMALL] });
+const WIDE_SMALL_RING = 24;
+const wide = with_state({ chainrings: [GEAR_CHAINRING_DEFAULT_LARGE, WIDE_SMALL_RING] });
+const SPLIT_RINGS = [60, 20];
+const split = with_state({ chainrings: SPLIT_RINGS });
+const top = pick_gear(DEFAULT_STATE, GEAR_CHAINRING_DEFAULT_LARGE, GEAR_CASSETTE_DEFAULT[0]);
+const topBigger = pick_gear(bigger, BIG_RING, GEAR_CASSETTE_DEFAULT[0]);
+// 탐욕 계산의 한계 — 기본 설정에서는 최댓값과 같고, 53/34에서는 모자란다.
+const baseMost = most_removable(base);
+const biggerMost = most_removable(bigger);
+
+// 허용오차 양 끝
+const strict = with_state({ tolerancePercent: GEAR_TOLERANCE_MIN });
+const loose = with_state({ tolerancePercent: GEAR_TOLERANCE_MAX });
+
+// 화면 읽는 법 — 두 스프라켓 단의 크기
+const SPROCKET_STEP_LOW = [GEAR_CASSETTE_DEFAULT[0], GEAR_CASSETTE_DEFAULT[1]];
+const SPROCKET_STEP_HIGH = [GEAR_CASSETTE_DEFAULT[8], GEAR_CASSETTE_DEFAULT[9]];
+const SPROCKET_STEP_SMALLEST = [GEAR_CASSETTE_DEFAULT[4], GEAR_CASSETTE_DEFAULT[3]];
+
+// 수식 절 — 크랭크와 타이어가 각 지표에 들어가는 방식
+// 슬라이더 양 끝이 아니라 흔히 쓰는 두 길이다. 양 끝은 폭이 너무 커서
+// "크랭크는 게인비에만 들어간다"는 요지가 크기에 묻힌다.
+const CRANK_SHORT_MM = 165;
+const CRANK_LONG_MM = 175;
+const gain_short = pick_gear({ ...DEFAULT_STATE, crankMm: CRANK_SHORT_MM }, 50, 11).gainRatio;
+const gain_long = pick_gear({ ...DEFAULT_STATE, crankMm: CRANK_LONG_MM }, 50, 11).gainRatio;
+const WIDE_TYRE_MM = 28;
+const D_NARROW = model_calculate_wheel_diameter(GEAR_BEAD_SEAT_DEFAULT, GEAR_TYRE_WIDTH_DEFAULT);
+const D_WIDE = model_calculate_wheel_diameter(GEAR_BEAD_SEAT_DEFAULT, WIDE_TYRE_MM);
+
+// 손으로 센 한 조합
+const HAND = top;
+const HAND_NAME = gear_name(HAND);
+const HAND_RATIO = HAND.ratio.toFixed(4);
+const HAND_INCH_DIAMETER = (D_NARROW / 25.4).toFixed(3);
+const HAND_RADIUS_MM = D_NARROW / 2;
+const HAND_RADIUS_OVER_CRANK = (HAND_RADIUS_MM / GEAR_CRANK_DEFAULT).toFixed(3);
+---
+
+<Base
+  title="Bicycle gear ratios: is a bigger chainring faster?"
+  description="Gear inches, gain ratio, development and speed against cadence for every combination a drivetrain can make — with the repeated gears marked and the duplicate rule left on a slider."
+  category={CATEGORY}
+  crumbTool={true}
+  crumbLabel={CRUMB}
+>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span aria-hidden="true">›</span>
+    <a href={cat.href}>{cat.name}</a> <span aria-hidden="true">›</span>
+    {CRUMB}
+  </nav>
+
+  <h1>Bicycle gears: is a bigger chainring faster?</h1>
+
+  <p class="deck">
+    Two front rings and {GEAR_CASSETTE_DEFAULT.length} sprockets make {base.combinationCount} combinations.
+    Change the tooth counts and see how many of them are really different gears.
+  </p>
+
+  <Byline slug={SLUG} />
+
+  <p class="lead">
+    A bigger front ring sounds faster, as if a gear were a part you bolt on. On
+    paper a gear is a division: the teeth on
+    the front ring over the teeth on the rear sprocket, with nothing else in it.
+  </p>
+
+  <p class="lead">
+    So two different pairs can make one gear. On the default wheel,
+    {" "}{gear_name(TWIN_A)} and {gear_name(TWIN_B)} (front teeth over back teeth) both
+    come to {inches(TWIN_A.gearInches)} gear inches, the size of a wheel the
+    pedals would turn directly; the bigger that figure, the farther one pedal
+    turn carries the bike. A drivetrain with {base.combinationCount} combinations
+    need not have {base.combinationCount} gears.
+  </p>
+
+  <p class="lead">
+    <span class="lead-turn">The widget below draws every combination a set of tooth counts can make</span>{" "}
+    and marks the ones the model counts as the same gear.
+  </p>
+
+  <Figure caption="The three pieces of hardware the widget asks about: the tooth counts, the wheel with its tyre on, and the crank.">
+    <TheDrivetrain />
+  </Figure>
+
+  <div id="sliders" data-widget="bicycle-gear-ratio">
+    <noscript>
+      <p>
+        The ladder, the speed lines and the table are drawn by JavaScript and stay
+        blank without it. The by-hand section later on still takes the {gear_name(top)} top gear from tooth counts to
+        {" "}{speed(top.speedKmh)} km/h.
+      </p>
+    </noscript>
+  </div>
+
+  <h2 data-block="reversal">What three extra teeth on the outer ring change</h2>
+
+  <p>
+    The tooth counts go in the boxes labelled “Front rings (teeth)” and “Rear
+    sprockets (teeth)”. The slider “Duplicate tolerance (%)” sets how close two
+    ratios have to be for the model to call them one gear.
+  </p>
+
+  <p>
+    The page opens on rings of {GEAR_CHAINRING_DEFAULT_LARGE} and
+    {" "}{GEAR_CHAINRING_DEFAULT_SMALL}, with sprockets from {GEAR_CASSETTE_DEFAULT[0]} to
+    {" "}{GEAR_CASSETTE_DEFAULT[10]}. At a {tolerance(base.tolerancePercent)} tolerance the
+    “Deletable repeats” card reads {base.removableCount}: that many of the
+    {" "}{base.combinationCount} combinations can go, and every dropped ratio still has a
+    kept gear within {tolerance(base.tolerancePercent)} of it. Type {BIG_RING} into the first
+    ring box in place of the {GEAR_CHAINRING_DEFAULT_LARGE} and the top gear rises by
+    {" "}{step_1(top.gearInches, topBigger.gearInches)}, less than any single step on the
+    cassette.
+  </p>
+
+  <p>
+    The repeats come from two spans: how far the cassette reaches, and how far
+    apart the two rings sit.
+  </p>
+
+  <Figure caption="On a log scale the ring gap and the overlap add up to the cassette's span, and in the lower pair the gap alone is longer.">
+    <WhyRingsRepeat />
+  </Figure>
+
+  <p>
+    The cassette covers a factor of {factor(GEAR_CASSETTE_DEFAULT[10] / GEAR_CASSETTE_DEFAULT[0])},
+    and the rings sit {factor(GEAR_CHAINRING_DEFAULT_LARGE / GEAR_CHAINRING_DEFAULT_SMALL)} apart.
+    The gap is the shorter span, so the ranges the two rings cover have to
+    overlap. Widen the gap far enough and the repeats drain away: at {GEAR_CHAINRING_DEFAULT_LARGE} and
+    {" "}{WIDE_SMALL_RING} the card reads {wide.removableCount}, and at {SPLIT_RINGS[0]} and
+    {" "}{SPLIT_RINGS[1]} it reads {split.removableCount} as the two rows stop
+    touching. Measured by width instead, the “Span covered twice” card gives
+    {" "}{share(base.overlapShare)} for the default pair.
+  </p>
+
+  <p>
+    Three extra teeth on the outer ring widen that gap too, and the
+    “Deletable repeats” card falls from {base.removableCount} to {bigger.removableCount}.
+    So the model does answer the title with a yes: at any one cadence the top
+    gear on {BIG_RING} teeth runs {step_1(top.speedKmh, topBigger.speedKmh)} faster than on
+    {" "}{GEAR_CHAINRING_DEFAULT_LARGE}. What the three teeth change more is how many of
+    the {base.combinationCount} combinations the drivetrain carries twice.
+  </p>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 data-block="howto" id="howto-title">Gear inches on a log axis, cadence on a linear one</h2>
+
+    <p>
+      The first chart is a ladder of gear inches. Its axis is logarithmic because gearing multiplies. Going
+      from an {SPROCKET_STEP_LOW[0]}-tooth sprocket to a {SPROCKET_STEP_LOW[1]} is a step of
+      {" "}{step_1(SPROCKET_STEP_LOW[0], SPROCKET_STEP_LOW[1])}, and going from a
+      {" "}{SPROCKET_STEP_HIGH[0]} to a {SPROCKET_STEP_HIGH[1]} is
+      {" "}{step_1(SPROCKET_STEP_HIGH[0], SPROCKET_STEP_HIGH[1])}. A log axis draws
+      those two steps at almost the same width. The axis is refitted to each setup
+      it is given, so a marker that seems to move after a change may only have
+      had its scale shift under it.
+    </p>
+
+    <p>
+      Each marker is one combination, with its sprocket printed underneath
+      where there is room for it, and each row belongs to one front ring. Where the rows sit over the same
+      stretch, both rings cover the same ground. Hollow markers joined by a
+      dashed line are the pairs the model calls duplicates, and moving
+      “Duplicate tolerance (%)” changes which ones. At its strictest,
+      {" "}{tolerance(GEAR_TOLERANCE_MIN)}, the model already pairs {strict.pairedCount} of
+      the {base.combinationCount}; at its loosest, {tolerance(GEAR_TOLERANCE_MAX)}, it
+      pairs {loose.pairedCount}. A pair counts both of its members, while a repeat on the
+      “Deletable repeats” card is only the member that can go, its partner staying
+      behind. That is why, at the opening {tolerance(base.tolerancePercent)}, the ladder shows
+      {" "}{base.pairedCount} hollow markers against a card reading {base.removableCount}.
+    </p>
+
+    <p>
+      The second chart plots speed against cadence, one line per combination.
+      The lines are straight because at a fixed ratio speed rises in exact step
+      with cadence. A dashed upright marks the cadence you have set, and the
+      dots on it give the speeds the table below lists at that cadence.
+    </p>
+  </section>
+
+  <section class="math" aria-labelledby="math-title">
+    <h2 data-block="math" class="math-title" id="math-title">Why one division needs three names</h2>
+
+    <p>Each of the three gear figures on this page is one ratio multiplied by a single scale factor.</p>
+
+    <div class="math-eq">
+      <span>R</span><span class="op">=</span>
+      <span class="frac"><span class="frac-num">C</span><span class="sr-only"> divided by </span><span class="frac-den">S</span></span>
+      <span class="op">,</span>
+      <span>D</span><span class="op">=</span><span>d + 2w</span>
+    </div>
+
+    <dl class="math-where">
+      <dt>R</dt><dd>the ratio, front teeth over back teeth</dd>
+      <dt>C</dt><dd>front ring tooth count</dd>
+      <dt>S</dt><dd>back sprocket tooth count</dd>
+      <dt>D</dt><dd>outside diameter of the wheel with its tyre on, mm</dd>
+      <dt>d</dt><dd>rim diameter where the tyre's bead seats, the second number in the tyre marking, mm</dd>
+      <dt>w</dt><dd>tyre width, the first number in the tyre marking, mm</dd>
+      <dt>L</dt><dd>crank length, mm</dd>
+      <dt>N</dt><dd>cadence, pedal turns per minute</dd>
+    </dl>
+
+    <div class="math-eq">
+      <span>gear inches</span><span class="op">=</span>
+      <span class="frac"><span class="frac-num">R · D</span><span class="sr-only"> divided by </span><span class="frac-den">25.4</span></span>
+      <span class="op">,</span>
+      <span>development</span><span class="op">=</span>
+      <span class="frac"><span class="frac-num">R · π · D</span><span class="sr-only"> divided by </span><span class="frac-den">1{"\u202f"}000</span></span>
+      <span class="op">,</span>
+      <span>gain ratio</span><span class="op">=</span>
+      <span class="frac"><span class="frac-num">R · D</span><span class="sr-only"> divided by </span><span class="frac-den">2L</span></span>
+    </div>
+
+    <p>
+      R is the same in all three; only what it is scaled by changes: the wheel
+      diameter in inches, the circumference in metres, or the wheel radius over
+      the crank length. The gear-inch figure is a diameter, that of a wheel the pedals could drive
+      directly. Development is the distance one pedal turn covers, in metres,
+      which makes it π times the gear-inch figure once the two are in the same
+      unit. The gain ratio divides the wheel radius by the crank length, so the
+      units cancel and it comes out as a plain number. Speed is development
+      times cadence.
+    </p>
+
+    <p class="math-check">
+      L appears only under the gain ratio, never in gear inches or development.
+      Move “Crank length (mm)” from
+      {" "}{CRANK_SHORT_MM} to {CRANK_LONG_MM} and L grows by
+      {" "}{step_2(CRANK_SHORT_MM, CRANK_LONG_MM)}; gain ratio falls by
+      {" "}{drop_2(gain_short, gain_long)} while gear inches stays exactly where it
+      was. The tyre reaches D only through the term 2w, so going from
+      {" "}{GEAR_TYRE_WIDTH_DEFAULT}-{GEAR_BEAD_SEAT_DEFAULT} to {WIDE_TYRE_MM}-{GEAR_BEAD_SEAT_DEFAULT}
+      {" "}moves D by {step_2(D_NARROW, D_WIDE)}, less than one extra tooth on a
+      {" "}{GEAR_CHAINRING_DEFAULT_LARGE}-tooth ring would.
+    </p>
+  </section>
+
+  <h2 data-block="byhand">The top gear, {HAND_NAME}, from teeth to kilometres an hour</h2>
+
+  <p>
+    Take the default {GEAR_TYRE_WIDTH_DEFAULT}-{GEAR_BEAD_SEAT_DEFAULT} wheel with the
+    {" "}{HAND.chainring}-tooth ring on the {HAND.sprocket}-tooth sprocket, a
+    {" "}{GEAR_CRANK_DEFAULT} mm crank and a cadence of {GEAR_CADENCE_DEFAULT} rpm.
+  </p>
+
+  <p>
+    Start with the wheel. D = {GEAR_BEAD_SEAT_DEFAULT} + 2 × {GEAR_TYRE_WIDTH_DEFAULT} = {D_NARROW} mm,
+    which is {D_NARROW} ÷ 25.4 = {HAND_INCH_DIAMETER} inches. Around the outside it
+    measures π × {D_NARROW} = {group(Math.PI * D_NARROW, 1)} mm, or
+    {" "}{base.circumferenceM.toFixed(4)} m. The ratio is {HAND.chainring} ÷ {HAND.sprocket} = {HAND_RATIO}.
+  </p>
+
+  <p>
+    The gear-inch figure comes to {HAND_RATIO} × {HAND_INCH_DIAMETER} = {inches(HAND.gearInches)}. For
+    gain ratio, the wheel radius is {HAND_RADIUS_MM} mm, so {HAND_RADIUS_MM} ÷ {GEAR_CRANK_DEFAULT} = {HAND_RADIUS_OVER_CRANK},
+    and {HAND_RADIUS_OVER_CRANK} × {HAND_RATIO} = {HAND.gainRatio.toFixed(2)}. Development is
+    {" "}{base.circumferenceM.toFixed(4)} m × {HAND_RATIO} = {HAND.developmentM.toFixed(2)} m per pedal turn.
+  </p>
+
+  <p>
+    From there, speed can be worked out along two separate routes, one through
+    development and one through how fast the wheel turns.
+  </p>
+
+  <Figure caption={`Each column carries its middle figures unrounded, which is why ${GEAR_CADENCE_DEFAULT} × ${HAND.developmentM.toFixed(2)} shows as ${(GEAR_CADENCE_DEFAULT * HAND.developmentM).toFixed(2)}.`}>
+    <TwoRoutesToSpeed />
+  </Figure>
+
+  <p>
+    Both land on {speed(HAND.speedKmh)} km/h. The first multiplies development by
+    cadence; the second turns the wheel and measures the ground it covers.
+  </p>
+
+  <h2 data-block="assumptions">A tyre as tall as it is wide, with the duplicate line at {tolerance(GEAR_TOLERANCE_DEFAULT)}</h2>
+
+  <p>
+    The figures above come from five choices, and the fifth is the one that
+    moves the count of repeats.
+  </p>
+
+  <ol>
+    <li>
+      <strong>Closed forms.</strong> Each figure is worked
+      out once from a formula. The arithmetic risk this model guards against
+      most is mixing units, so it carries millimetres until each figure is
+      built and converts there.
+    </li>
+    <li>
+      <strong>The wheel is D = d + 2w.</strong> This treats an inflated tyre as
+      exactly as tall as it is wide, a simplification the model makes on its
+      own rather than one taken from ISO 5775-1. Of the rim it keeps only d,
+      the diameter where the tyre's bead seats.
+    </li>
+    <li>
+      <strong>Development uses the plain circumference, πD.</strong> The model
+      uses the unloaded diameter and ignores how a tyre deforms under
+      load.
+    </li>
+    <li>
+      <strong>Crank length is a slider whose range the page sets.</strong> The
+      crank range is this page's choice.
+    </li>
+    <li>
+      <strong>"Duplicate" is a threshold the page sets.</strong> Two
+      combinations count as one when their ratios differ by less than
+      “Duplicate tolerance (%)”. The default {tolerance(GEAR_TOLERANCE_DEFAULT)} is
+      narrower than the smallest step on this cassette, {SPROCKET_STEP_SMALLEST[1]} to
+      {" "}{SPROCKET_STEP_SMALLEST[0]}, at {step_1(SPROCKET_STEP_SMALLEST[1], SPROCKET_STEP_SMALLEST[0])}.
+      The {tolerance(GEAR_TOLERANCE_DEFAULT)} line is this page's choice, and the slider is there so you can
+      see how much the answer leans on it.
+    </li>
+  </ol>
+
+  <p class="note"><a href="#sliders">Back to the sliders ↑</a></p>
+
+  <h2 data-block="limits">The model counts every combination, including ones a real drivetrain is set up to avoid</h2>
+
+  <p>
+    <strong>Cross-chaining.</strong> The model combines every ring with every
+    sprocket, and the chain sits at an angle when the ring and the sprocket are at opposite ends.
+    Some of those crossed combinations are among the pairs the model marks as
+    duplicates, yet the
+    {" "}{base.removableCount} it deletes at the default setup all come from the middle of
+    the cassette. Nothing here checks chain angle, or whether the chain is long
+    enough.
+  </p>
+
+  <p>
+    The count on the “Deletable repeats” card can itself fall short. It walks up
+    the ratios from the lowest and drops any that sit within the tolerance of a
+    gear it has already kept, and that walk does not always find the most that
+    can go. At the default setup it does, {base.removableCount} out of a possible
+    {" "}{baseMost}, but on {BIG_RING} and {GEAR_CHAINRING_DEFAULT_SMALL} it drops
+    {" "}{bigger.removableCount} where a different choice of which gears to keep would drop
+    {" "}{biggerMost}.
+  </p>
+
+  <p>
+    <strong>Effort.</strong> The model counts pedal turns and the distance each
+    one covers. What those turns cost lies outside it, chain friction included.
+    The chain runs at an angle at the extremes, and the model leaves that out
+    too.
+  </p>
+
+  <p>
+    Cadence, too, is an input the model takes and never questions, including
+    whether a rider can turn a gear at that cadence at all. Speed here follows
+    from cadence, the gear and the wheel size alone, with no air, gradient, rolling resistance
+    or wheel slip.
+  </p>
+
+  <p class="note"><a href="#sliders">Back to the sliders ↑</a></p>
+
+  <h2 data-block="about">About this page</h2>
+
+  <p class="note">
+    The unit conversions are checked by two independent paths in the test file:
+    one carries millimetres to the end, and one converts to inches first. Speed
+    is held to the same test along the two routes worked by hand above, through
+    development and through wheel turns, and they agree at every combination of
+    the default setup. What I could not check is listed on the About page, under <a href="/about#how-i-check">How I check things</a>.
+  </p>
+
+  <p><strong>Sources.</strong></p>
+
+  <ul class="sources">
+    <li>
+      ISO, 2023. <em>ISO 5775-1:2023, Bicycle tyres and rims — Part 1: Tyre
+      designations and dimensions</em>. International Organization for
+      Standardization. Sold; no DOI; <a href="https://www.iso.org/standard/80740.html">catalogue
+      entry linked</a>. The designation scheme behind a marking such as {GEAR_TYRE_WIDTH_DEFAULT}-{GEAR_BEAD_SEAT_DEFAULT}.
+    </li>
+    <li>
+      ISO, 2021. <em>ISO 5775-2:2021, Bicycle tyres and rims — Part 2: Rims</em>.
+      International Organization for Standardization. Sold; no DOI; <a
+      href="https://www.iso.org/standard/79924.html">catalogue entry linked</a>.
+    </li>
+  </ul>
+
+  <RelatedTools slug={SLUG} />
+
+  <script>
+    import "@widgets/bicycle-gear-ratio/widget.js";
+  </script>
+</Base>

@@ -32,6 +32,7 @@ import {
   model_clamp_density,
   model_clamp_mass,
   model_clamp_area,
+  model_clamp_area_at_least,
   model_calculate_log_value,
   model_calculate_log_index,
   model_calculate_drag_factor,
@@ -475,6 +476,40 @@ describe('프리셋', () => {
     }
   });
 
+  it('투포환 프리셋은 4 kg(규정 최소) 아래로 내려가지 않는다 — 가장 가까운 칸은 3.971 kg였다', () => {
+    const shot = PROJECTILE_PRESETS.find((preset) => preset.key === 'shot');
+    expect(shot.massKg).toBeGreaterThanOrEqual(4);
+    // 4 kg 이상 첫 칸이어야 한다 — 한 칸 아래는 4 kg 미만.
+    const index = model_calculate_log_index(PROJECTILE_MASS_AXIS, shot.massKg);
+    expect(model_calculate_log_value(PROJECTILE_MASS_AXIS, index - 1)).toBeLessThan(4);
+    expect(shot.massKg).toBe(4.08666);
+  });
+
+  it('투포환 프리셋의 지름은 95 mm(여자 규정 하한) 아래로 내려가지 않는다 — 가장 가까운 칸은 94.58 mm였다 (B6 3회차)', () => {
+    // 규정: 4 kg, 지름 95–110 mm. 출처 캐시 audit/sources/wiki-de-kugelstossen-p4.md
+    const SHOT_DIAMETER_MIN_M = 0.095;
+    const SHOT_DIAMETER_MAX_M = 0.11;
+    const shot = PROJECTILE_PRESETS.find((preset) => preset.key === 'shot');
+    const diameter = model_calculate_diameter(shot.areaM2);
+    expect(diameter).toBeGreaterThanOrEqual(SHOT_DIAMETER_MIN_M);
+    expect(diameter).toBeLessThanOrEqual(SHOT_DIAMETER_MAX_M);
+    // 95 mm 이상 첫 칸이어야 한다 — 한 칸 아래는 95 mm 미만(옛 값 94.58 mm).
+    const index = model_calculate_log_index(PROJECTILE_AREA_AXIS, shot.areaM2);
+    const below = model_calculate_log_value(PROJECTILE_AREA_AXIS, index - 1);
+    expect(model_calculate_diameter(below)).toBeLessThan(SHOT_DIAMETER_MIN_M);
+    expect(below).toBe(model_clamp_area(model_calculate_area(SHOT_DIAMETER_MIN_M)));
+    expect(shot.areaM2).toBe(0.00723095);
+    expect(model_calculate_diameter(shot.areaM2) * 1000).toBeCloseTo(95.9517, 4);
+  });
+
+  it('model_clamp_area_at_least: 값 이상인 첫 칸, 눈금 위의 값은 그대로, 위 끝에서 멈춘다', () => {
+    const exact = model_calculate_log_value(PROJECTILE_AREA_AXIS, 7);
+    expect(model_clamp_area_at_least(exact)).toBe(exact);
+    const nudged = model_clamp_area_at_least(exact * (1 + 1e-6));
+    expect(nudged).toBe(model_calculate_log_value(PROJECTILE_AREA_AXIS, 8));
+    expect(model_clamp_area_at_least(PROJECTILE_AREA_MAX_M2 * 2)).toBe(PROJECTILE_AREA_MAX_M2);
+  });
+
   it('진공 프리셋은 Cd만 0으로 두고 질량·면적을 건드리지 않는다', () => {
     const vacuum = PROJECTILE_PRESETS.find((preset) => preset.key === 'vacuum');
     expect(vacuum.dragCoefficient).toBe(0);
@@ -493,7 +528,9 @@ describe('프리셋', () => {
   });
 
   it('프리셋의 지름이 원래 치수로 되돌아온다 (면적 ↔ 지름 왕복)', () => {
-    const expected = [73, 67, 95, 399];
+    // 투포환만 95 → 96: 규정 하한 95 mm 이상 첫 칸(95.95 mm)으로 올렸다(B6 3회차). 가까운 칸 94.58 mm가
+    // 95로 반올림돼 보이던 것이 결함이었다.
+    const expected = [73, 67, 96, 399];
     const measured = PROJECTILE_PRESETS
       .filter((preset) => preset.areaM2 !== undefined)
       .map((preset) => Math.round(model_calculate_diameter(preset.areaM2) * 1000));

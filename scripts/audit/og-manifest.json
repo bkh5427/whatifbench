@@ -48,6 +48,27 @@
     "figureLabel": "the minute the model has a 9.5 L/min shower pass an 80 L bath",
     "sha256": "6a92914e2d0c66fa92f33aa072846bd258824a1b3ece5be05c38bc0dfaf2caf4"
   },
+  "speed-vs-time-saved": {
+    "eyebrow": "Motion",
+    "headline": "How Little Time Speeding Saves",
+    "figureValue": "5.00 min",
+    "figureLabel": "the model’s saving from 40 to 60 km/h over 10 km",
+    "sha256": "5a38210cde117ff299cd506e28173d64fa843dd9d7f82a90d640120892a370b0"
+  },
+  "bicycle-gear-ratio": {
+    "eyebrow": "Motion",
+    "headline": "Bicycle Gear Ratios",
+    "figureValue": "6 of 22",
+    "figureLabel": "the combinations the model can drop at a 5% tolerance, on a 50/34 with 11–28",
+    "sha256": "fe26ee13c17f74412e53c2ebccb5b304dfa8c3ce4afba64b0fbab48953a05e7a"
+  },
+  "projectile-with-drag": {
+    "eyebrow": "Motion",
+    "headline": "Projectiles with Air Drag",
+    "figureValue": "40.1°",
+    "figureLabel": "the model’s longest-range angle for a 145 g ball at 40 m/s, against 45° in a vacuum",
+    "sha256": "e1f98f777eda97559e7a9ad6a69e57b045ee05afb68fb7e2958b8279233edf77"
+  },
   "default": {
     "eyebrow": "Interactive calculators",
     "headline": "Move the number and see what happens.",

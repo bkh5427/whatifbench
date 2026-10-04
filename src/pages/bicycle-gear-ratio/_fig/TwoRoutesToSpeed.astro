@@ -1,0 +1,115 @@
+---
+/**
+ * 도해 3 — **증명.** 손계산 절에 놓는다. 규약 §5.
+ *
+ * 상위 형태는 "독립된 두 경로가 같은 답에서 합류하는 그림"이다. 왼쪽은
+ * 발전량(한 바퀴에 나아가는 거리)을 거쳐 가고, 오른쪽은 발전량을 한 번도
+ * 쓰지 않고 휠 회전수로 간다. 두 줄이 같은 칸에서 만나는 것이 이 그림의 전부다.
+ *
+ * 숫자는 전부 톱니 수와 휠 표기에서 계산한다 — 손으로 적으면 본문·모델과 갈린다.
+ * 자릿수는 위젯 출력 형식에 맞춘다 (규약 §6 S4): 발전량·둘레 두 자리,
+ * 속도 한 자리.
+ *
+ * **이 파일이 `---`로 시작하는 이유**: `<svg`로 시작하는 `.astro`는 전송 중
+ * C2PA 서명이 붙어 파일이 깨진다 (규약 §5).
+ */
+
+// ── 재료 — 손으로 센 그 한 조합 ─────────────────────────────
+const RING_TEETH = 50;
+const SPROCKET_TEETH = 11;
+const BEAD_SEAT_MM = 622;
+const TYRE_WIDTH_MM = 25;
+const CADENCE_RPM = 90;
+
+const MM_PER_METRE = 1000;
+const SECONDS_PER_MINUTE = 60;
+const MS_TO_KMH = 3.6;
+
+const DIAMETER_MM = BEAD_SEAT_MM + 2 * TYRE_WIDTH_MM;
+const RATIO = RING_TEETH / SPROCKET_TEETH;
+const CIRCUMFERENCE_M = (Math.PI * DIAMETER_MM) / MM_PER_METRE;
+
+// 왼쪽 길 — 발전량을 거친다
+const DEVELOPMENT_M = RATIO * CIRCUMFERENCE_M;
+const METRES_PER_MINUTE = CADENCE_RPM * DEVELOPMENT_M;
+
+// 오른쪽 길 — 발전량을 쓰지 않는다
+const WHEEL_RPM = CADENCE_RPM * RATIO;
+const WHEEL_RPS = WHEEL_RPM / SECONDS_PER_MINUTE;
+const METRES_PER_SECOND = WHEEL_RPS * CIRCUMFERENCE_M;
+
+const SPEED_KMH = METRES_PER_SECOND * MS_TO_KMH;
+
+// ── 판 크기 ────────────────────────────────────────────────
+const FIG_W = 420;
+const FIG_H = 362;
+
+// ── 두 기둥 ────────────────────────────────────────────────
+const COL_X = [105, 315];
+const HEAD_Y = 30;
+const ROW_Y = [66, 106, 146, 186, 226];
+const DIVIDER_X = 210;
+const DIVIDER_Y1 = 44;
+const DIVIDER_Y2 = 248;
+
+const LEFT_ROWS = [
+  `${CADENCE_RPM} rpm`,
+  `× ${DEVELOPMENT_M.toFixed(2)} m per turn`,
+  `= ${METRES_PER_MINUTE.toFixed(2)} m/min`,
+  `× 60 ÷ 1\u202f000`,
+];
+const RIGHT_ROWS = [
+  `${CADENCE_RPM} rpm`,
+  `× ${RATIO.toFixed(4)} gear`,
+  `= ${WHEEL_RPM.toFixed(2)} wheel rpm`,
+  `÷ 60 = ${WHEEL_RPS.toFixed(2)} per sec`,
+  `× ${CIRCUMFERENCE_M.toFixed(2)} m, × 3.6`,
+];
+
+// ── 합류 ───────────────────────────────────────────────────
+const JOIN_Y = 268;
+const BOX_X = 105;
+const BOX_Y = 284;
+const BOX_W = 210;
+const BOX_H = 44;
+const BOX_TEXT_Y = BOX_Y + 28;
+const FOOT_Y = 352;
+
+const left_join = `M${COL_X[0]},${ROW_Y[3] + 14} L${COL_X[0]},${JOIN_Y} L${DIVIDER_X},${JOIN_Y} L${DIVIDER_X},${BOX_Y - 2}`;
+const right_join = `M${COL_X[1]},${ROW_Y[4] + 14} L${COL_X[1]},${JOIN_Y} L${DIVIDER_X},${JOIN_Y}`;
+
+const FIG_ALT =
+  "Two columns of arithmetic running down the page and meeting in one box at " +
+  "the bottom. The left column is headed through development: 90 rpm, times " +
+  "9.60 metres per pedal turn, giving 863.65 metres per minute, then times 60 " +
+  "and divided by 1000. The right column is headed through the wheel and never " +
+  "uses development: 90 rpm, times the gear of 4.5455, giving 409.09 wheel " +
+  "turns per minute, divided by 60 for 6.82 turns per second, times 2.11 " +
+  "metres around the wheel and times 3.6. A line from the foot of each column " +
+  "runs into the same box, which reads 51.8 km/h.";
+---
+
+<svg class="fig-svg" viewBox={`0 0 ${FIG_W} ${FIG_H}`} role="img" aria-label={FIG_ALT}>
+  <!-- 두 길이 서로 기대지 않는다는 표시 -->
+  <line x1={DIVIDER_X} y1={DIVIDER_Y1} x2={DIVIDER_X} y2={DIVIDER_Y2}
+        stroke="var(--rule)" stroke-width="1" stroke-dasharray="3 4" />
+
+  <text x={COL_X[0]} y={HEAD_Y} class="fig-label" text-anchor="middle">through development</text>
+  <text x={COL_X[1]} y={HEAD_Y} class="fig-label" text-anchor="middle">through the wheel</text>
+
+  {LEFT_ROWS.map((row, index) => (
+    <text x={COL_X[0]} y={ROW_Y[index]} class="fig-value" fill="var(--graphite)" text-anchor="middle">{row}</text>
+  ))}
+  {RIGHT_ROWS.map((row, index) => (
+    <text x={COL_X[1]} y={ROW_Y[index]} class="fig-value" fill="var(--graphite)" text-anchor="middle">{row}</text>
+  ))}
+
+  <path d={left_join} fill="none" stroke="var(--steel-700)" stroke-width="2" stroke-linejoin="round" />
+  <path d={right_join} fill="none" stroke="var(--steel-700)" stroke-width="2" stroke-linejoin="round" />
+
+  <rect x={BOX_X} y={BOX_Y} width={BOX_W} height={BOX_H} rx="3"
+        fill="var(--steel-200)" stroke="var(--steel-700)" stroke-width="2.5" />
+  <text x={DIVIDER_X} y={BOX_TEXT_Y} class="fig-num" text-anchor="middle">{SPEED_KMH.toFixed(1)} km/h</text>
+
+  <text x={DIVIDER_X} y={FOOT_Y} class="fig-label-dim" text-anchor="middle">✓ both routes agree</text>
+</svg>

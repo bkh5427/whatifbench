@@ -273,6 +273,20 @@ describe('판정 문장', () => {
     expect(display_describe_verdict(single).detail).toContain('no two combinations');
   });
 
+  it('hold 등급에서 지울 수 있는 조합이 하나뿐이면 "a few"가 아니라 "one repeat"라고 말한다', () => {
+    const one = model_calculate_result(fixture_build_state({ chainrings: [40, 28], tolerancePercent: 2 }));
+    expect(one.verdict).toBe('hold');
+    expect(one.removableCount).toBe(1);
+    const spoken = display_describe_verdict(one);
+    expect(spoken.headline).toBe('The model finds one repeat in this drivetrain.');
+    expect(spoken.detail).toContain('drop 1 of 22');
+
+    const two = model_calculate_result(fixture_build_state({ chainrings: [46, 30], tolerancePercent: 2 }));
+    expect(two.verdict).toBe('hold');
+    expect(two.removableCount).toBe(2);
+    expect(display_describe_verdict(two).headline).toBe('The model finds a few repeats in this drivetrain.');
+  });
+
   it('조합이 하나뿐이면 비교할 것이 없다고 말한다', () => {
     const one = model_calculate_result(fixture_build_state({ chainrings: [40], cassette: [16] }));
     expect(display_describe_verdict(one).headline).toContain('single ratio');
@@ -312,12 +326,22 @@ describe('판정 문장', () => {
     }
   });
 
-  it('겹쳐 보이는 선은 축을 조이지 않고 "구분 불가"라고 적는다', () => {
+  it('짝 있는 선은 축을 조이지 않고 "가깝게 달린다"고 적는다 — "구분 불가"라고 단정하지 않는다', () => {
     const many = model_calculate_result(fixture_build_state());
-    expect(chart_describe_speed(many, null)).toContain('cannot be told apart');
+    // 기본 상태 50×17·34×12는 120 rpm에서 약 5 px 떨어진다 — 선 굵기(1.6 px)보다 멀다.
+    expect(chart_describe_speed(many, null)).toContain('run close together at this scale');
+    expect(chart_describe_speed(many, null)).not.toContain('cannot be told apart');
     // 중복이 없으면 없는 말을 만들지 않는다.
     const none = model_calculate_result(fixture_build_state({ chainrings: [42], cassette: [11, 42] }));
-    expect(chart_describe_speed(none, null)).not.toContain('cannot be told apart');
+    expect(chart_describe_speed(none, null)).not.toContain('run close together');
+  });
+
+  it('링이 하나면 둘째 링의 점선을 말하지 않는다', () => {
+    const single = model_calculate_result(fixture_build_state({ chainrings: [42], cassette: [11, 42] }));
+    expect(chart_describe_speed(single, null)).not.toContain('dashed lines the second');
+    expect(chart_describe_speed(single, null)).toContain('Every line belongs to the single front ring and is drawn solid.');
+    const double = model_calculate_result(fixture_build_state());
+    expect(chart_describe_speed(double, null)).toContain('Solid lines are the first front ring, dashed lines the second.');
   });
 
   it('캡션은 렌더가 실제로 쓴 축만 인용한다', () => {
@@ -808,7 +832,7 @@ describe('그림', () => {
 
   it('축 제목 줄바꿈 — 넓으면 한 줄, 좁으면 여러 줄로(글자를 줄이지 않는다)', () => {
     const stubContext = { measureText: (text) => ({ width: String(text).length * 6 }) };
-    const title = 'Gear inches — how far one pedal turn takes you (log scale)'; // LADDER_TITLE_X
+    const title = 'Gear inches — size of the equivalent wheel (log scale)'; // LADDER_TITLE_X
     expect(chart_wrap_text(stubContext, title, 10000)).toEqual([title]);
     const wrapped = chart_wrap_text(stubContext, title, 100);
     expect(wrapped.length).toBeGreaterThan(1);
@@ -826,7 +850,7 @@ describe('그림', () => {
       .querySelectorAll('canvas')[1]
       .getContext('2d')
       .texts.map((t) => t.text);
-    expect(wideLadderTexts).toContain('Gear inches — how far one pedal turn takes you (log scale)');
+    expect(wideLadderTexts).toContain('Gear inches — size of the equivalent wheel (log scale)');
     expect(wideSpeedTexts).toContain('Cadence — pedal turns per minute (linear)');
     openDom.restore();
     openDom = null;
@@ -841,7 +865,7 @@ describe('그림', () => {
       .getContext('2d')
       .texts.map((t) => t.text);
     // 한 줄로는 더 이상 들어가지 않는다 — 글자를 줄이는 대신 줄을 나눈다.
-    expect(narrowLadderTexts).not.toContain('Gear inches — how far one pedal turn takes you (log scale)');
+    expect(narrowLadderTexts).not.toContain('Gear inches — size of the equivalent wheel (log scale)');
     expect(narrowSpeedTexts).not.toContain('Cadence — pedal turns per minute (linear)');
   });
 });

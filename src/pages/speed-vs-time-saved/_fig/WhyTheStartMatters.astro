@@ -1,0 +1,155 @@
+---
+/**
+ * 도해 2 — 메커니즘. 반전 절에 놓는다.
+ *
+ * 왜 같은 +20이 같은 분을 못 주는가: 트립 시간은 거리 ÷ 속도라서 처음엔 가파르게
+ * 떨어지고 곧 납작해진다. 같은 폭의 계단 둘을 가로축에 올려 **세로 낙차가 얼마나
+ * 다른지**를 그린다.
+ *
+ * **위젯 곡선의 재탕이 아니다** (규약 §5). 위젯은 *절약된 분*을 *올린 속도*에 대해
+ * 그린다. 이 그림은 *트립 시간 자체*를 *유지 속도*에 대해 그리고, 그 위에 같은 폭의
+ * 계단 둘을 얹는다 — 위젯이 한 장에 담지 않는 비교다.
+ *
+ * 숫자는 전부 모델이 낸다. 좌표는 아래 상수에서만 나온다 (하드코딩 금지).
+ */
+import {
+  UNIT_KMH,
+  SPEED_UNITS,
+  SECONDS_PER_MINUTE,
+  DISTANCE_DEFAULT_UNITS,
+  model_calculate_distance_to_metres,
+  model_calculate_speed_to_ms,
+  model_calculate_travel_seconds,
+} from "@widgets/speed-vs-time-saved/model.js";
+import { display_format_minutes } from "@widgets/speed-vs-time-saved/widget.js";
+
+// ── 판 크기 ────────────────────────────────────────────────
+const FIG_W = 420;
+const FIG_H = 286;
+
+// ── 그림판 ─────────────────────────────────────────────────
+const PLOT_LEFT = 64;
+const PLOT_RIGHT = 400;
+const PLOT_TOP = 44;
+const PLOT_BOTTOM = 214;
+
+// ── 축 범위 ────────────────────────────────────────────────
+const SPEED_MIN = 25;
+const SPEED_MAX = 130;
+const MINUTES_MAX = 25;
+const MINUTE_TICKS = [0, 10, 20];
+const SPEED_SAMPLE_STEP = 1;
+
+// ── 표시하는 두 계단. 같은 폭이다 — 그것이 이 그림의 요지다 ──
+const STEP_LOW = { from: 30, to: 50 };
+const STEP_HIGH = { from: 100, to: 120 };
+
+// ── 치수 ───────────────────────────────────────────────────
+const DOT_R = 3.5;
+const BRACKET_Y = 204;
+const BRACKET_TICK = 5;
+const DROP_LABEL_GAP = 8;
+const AXIS_TICK = 5;
+
+const distanceMetres = model_calculate_distance_to_metres(DISTANCE_DEFAULT_UNITS, UNIT_KMH);
+const distanceLabel = `${DISTANCE_DEFAULT_UNITS} ${SPEED_UNITS[UNIT_KMH].distanceLabel}`;
+const speedLabel = SPEED_UNITS[UNIT_KMH].speedLabel;
+
+/** 이 속도로 그 거리를 갈 때 걸리는 분. 모델의 나눗셈 하나가 전부다. */
+const minutes_at = (speedUnits) =>
+  model_calculate_travel_seconds(distanceMetres, model_calculate_speed_to_ms(speedUnits, UNIT_KMH)) /
+  SECONDS_PER_MINUTE;
+
+const plot_x = (speedUnits) =>
+  PLOT_LEFT + ((speedUnits - SPEED_MIN) * (PLOT_RIGHT - PLOT_LEFT)) / (SPEED_MAX - SPEED_MIN);
+const plot_y = (minutes) => PLOT_BOTTOM - (minutes * (PLOT_BOTTOM - PLOT_TOP)) / MINUTES_MAX;
+
+const curvePoints = [];
+for (let speed = SPEED_MIN; speed <= SPEED_MAX; speed += SPEED_SAMPLE_STEP) {
+  curvePoints.push(`${plot_x(speed).toFixed(2)},${plot_y(minutes_at(speed)).toFixed(2)}`);
+}
+const curvePath = `M${curvePoints.join(" L")}`;
+
+/** 계단 하나를 좌표와 글자로 푼다. 낙차 글자는 위젯과 같은 자릿수 규칙을 쓴다. */
+const step_build = (step) => ({
+  ...step,
+  xFrom: plot_x(step.from),
+  xTo: plot_x(step.to),
+  yFrom: plot_y(minutes_at(step.from)),
+  yTo: plot_y(minutes_at(step.to)),
+  dropText: `${display_format_minutes(minutes_at(step.from) - minutes_at(step.to))} min`,
+});
+const stepLow = step_build(STEP_LOW);
+const stepHigh = step_build(STEP_HIGH);
+const stepWidthText = `+${STEP_LOW.to - STEP_LOW.from}`;
+
+const FIG_ALT =
+  `Trip time over ${distanceLabel} plotted against the speed held for the whole trip. ` +
+  `The curve starts high on the left and falls steeply, then flattens out to the right. ` +
+  `Two steps of the same width, both marked ${stepWidthText}, sit under the curve. ` +
+  `The low step runs from ${STEP_LOW.from} to ${STEP_LOW.to} ${speedLabel} and the trip time ` +
+  `falls by ${stepLow.dropText}, a tall drop. The high step runs from ${STEP_HIGH.from} to ` +
+  `${STEP_HIGH.to} ${speedLabel} and the trip time falls by only ${stepHigh.dropText}, a sliver. ` +
+  `The two steps are the same width on the speed axis and the drops are not close.`;
+---
+
+<svg class="fig-svg" viewBox={`0 0 ${FIG_W} ${FIG_H}`} role="img" aria-label={FIG_ALT}>
+  <text x={PLOT_LEFT} y="26" class="fig-label-dim" fill="var(--graphite-soft)">minutes the {distanceLabel} takes</text>
+
+  <!-- 축 -->
+  <line x1={PLOT_LEFT} y1={PLOT_TOP} x2={PLOT_LEFT} y2={PLOT_BOTTOM} stroke="var(--graphite)" stroke-width="1.5" />
+  <line x1={PLOT_LEFT} y1={PLOT_BOTTOM} x2={PLOT_RIGHT} y2={PLOT_BOTTOM} stroke="var(--graphite)" stroke-width="1.5" />
+
+  {MINUTE_TICKS.map((minutes) => (
+    <g>
+      <line
+        x1={PLOT_LEFT - AXIS_TICK} y1={plot_y(minutes)} x2={PLOT_LEFT} y2={plot_y(minutes)}
+        stroke="var(--graphite)" stroke-width="1.5"
+      />
+      <text x={PLOT_LEFT - AXIS_TICK - 4} y={plot_y(minutes) + 5} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="end">{minutes}</text>
+    </g>
+  ))}
+
+  {[STEP_LOW.from, STEP_LOW.to, STEP_HIGH.from, STEP_HIGH.to].map((speed) => (
+    <g>
+      <line
+        x1={plot_x(speed)} y1={PLOT_BOTTOM} x2={plot_x(speed)} y2={PLOT_BOTTOM + AXIS_TICK}
+        stroke="var(--graphite)" stroke-width="1.5"
+      />
+      <text x={plot_x(speed)} y={PLOT_BOTTOM + 24} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">{speed}</text>
+    </g>
+  ))}
+
+  <text x={(PLOT_LEFT + PLOT_RIGHT) / 2} y={FIG_H - 10} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="middle">speed held, {speedLabel}</text>
+
+  <!-- 곡선 — 거리 ÷ 속도 -->
+  <path d={curvePath} fill="none" stroke="var(--series-1)" stroke-width="2.5" stroke-linejoin="round" />
+
+  <!-- 낮은 데서의 계단 — 낙차가 크다 -->
+  <line x1={stepLow.xFrom} y1={stepLow.yFrom} x2={stepLow.xFrom} y2={BRACKET_Y} stroke="var(--graphite-soft)" stroke-width="1" stroke-dasharray="3 3" />
+  <line x1={stepLow.xTo} y1={stepLow.yTo} x2={stepLow.xTo} y2={BRACKET_Y} stroke="var(--graphite-soft)" stroke-width="1" stroke-dasharray="3 3" />
+  <line x1={stepLow.xFrom} y1={BRACKET_Y} x2={stepLow.xTo} y2={BRACKET_Y} stroke="var(--graphite)" stroke-width="1.5" />
+  <line x1={stepLow.xFrom} y1={BRACKET_Y - BRACKET_TICK} x2={stepLow.xFrom} y2={BRACKET_Y + BRACKET_TICK} stroke="var(--graphite)" stroke-width="1.5" />
+  <line x1={stepLow.xTo} y1={BRACKET_Y - BRACKET_TICK} x2={stepLow.xTo} y2={BRACKET_Y + BRACKET_TICK} stroke="var(--graphite)" stroke-width="1.5" />
+  <text x={(stepLow.xFrom + stepLow.xTo) / 2} y={BRACKET_Y - 9} class="fig-label" fill="var(--graphite)" text-anchor="middle">{stepWidthText}</text>
+
+  <line x1={stepLow.xTo} y1={stepLow.yFrom} x2={stepLow.xTo} y2={stepLow.yTo} stroke="var(--graphite)" stroke-width="2.5" />
+  <circle cx={stepLow.xFrom} cy={stepLow.yFrom} r={DOT_R} fill="var(--graphite)" />
+  <circle cx={stepLow.xTo} cy={stepLow.yTo} r={DOT_R} fill="var(--graphite)" />
+  <text x={stepLow.xTo + DROP_LABEL_GAP} y={(stepLow.yFrom + stepLow.yTo) / 2 - 2} class="fig-value" fill="var(--graphite)">{stepLow.dropText}</text>
+  <text x={stepLow.xTo + DROP_LABEL_GAP} y={(stepLow.yFrom + stepLow.yTo) / 2 + 16} class="fig-label-dim" fill="var(--graphite-soft)">a tall drop</text>
+
+  <!-- 높은 데서의 계단 — 같은 폭, 낙차는 조각이다 -->
+  <line x1={stepHigh.xFrom} y1={stepHigh.yFrom} x2={stepHigh.xFrom} y2={BRACKET_Y} stroke="var(--graphite-soft)" stroke-width="1" stroke-dasharray="3 3" />
+  <line x1={stepHigh.xTo} y1={stepHigh.yTo} x2={stepHigh.xTo} y2={BRACKET_Y} stroke="var(--graphite-soft)" stroke-width="1" stroke-dasharray="3 3" />
+  <line x1={stepHigh.xFrom} y1={BRACKET_Y} x2={stepHigh.xTo} y2={BRACKET_Y} stroke="var(--graphite)" stroke-width="1.5" />
+  <line x1={stepHigh.xFrom} y1={BRACKET_Y - BRACKET_TICK} x2={stepHigh.xFrom} y2={BRACKET_Y + BRACKET_TICK} stroke="var(--graphite)" stroke-width="1.5" />
+  <line x1={stepHigh.xTo} y1={BRACKET_Y - BRACKET_TICK} x2={stepHigh.xTo} y2={BRACKET_Y + BRACKET_TICK} stroke="var(--graphite)" stroke-width="1.5" />
+  <text x={(stepHigh.xFrom + stepHigh.xTo) / 2} y={BRACKET_Y - 9} class="fig-label" fill="var(--graphite)" text-anchor="middle">{stepWidthText}</text>
+
+  <line x1={stepHigh.xTo} y1={stepHigh.yFrom} x2={stepHigh.xTo} y2={stepHigh.yTo} stroke="var(--graphite)" stroke-width="2.5" />
+  <circle cx={stepHigh.xFrom} cy={stepHigh.yFrom} r={DOT_R} fill="var(--graphite)" />
+  <circle cx={stepHigh.xTo} cy={stepHigh.yTo} r={DOT_R} fill="var(--graphite)" />
+  <text x={stepHigh.xTo} y={stepHigh.yTo - 30} class="fig-value" fill="var(--graphite)" text-anchor="end">{stepHigh.dropText}</text>
+  <text x={stepHigh.xTo} y={stepHigh.yTo - 12} class="fig-label-dim" fill="var(--graphite-soft)" text-anchor="end">a sliver</text>
+</svg>

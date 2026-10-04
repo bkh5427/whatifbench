@@ -162,6 +162,9 @@ const STYLE_BANNED_PATTERNS = [
  */
 const STYLE_REVISED_SLUGS = new Set([
   "shower-vs-bath", // 2026-10-03 새 발행 — 처음부터 막는 규칙으로
+  "speed-vs-time-saved", // 2026-10-04 예정 새 발행(motion 세 편)
+  "bicycle-gear-ratio",
+  "projectile-with-drag",
 ]);
 /** 시험용: 모든 편을 개정 편으로 본다. */
 export const STYLE_REVISED_ALL = "all";

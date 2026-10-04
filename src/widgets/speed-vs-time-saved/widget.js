@@ -92,6 +92,14 @@ const SPEED_DIGITS = 0;
 const DISTANCE_SIGNIFICANT = 6;
 const SECOND_DIGITS = 0;
 const RECOMPUTE_DELAY_MS = 110;
+/**
+ * 반올림 허용오차(상대). 25 km/h → 160 km/h, 1 km는 절약이 정확히 2.025분인데 부동소수에서
+ * 이진수로 2.02499…가 되어 `toFixed`가 0.5를 내림한다("2.02"). 사이트 규칙은 0.5 올림이다.
+ * 자릿수 문턱(1분·10분)에도 같은 허용오차를 쓴다 — 정확히 1분인 값이 0.999…로 떨어져
+ * 세 자리("1.000")로 찍히지 않게.
+ * 2026-10-03 오라클(shown.test.js)이 잡았다.
+ */
+const DISPLAY_ROUND_EPSILON = 1e-9;
 /** 프리셋이 지금 상태와 같은지 볼 때의 허용 오차(초). 왕복 환산 오차만 삼킨다. */
 const PRESET_MATCH_EPSILON = 1e-6;
 
@@ -120,12 +128,17 @@ const AXIS_LABEL_DECIMALS_MAX = 3;
 
 // ── 색 토큰 ────────────────────────────────────────────────
 const COLOR_VAR_CURVE = '--series-1';
-const COLOR_VAR_CEILING = '--series-2';
+/**
+ * 천장선은 흑연색이다. 주황(--series-2)은 이 위젯에서 **고정 지연 전용**이다(막대의 빗금, 본문 도해 1).
+ * 천장은 원래 트립의 이동 시간이라, 주황으로 그리면 같은 색이 "움직이지 않는 시간"과
+ * "이동 시간"을 함께 뜻하게 된다. (2026-10-03 B5/B6 L-COLOR)
+ */
+const COLOR_VAR_CEILING = '--graphite';
 const COLOR_VAR_GRID = '--rule';
 const COLOR_VAR_TEXT = '--graphite-soft';
 const COLOR_VAR_AXIS = '--graphite';
 const COLOR_FALLBACK_CURVE = '#1f4e79';
-const COLOR_FALLBACK_CEILING = '#c2570a';
+const COLOR_FALLBACK_CEILING = '#2b2f33';
 const COLOR_FALLBACK_GRID = '#d6d8d1';
 const COLOR_FALLBACK_TEXT = '#5f666b';
 const COLOR_FALLBACK_AXIS = '#2b2f33';
@@ -140,10 +153,12 @@ const CHART_TITLE_X_UNIT_TOKEN = '{unit}';
 const CHART_TITLE_X = `Raised speed (${CHART_TITLE_X_UNIT_TOKEN}, linear)`;
 const LEGEND_CURVE_LABEL = 'Time saved';
 const LEGEND_CEILING_LABEL = 'Ceiling d/v₁';
+/** 단위 토글의 라벨. 캡션이 같은 글자로 인용하므로 한 자리에 둔다. */
+const UNIT_LABEL_TEXT = 'Units on screen';
 const LEGEND_KEY_TEXT =
   'Solid = minutes saved by the raised speed. Dashed = the ceiling d/v₁, the whole moving time of the original trip.';
 const VERDICT_HEADLINE = {
-  hold: 'The model returns very little time here.',
+  hold: 'The model returns a small slice of the trip.',
   edge: 'The model returns a noticeable slice of the trip.',
   break: 'The model returns a large slice of the trip.',
 };
@@ -172,23 +187,37 @@ export const PRESET_KEYS = PRESETS[UNIT_KMH].map((preset) => preset.key);
 
 // ── 표시 함수 ──────────────────────────────────────────────
 
+/**
+ * 고정 자릿수 표기. **0.5는 올림**(크기 기준)이고, 반올림해서 0이 되면 부호를 버린다 —
+ * `toFixed`는 부동소수 오차로 동점을 내림한다. (2026-10-03, shower-vs-bath와 같은 수정)
+ */
+export function display_format_fixed(value, digits) {
+  const scale = 10 ** digits;
+  const scaled = Math.abs(value) * scale;
+  const rounded = Math.floor(scaled + 0.5 + DISPLAY_ROUND_EPSILON * Math.max(1, scaled));
+  const text = (rounded / scale).toFixed(digits);
+  return value < 0 && rounded !== 0 ? `-${text}` : text;
+}
+
 /** 분. 초안이 인용하는 8.00 / 5.00 / 15.0 / 21.0이 이 규칙에서 그대로 나온다. */
 export function display_format_minutes(minutes) {
   if (!Number.isFinite(minutes)) return '—';
-  if (minutes < MINUTE_SMALL_THRESHOLD) return minutes.toFixed(MINUTE_SMALL_DIGITS);
-  if (minutes < MINUTE_MEDIUM_THRESHOLD) return minutes.toFixed(MINUTE_MEDIUM_DIGITS);
-  return minutes.toFixed(MINUTE_LARGE_DIGITS);
+  // 문턱은 반올림 전 값으로 보되 허용오차를 둔다 — 정확히 1분·10분이 아래 칸으로 새지 않게.
+  const size = Math.abs(minutes);
+  if (size < MINUTE_SMALL_THRESHOLD - DISPLAY_ROUND_EPSILON) return display_format_fixed(minutes, MINUTE_SMALL_DIGITS);
+  if (size < MINUTE_MEDIUM_THRESHOLD - DISPLAY_ROUND_EPSILON) return display_format_fixed(minutes, MINUTE_MEDIUM_DIGITS);
+  return display_format_fixed(minutes, MINUTE_LARGE_DIGITS);
 }
 
 export function display_format_seconds(seconds) {
   if (!Number.isFinite(seconds)) return '—';
-  return seconds.toFixed(SECOND_DIGITS);
+  return display_format_fixed(seconds, SECOND_DIGITS);
 }
 
 /** 백분율의 숫자만. 카드의 값과 단위를 따로 채워야 해서 둘로 나눠 둔다. */
 export function display_format_percent_number(share) {
   if (!Number.isFinite(share)) return '—';
-  return (share * PERCENT_SCALE).toFixed(PERCENT_DIGITS);
+  return display_format_fixed(share * PERCENT_SCALE, PERCENT_DIGITS);
 }
 
 export function display_format_percent(share) {
@@ -198,7 +227,7 @@ export function display_format_percent(share) {
 
 export function display_format_speed(speedMs, unitKey) {
   const unit = model_read_unit(unitKey);
-  return `${model_calculate_speed_from_ms(speedMs, unitKey).toFixed(SPEED_DIGITS)} ${unit.speedLabel}`;
+  return `${display_format_fixed(model_calculate_speed_from_ms(speedMs, unitKey), SPEED_DIGITS)} ${unit.speedLabel}`;
 }
 
 /**
@@ -221,7 +250,7 @@ export function display_format_axis_minutes(minutes) {
   if (minutes === 0) return '0';
   const size = Math.abs(minutes);
   const decimals = Math.max(0, AXIS_LABEL_SIGNIFICANT - 1 - Math.floor(Math.log10(size)));
-  return minutes.toFixed(Math.min(decimals, AXIS_LABEL_DECIMALS_MAX));
+  return display_format_fixed(minutes, Math.min(decimals, AXIS_LABEL_DECIMALS_MAX));
 }
 
 /** 프리셋 버튼의 글자. 버튼 라벨만 읽고도 무엇이 로드되는지 알 수 있어야 한다. */
@@ -501,8 +530,10 @@ export function chart_describe_axes(drawn, unitKey) {
   return (
     `${LEGEND_KEY_TEXT} Vertical axis 0–${display_format_axis_minutes(drawn.scale.high)} minutes, ` +
     `horizontal axis ${Math.round(drawn.speedLow)}–${Math.round(drawn.speedHigh)} ${unit.speedLabel}, both linear. ` +
-    `Both rescale with the sliders, so read them before comparing two settings. The dotted vertical line marks ` +
-    `where the raised-speed slider sits. The curve approaches the dashed ceiling and never reaches it.`
+    `The vertical axis rescales with the distance and starting-speed sliders and the horizontal axis with the ` +
+    `starting-speed slider and the “${UNIT_LABEL_TEXT}” setting, so read them before comparing two settings. ` +
+    `The dotted vertical line marks the raised ` +
+    `speed the cards use. The curve approaches the dashed ceiling and never reaches it.`
   );
 }
 
@@ -576,7 +607,7 @@ export function widget_mount(rootEl) {
   const distanceSlider = control_build_slider(
     ID_DISTANCE,
     'How far you are going',
-    'The distance of the trip. The handle steps through round distances, and every figure on this page scales straight up and down with it.',
+    'The distance of the trip. The handle steps through round distances. Moving times, the minutes saved and the ceiling scale in proportion to it; the shares stay put unless a fixed delay is entered.',
     {
       min: DISTANCE_INDEX_MIN,
       max: DISTANCE_INDEX_MAX,
@@ -587,7 +618,7 @@ export function widget_mount(rootEl) {
   const fromSlider = control_build_slider(
     ID_FROM,
     'The speed you were doing',
-    'The speed held for the whole trip in the first scenario. This is the number that decides how much the raise is worth. ' +
+    'The speed held for the whole trip in the first scenario. For a given raise over a given distance, this is the number that decides how much the raise is worth. ' +
       'Try the same raise from a low starting speed and then from a high one — the minutes saved are not close.',
     { min: 0, max: 1, step: 1, value: 0 },
   );
@@ -617,7 +648,7 @@ export function widget_mount(rootEl) {
   unitLabelBox.className = 'widget-label';
   const unitLabel = document.createElement('span');
   unitLabel.setAttribute('id', `${ID_UNIT}-label`);
-  unitLabel.textContent = 'Units on screen';
+  unitLabel.textContent = UNIT_LABEL_TEXT;
   const unitHint = document.createElement('span');
   unitHint.className = 'widget-hint';
   unitHint.setAttribute('id', `${ID_UNIT}-hint`);
@@ -702,7 +733,8 @@ export function widget_mount(rootEl) {
   legend.className = 'widget-legend';
   for (const key of [
     { swatch: 'legend-mean-1', label: LEGEND_CURVE_LABEL },
-    { swatch: 'legend-tail-2', label: LEGEND_CEILING_LABEL },
+    // 천장 견본: 흑연색 점선(전역 CSS의 기존 `.legend-reference`). 주황은 지연 전용이다.
+    { swatch: 'legend-reference', label: LEGEND_CEILING_LABEL },
   ]) {
     const item = document.createElement('span');
     item.className = 'legend-item';
@@ -949,7 +981,7 @@ export function widget_mount(rootEl) {
     const spoken = display_describe_verdict(lastResult, state.unit);
     chartCanvas.setAttribute(
       'aria-label',
-      `Time saved against the raised speed, rising steeply and then flattening toward the ceiling. ` +
+      `Time saved against the raised speed, rising toward the ceiling without reaching it. ` +
         `${spoken.headline} ${spoken.detail}`,
     );
   }

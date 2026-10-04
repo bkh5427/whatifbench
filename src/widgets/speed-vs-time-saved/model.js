@@ -128,6 +128,13 @@ export const DELAY_DEFAULT_MINUTES = 0;
  */
 export const VERDICT_BREAK_MIN_SHARE = 0.25;
 export const VERDICT_EDGE_MIN_SHARE = 0.1;
+/**
+ * 판정 경계의 허용오차. 문턱은 **포함**이다(비율 ≥ 0.25면 break, ≥ 0.1이면 edge).
+ * 30 → 40 km/h, 1 km면 비율이 정확히 1/4인데 부동소수에서 0.2499…로 떨어져 edge로 찍혔다.
+ * 2026-10-03 오라클(shown.test.js)이 잡았다. 격자 위 비율은 문턱과 같지 않으면 10⁻⁸ 이상
+ * 떨어지므로, 1e-12는 부동소수 오차만 삼킨다.
+ */
+export const VERDICT_BOUNDARY_EPSILON = 1e-12;
 
 /** 곡선을 그릴 때 v₂를 몇 점으로 훑는가. */
 export const CURVE_POINT_COUNT = 180;
@@ -304,8 +311,8 @@ export function model_calculate_result(distanceMetres, speedFromMs, speedToMs, d
 
 /** 판정. 절약이 원래 총 소요시간의 몇 할인가로 가른다. */
 export function model_calculate_verdict(savedShare) {
-  if (savedShare >= VERDICT_BREAK_MIN_SHARE) return 'break';
-  if (savedShare >= VERDICT_EDGE_MIN_SHARE) return 'edge';
+  if (savedShare >= VERDICT_BREAK_MIN_SHARE - VERDICT_BOUNDARY_EPSILON) return 'break';
+  if (savedShare >= VERDICT_EDGE_MIN_SHARE - VERDICT_BOUNDARY_EPSILON) return 'edge';
   return 'hold';
 }
 

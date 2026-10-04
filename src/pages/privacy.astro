@@ -2,7 +2,7 @@
 import Base from "@layouts/Base.astro";
 import { tools_read_published } from "@data/tools.js";
 const EMAIL = "contact@whatifbench.com";
-const UPDATED = "27 September 2026";
+const UPDATED = "3 October 2026";
 
 // 이 페이지가 말하는 "계산기"는 발행된 도구의 개수를 약속한다 — 하나인데 복수형으로
 // 쓰면 거짓이다. `[category].astro`의 `elsewhere_text`와 같은 규율이다: 개수에서
@@ -28,8 +28,8 @@ const manyCalculators = tools_read_published().length >= CALCULATOR_MIN_FOR_PLUR
   <h2>What the {manyCalculators ? "calculators do" : "calculator does"} with your input</h2>
 
   <p>
-    There is no text box to fill in: you set a calculator with buttons and
-    sliders, and those settings are processed by JavaScript running on
+    You set a calculator with buttons, sliders, drop-down lists, a tick box and a few number boxes, and
+    those settings are processed by JavaScript running on
     your own device. The calculator itself sends them nowhere. It does write the
     current settings into the page address, after the "?", so that a link
     reopens the same view. That makes them part of the address: if you reload,
@@ -172,7 +172,7 @@ const manyCalculators = tools_read_published().length >= CALCULATOR_MIN_FOR_PLUR
   <p>
     This site is not directed at children under 13 and does not knowingly
     collect their personal information. Nothing here asks for it: there is no
-    text box, no account and no newsletter, and this site holds no copy of the
+    account, no newsletter and no box that asks who you are, and this site holds no copy of the
     technical data described above to delete — that data is held by Cloudflare.
     If you believe a child's personal information has reached this site, email
     the address above, and I can take the request to Cloudflare.
@@ -190,6 +190,12 @@ const manyCalculators = tools_read_published().length >= CALCULATOR_MIN_FOR_PLUR
   <p>
     This policy may be updated. The date at the top reflects the most recent
     revision. Material changes will be noted on this page.
+  </p>
+
+  <p>
+    The revision of 3 October 2026 added drop-down lists, a tick box and number
+    boxes to the controls a calculator has, and dropped the line saying there is
+    no text box to fill in, since some calculators now take a typed number.
   </p>
 
   <p>

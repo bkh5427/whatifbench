@@ -44,6 +44,8 @@ export const CATEGORIES = [
   { key: "scale", href: "/scale", short: "Scale", name: "Scale" },
   // 2026-10-03 운영자 결정: shower-vs-bath 한 편으로 연다(아래 CATEGORY_OPEN_MIN_EXCEPTIONS).
   { key: "energy", href: "/energy", short: "Energy", name: "Energy" },
+  // 2026-10-03: motion 세 편(speed·bicycle·projectile)을 한 번에 내며 연다 — 최소 2편 규칙 그대로.
+  { key: "motion", href: "/motion", short: "Motion", name: "Motion" },
 ];
 
 /**
@@ -52,9 +54,7 @@ export const CATEGORIES = [
  * 도입글(`category-intros.js`)도 그대로 남겨 둔다: 도구 둘이 발행되면 거의 그대로
  * 다시 참이 되므로, 문장을 버리는 대신 발행 전까지 잠가 두는 쪽이 낫다.
  */
-export const CATEGORIES_PLANNED = [
-  { key: "motion", href: "/motion", short: "Motion", name: "Motion" },
-];
+export const CATEGORIES_PLANNED = [];
 
 /** 열렸든 닫혔든 이름이 붙어 있는 모든 카테고리. 도구의 `category` 검증용. */
 export const CATEGORIES_ALL = [...CATEGORIES, ...CATEGORIES_PLANNED];
@@ -66,6 +66,9 @@ import { meta as FOLDING_PAPER_MOON } from "../pages/folding-paper-moon/_meta.js
 import { meta as SOLAR_SYSTEM_LIGHT_DELAY } from "../pages/solar-system-light-delay/_meta.js";
 import { meta as WIFI_THROUGH_WALLS } from "../pages/wifi-through-walls/_meta.js";
 import { meta as SHOWER_VS_BATH } from "../pages/shower-vs-bath/_meta.js";
+import { meta as SPEED_VS_TIME_SAVED } from "../pages/speed-vs-time-saved/_meta.js";
+import { meta as BICYCLE_GEAR_RATIO } from "../pages/bicycle-gear-ratio/_meta.js";
+import { meta as PROJECTILE_WITH_DRAG } from "../pages/projectile-with-drag/_meta.js";
 
 export const CATEGORY_MAX_BEFORE_HEADER_CHANGE = 4;
 /** 카테고리를 열 수 있는 최소 발행 수. 위 주석의 규칙을 기계가 읽는 값으로. */
@@ -95,13 +98,9 @@ export const TOOLS = [
   SOLAR_SYSTEM_LIGHT_DELAY,
   WIFI_THROUGH_WALLS,
   SHOWER_VS_BATH,
-
-  // 5.00분은 40→60 km/h · 10 km에서만 참이다 — 같은 +20이라도 70→90이면 1.90분이다.
-  { slug: "speed-vs-time-saved", category: "motion", name: "How Little Time Speeding Saves", blurb: "Time saved against speed, with the fixed delays held constant on both sides.", grade: "A", since: null, updated: null, changed: "", tags: ["counterintuitive", "rates", "commute"], figure: { value: "5.00 min", label: "the model’s saving from 40 to 60 km/h over 10 km" }, published: false },
-
-  // “6 of 22”는 허용오차 5%에서의 값이다. 중복은 정의마다 갈리므로 라벨에 조건을 넣는다.
-  { slug: "bicycle-gear-ratio", category: "motion", name: "Bicycle Gear Ratios", blurb: "Gear inches, gain ratio and speed against cadence, with duplicate gears marked.", grade: "A", since: null, updated: null, changed: "", tags: ["rates", "mechanics", "outdoors"], figure: { value: "6 of 22", label: "the combinations the model can drop at a 5% tolerance, on a 50/34 with 11–28" }, published: false },
-  { slug: "projectile-with-drag", category: "motion", name: "Projectiles with Air Drag", blurb: "Trajectory with drag, drawn over the vacuum solution as a ghost line.", grade: "B", since: null, updated: null, changed: "", tags: ["mechanics", "counterintuitive", "outdoors"], figure: { value: "40.1°", label: "the model’s longest-range angle for a 145 g ball at 40 m/s, against 45° in a vacuum" }, published: false },
+  SPEED_VS_TIME_SAVED,
+  BICYCLE_GEAR_RATIO,
+  PROJECTILE_WITH_DRAG,
 ];
 
 // ── 관련 도구 선택 ──────────────────────────────────────────

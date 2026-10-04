@@ -203,7 +203,7 @@ describe("데이터 무결성", () => {
 
   it("카테고리 수가 헤더 한 줄 한계 안에 있다", () => {
     // 2026-09-24: scale·motion·energy를 닫았다. 2026-09-26: scale을 두 편으로 다시 연다. 2026-10-03: energy를 한 편으로 연다.
-    expect(CATEGORIES.length).toBe(3); // 골든(2026-09-26: scale, 2026-10-03: energy 열림). 늘리려면 헤더 패턴을 먼저 본다.
+    expect(CATEGORIES.length).toBe(4); // 골든(2026-09-26: scale, 2026-10-03: energy, 2026-10-04: motion 열림). 늘리려면 헤더 패턴을 먼저 본다.
     expect(CATEGORIES.length).toBeLessThanOrEqual(CATEGORY_MAX_BEFORE_HEADER_CHANGE);
     expect(CATEGORIES_ALL.length).toBe(4); // 이름이 붙은 것은 넷 그대로
   });
@@ -269,7 +269,8 @@ describe("발행 게이트", () => {
   it("발행된 도구의 카테고리가 닫혀 있으면 throw한다", () => {
     const pool = [
       ...TOOLS.filter((t) => t.published),
-      { ...TOOLS[0], slug: "homeless", category: CATEGORIES_PLANNED[0].key, published: true, updated: "2026-01-01" },
+      // 2026-10-04: 닫힌 카테고리가 하나도 남지 않아(넷 다 열림) 목록에 없는 키로 닫힘을 흉내 낸다.
+      { ...TOOLS[0], slug: "homeless", category: CATEGORIES_PLANNED[0]?.key ?? "fixture-closed", published: true, updated: "2026-01-01" },
     ];
     expect(() => tools_check_publishable(pool)).toThrow(/카테고리가 닫혀 있다/);
   });

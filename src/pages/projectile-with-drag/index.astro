@@ -1,0 +1,525 @@
+---
+import Base from "@layouts/Base.astro";
+import Byline from "@components/Byline.astro";
+import RelatedTools from "@components/RelatedTools.astro";
+import Figure from "@components/Figure.astro";
+// 도해 셋. 설정(위젯 앞) → 메커니즘(반전 절) → 증명(손계산 절). 규약 §5.
+import TwoForces from "./_fig/TwoForces.astro";
+import WhatTimeBuys from "./_fig/WhatTimeBuys.astro";
+import TwoRoutes from "./_fig/TwoRoutes.astro";
+import { tools_read_category } from "@data/tools.js";
+import {
+  PROJECTILE_GRAVITY_MS2,
+  PROJECTILE_DENSITY_DEFAULT_KGM3,
+  PROJECTILE_VACUUM_OPTIMUM_ANGLE_DEG,
+  PROJECTILE_STEP_SECONDS,
+  PROJECTILE_SPEED_MIN_MS,
+  PROJECTILE_SPEED_MAX_MS,
+  model_build_default_parameters,
+  model_calculate_diameter,
+  model_calculate_drag_factor,
+  model_calculate_terminal_speed,
+  model_calculate_flight,
+  model_calculate_vacuum,
+  model_calculate_summary,
+  model_calculate_sweep,
+} from "@widgets/projectile-with-drag/model.js";
+import { units_format_scientific } from "@widgets/_shared/units.js";
+
+const SLUG = "projectile-with-drag";
+const CATEGORY = "motion";
+const cat = tools_read_category(CATEGORY);
+
+// 브레드크럼 이름. 화면과 구조화 데이터가 **같은 상수 하나**를 읽는다.
+const CRUMB = "Projectiles with Air Drag";
+
+// ── 본문이 인용하는 숫자는 전부 여기서 모델이 낸다 ─────────────
+// 하드코딩하지 않는다(규약 §6). 표시 자릿수는 위젯 화면과 맞춘다(§5.5 S4):
+// 각도 1자리 · 미터 1자리 · 속력 1자리 · 질량 g 1자리.
+const ANGLE_D = 1;
+const METRE_D = 1;
+const SPEED_D = 1;
+const fmtAngle = (deg) => `${deg.toFixed(ANGLE_D)}°`;
+const fmtMetre = (m) => m.toFixed(METRE_D);
+const fmtSpeed = (v) => v.toFixed(SPEED_D);
+const fmtGram = (kg) => `${(kg * 1000).toFixed(1)} g`;
+// 천 단위는 좁은 공백(U+202F) — 사이트 공통 규약 §6.
+const fmtCount = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f");
+// 10 미만의 개수는 낱말로 — 사이트 공통 규약 §6.
+const COUNT_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+const fmtCountWord = (n) => (n < COUNT_WORDS.length ? COUNT_WORDS[n] : fmtCount(n));
+// 위젯의 “Cross-section” 판독과 같은 자릿수(widget.js AREA_SIGNIFICANT_DIGITS = 4).
+const AREA_DIGITS = 4;
+const MM_PER_M = 1000;
+
+const BASE = model_build_default_parameters();
+const SPEED = BASE.speedMs;
+const MASS = BASE.massKg;
+const DIAMETER_MM = Math.round(model_calculate_diameter(BASE.areaM2) * MM_PER_M);
+const AREA_TEXT = units_format_scientific(BASE.areaM2, AREA_DIGITS);
+
+const SWEEP = model_calculate_sweep(BASE);
+const OPT_ANGLE = fmtAngle(SWEEP.optimum.angleDeg);
+const OPT_RANGE = fmtMetre(SWEEP.optimum.rangeMetres);
+const VACUUM_RANGE = fmtMetre(SWEEP.vacuumOptimum.rangeMetres);
+const ANGLE_SHIFT = (PROJECTILE_VACUUM_OPTIMUM_ANGLE_DEG - SWEEP.optimum.angleDeg).toFixed(ANGLE_D);
+
+const SUMMARY = model_calculate_summary(BASE);
+const LOST_PERCENT = `${((1 - SUMMARY.rangeRatio) * 100).toFixed(0)}%`;
+
+// 최적각이 질량 하나로 얼마나 움직이는가. 크기·속력·항력계수는 그대로 둔다.
+// 질량은 로그 슬라이더 눈금 위의 값만 쓴다 — 화면에 그 숫자가 실제로 뜬다.
+const joinList = (parts) =>
+  parts.length < 2 ? parts.join("") : `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
+const MASS_LADDER = joinList(
+  [0.01, 0.0499883, 0.145, 0.544964, 5].map((kg) => {
+    const mass = kg < 1 ? fmtGram(kg) : `${kg.toFixed(3)} kg`;
+    return `${fmtAngle(model_calculate_sweep({ ...BASE, massKg: kg }).optimum.angleDeg)} for ${mass}`;
+  }),
+);
+
+// 봉우리가 얼마나 평평한가. 세 각을 그대로 읽는다.
+const FLAT_DEGREES = [35, 40, 45];
+const FLAT_RANGES = FLAT_DEGREES.map((deg) => ({
+  angle: `${deg}°`,
+  range: fmtMetre(model_calculate_flight({ ...BASE, angleDeg: deg }).rangeMetres),
+}));
+const FLAT = joinList(FLAT_RANGES.map((row) => `${row.range} m at ${row.angle}`));
+const FLAT_SPAN = `${FLAT_DEGREES.at(-1) - FLAT_DEGREES[0]}°`;
+const FLAT_SPREAD = fmtMetre(
+  Math.max(...FLAT_RANGES.map((f) => Number(f.range)))
+    - Math.min(...FLAT_RANGES.map((f) => Number(f.range))),
+);
+
+// 항력 묶음 k와 그 파생값. 손계산 절이 이 숫자를 그대로 쓴다.
+const K = model_calculate_drag_factor(BASE);
+const K_TEXT = units_format_scientific(K, AREA_DIGITS);
+const K_RECIPROCAL = Math.round(1 / K);
+const TERMINAL = fmtSpeed(model_calculate_terminal_speed(K));
+const DRAG_DIGITS = 2;
+const dragAt = (speed) => K * speed * speed;
+const LAUNCH_DRAG = dragAt(SPEED).toFixed(DRAG_DIGITS);
+// 발사 순간 항력 감속 대 중력. 값에 따라 문장이 갈린다 — 결론을 하드코딩하지 않는다.
+// 둘이 같아지는 자리가 종단속도 √(g/k)다.
+const DRAG_RATIO = dragAt(SPEED) / PROJECTILE_GRAVITY_MS2;
+const DRAG_AHEAD = DRAG_RATIO > 1;
+const DRAG_RATIO_TEXT = DRAG_RATIO.toFixed(DRAG_DIGITS);
+const DRAG_SLOWEST = dragAt(PROJECTILE_SPEED_MIN_MS).toFixed(DRAG_DIGITS);
+const DRAG_FASTEST = dragAt(PROJECTILE_SPEED_MAX_MS).toFixed(DRAG_DIGITS);
+const LAUNCH_VERDICT = DRAG_AHEAD
+  ? `the air slows this ball ${DRAG_RATIO_TEXT} times as hard as gravity pulls it`
+  : `gravity pulls this ball harder than the air slows it, by a factor of ${(1 / DRAG_RATIO).toFixed(DRAG_DIGITS)}`;
+const ROBINS_SIDE = DRAG_AHEAD ? "the same side" : "the opposite side";
+
+// 공기를 뺀 한 발사. 두 경로가 만나는 자리.
+const CHECK = { ...BASE, angleDeg: PROJECTILE_VACUUM_OPTIMUM_ANGLE_DEG, dragCoefficient: 0 };
+const CHECK_FLIGHT = model_calculate_flight(CHECK);
+const CHECK_CLOSED = model_calculate_vacuum(CHECK);
+const CHECK_DIGITS = 6;
+const CHECK_INTEGRATOR = CHECK_FLIGHT.rangeMetres.toFixed(CHECK_DIGITS);
+const CHECK_FORMULA = CHECK_CLOSED.rangeMetres.toFixed(CHECK_DIGITS);
+const CHECK_STEPS = fmtCount(Math.ceil(CHECK_FLIGHT.flightSeconds / PROJECTILE_STEP_SECONDS));
+const CHECK_ANGLES = [15, 30, 45, 60, 75];
+const CHECK_WORST = "4 × 10⁻¹⁴";
+const CHECK_TOLERANCE = "1 × 10⁻¹²";
+
+// 스텝 크기가 답을 얼마나 흔드는가.
+const STEP_COARSE = 0.16;
+const STEP_COARSE_GAP = "0.03 mm";
+const STEP_HALVED_GAP = "2 × 10⁻¹¹ m";
+
+// 항력계수가 한 숫자가 아니라는 것.
+const CD_LOW = "0.07";
+const CD_HIGH = "0.5";
+const REYNOLDS = "2 × 10⁵";
+---
+
+<Base
+  title="Projectile with drag: is 45° still the longest shot?"
+  description="Set the mass, the size, the drag coefficient and the air, and watch the longest-range launch angle slide off 45°. A stepped solution for quadratic drag, drawn over the same launch with no air."
+  category={CATEGORY}
+  crumbTool={true}
+  crumbLabel={CRUMB}
+>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span aria-hidden="true">›</span>
+    <a href={cat.href}>{cat.name}</a> <span aria-hidden="true">›</span>
+    {CRUMB}
+  </nav>
+
+  <h1>Does 45° still give the longest shot once the air pushes back?</h1>
+
+  <p class="deck">
+    A ball goes furthest at {PROJECTILE_VACUUM_OPTIMUM_ANGLE_DEG}° — in air that is
+    not there. Put the air back, set the mass and the size, and watch that angle
+    move.
+  </p>
+
+  <Byline slug={SLUG} />
+
+  <p class="lead">
+    In 1742 Benjamin Robins hung a heavy block from a frame, sent a small ball
+    into it and measured how far the block swung. From the swing he worked out
+    the speed of the ball.
+  </p>
+
+  <p class="lead">
+    At those speeds the air pushed back harder than the ball weighed. The tidy
+    parabola from the airless formula has no air in it, and it was not the path
+    the ball took.
+  </p>
+
+  <p class="lead">
+    <span class="lead-turn">This page puts the air back</span> and steps the
+    motion forward in small slices of time. Below, the solid path carries the
+    air and the dashed one does not.
+  </p>
+
+  <Figure caption="The drag arrow grows with the square of the ball's speed; the gravity arrow stays the same length in every panel.">
+    <TwoForces />
+  </Figure>
+
+  <div id="sliders" data-widget="projectile-with-drag">
+    <noscript>
+      <p>
+        Without scripts the sliders and the two charts stay empty. Later on, the {SPEED} m/s baseball throw gets two sums on paper:
+        its airless range, and how hard the air pushes on it at launch.
+      </p>
+    </noscript>
+  </div>
+
+  <h2 data-block="reversal">Mass and speed move the best angle through one ratio</h2>
+
+  <p>
+    “Launch angle” and “Launch speed” set the throw. The other four sliders
+    describe the ball and the air, and together they fix how hard the air slows
+    the ball at a given speed.
+  </p>
+
+  <p>
+    Press “Baseball” and keep the launch speed at {SPEED} m/s. That loads a{" "}
+    {fmtGram(MASS)} ball {DIAMETER_MM} mm across, which the “Cross-section” slider
+    shows as {AREA_TEXT} m², and the model puts its longest shot at{" "}
+    <strong>{OPT_ANGLE}</strong>, where it travels {OPT_RANGE} m. With the air
+    taken out, the same throw reaches {VACUUM_RANGE} m at{" "}
+    {PROJECTILE_VACUUM_OPTIMUM_ANGLE_DEG}°, so the air costs {LOST_PERCENT} of the
+    distance. It also pulls the best angle down by {ANGLE_SHIFT}°.
+  </p>
+
+  <Figure caption="The shaded area is the distance. Neither panel shows one cost: a steeper launch also starts the ball slower along the ground.">
+    <WhatTimeBuys />
+  </Figure>
+
+  <p>
+    In the model, tilting the throw upward buys time in the air. Without air, the last second
+    of flight carries the ball along the ground as far as the first one did.
+    With air, the ball keeps shedding speed along the ground until it lands;
+    the baseball keeps less than half of it. With air, the extra time adds less
+    distance, so the trade tips at a lower angle.
+  </p>
+
+  <p>
+    Mass enters the model in one place: it divides the drag term, so a heavier
+    ball of the same size is slowed less by the same drag. Move “Mass” alone and the best
+    angle comes out at {MASS_LADDER}. Heavier still, it creeps back toward{" "}
+    {PROJECTILE_VACUUM_OPTIMUM_ANGLE_DEG}°.
+  </p>
+
+  <p>
+    The model sets the best angle by one ratio: the air's drag at launch
+    against the ball's weight, written k·v₀²/g with the symbols defined below.
+    More mass behind the same cross-section pulls the angle back toward{" "}
+    {PROJECTILE_VACUUM_OPTIMUM_ANGLE_DEG}°, and a harder throw pushes it further
+    away.
+  </p>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 data-block="howto" id="howto-title">One chart for the flight, one for every angle</h2>
+
+    <p>
+      Press “Vacuum (no air)” first. It sets the drag coefficient
+      to 0 and leaves everything else alone, so the two paths land on one curve
+      and each card shows the same figure twice.
+    </p>
+
+    <p>
+      The upper chart puts both paths on one pair of axes, with distance along
+      the bottom and height up the side, both in metres. The axes are fitted to the airless
+      path, so only “Launch angle” and “Launch speed” rescale them; the other sliders move the solid path inside a fixed frame.
+      The two axes can also use different scales, so the arc on screen need not have its true shape. The dashed path comes from a formula and skips the stepping
+      entirely, which is why “Mass”, “Cross-section”, “Drag coefficient” and “Air density”
+      never move it.
+    </p>
+
+    <p>
+      Four cards give the drag path's figures, each with the airless figure
+      under it. The lower chart sweeps the launch angle from 0° to 90° with
+      everything else held. There the airless arch peaks at{" "}
+      {PROJECTILE_VACUUM_OPTIMUM_ANGLE_DEG}°. The drag curve sits under it and
+      leans left, with a vertical line at its peak and that angle printed in
+      degrees in the caption. The dot on the curve marks the angle the “Launch
+      angle” slider is set to.
+    </p>
+
+    <p>
+      For the baseball that drag curve is nearly flat at the top: {FLAT}, about{" "}
+      {FLAT_SPREAD} m apart across {FLAT_SPAN}.
+    </p>
+  </section>
+
+  <section class="math" aria-labelledby="math-title">
+    <h2 data-block="math" class="math-title" id="math-title">Where the drag term comes from</h2>
+
+    <p>Newton's second law, with two forces on the right:</p>
+
+    <div class="math-eq">
+      <span>m · dv/dt</span><span class="op">=</span>
+      <span>− m·g·ĵ</span><span class="op">−</span>
+      <span>½·ρ·C<sub>d</sub>·A·|v|·v</span>
+    </div>
+
+    <dl class="math-where">
+      <dt>m</dt><dd>mass of the ball, kg</dd>
+      <dt>g</dt><dd>gravity, {PROJECTILE_GRAVITY_MS2} m/s²</dd>
+      <dt>ĵ</dt><dd>a unit arrow pointing up</dd>
+      <dt>ρ</dt><dd>air density, kg/m³</dd>
+      <dt>C<sub>d</sub></dt><dd>drag coefficient, a bare number</dd>
+      <dt>A</dt><dd>the area the air meets head-on, m²</dd>
+      <dt>v</dt><dd>velocity; |v| is the speed</dd>
+    </dl>
+
+    <p>
+      The second term is the quadratic drag law; writing |v|·v instead of v²
+      keeps it pointed against the motion in both parts, with no separate sign
+      rule. Dividing through by m gathers
+      everything except gravity into one number, k:
+    </p>
+
+    <div class="math-eq">
+      <span>dv/dt</span><span class="op">=</span><span>− g·ĵ</span>
+      <span class="op">−</span><span>k·|v|·v</span>
+      <span class="op">,</span>
+      <span>k</span><span class="op">=</span>
+      <span class="frac">
+        <span class="frac-num">ρ·C<sub>d</sub>·A</span>
+        <span class="frac-den">2m</span>
+      </span>
+    </div>
+
+    <p>
+      k has units of one over a length, so 1/k is a length and √(g/k) is a
+      speed: the terminal speed, at which drag alone balances the weight. For
+      the {fmtGram(MASS)} ball it is {TERMINAL} m/s. Split into its two parts,
+      the motion is:
+    </p>
+
+    <div class="math-eq">
+      <span>dx/dt = v<sub>x</sub></span><span class="op">,</span>
+      <span>dy/dt = v<sub>y</sub></span><span class="op">,</span>
+      <span>dv<sub>x</sub>/dt = −k·|v|·v<sub>x</sub></span><span class="op">,</span>
+      <span>dv<sub>y</sub>/dt = −g − k·|v|·v<sub>y</sub></span>
+    </div>
+
+    <p>
+      With the drag coefficient at 0, k vanishes and the two parts come apart.
+      Short formulas then answer the airless case: R = v₀²·sin2θ/g,
+      H = v₀²·sin²θ/2g, T = 2·v₀·sinθ/g. Once k is back, each part carries the
+      other's speed inside the drag term, and no short formula survives.
+    </p>
+
+    <dl class="math-where">
+      <dt>v₀</dt><dd>launch speed, m/s</dd>
+      <dt>θ</dt><dd>launch angle above level ground</dd>
+      <dt>R</dt><dd>range to the landing point, m</dd>
+      <dt>H</dt><dd>height of the top of the arc, m</dd>
+      <dt>T</dt><dd>time in the air, s</dd>
+    </dl>
+
+    <p class="math-check">
+      <strong>Stepping instead of solving.</strong> The page therefore moves the
+      equations forward one small step at a time, using classical fourth-order
+      Runge–Kutta. It reads the slope four times per step, and its error falls
+      as the fourth power of the step. The landing point is solved for inside
+      the last partial step rather than read off a step edge, and the top of
+      the arc is found the same way.
+    </p>
+  </section>
+
+  <h2 data-block="byhand">Two sums for one {SPEED} m/s throw</h2>
+
+  <p>
+    Start with the air out. At a drag coefficient of 0, k is zero and the range
+    is R = v₀²·sin2θ/g. At {PROJECTILE_VACUUM_OPTIMUM_ANGLE_DEG}° the sine is 1,
+    so the range is {SPEED} × {SPEED} ÷ {PROJECTILE_GRAVITY_MS2}, or{" "}
+    <strong>{CHECK_FORMULA} m</strong>. That takes two lines of arithmetic and
+    no stepping at all.
+  </p>
+
+  <Figure caption="Left, the arithmetic from the paragraph above; right, the stepper's run from the paragraph below.">
+    <TwoRoutes />
+  </Figure>
+
+  <p>
+    The stepper knows nothing about that formula. It takes {CHECK_STEPS} steps
+    of {PROJECTILE_STEP_SECONDS} s and lands the ball at{" "}
+    <strong>{CHECK_INTEGRATOR} m</strong>, agreeing with the hand count to every
+    figure shown.
+  </p>
+
+  <p>
+    The same check runs at {CHECK_ANGLES.slice(0, -1).join("°, ")}° and {CHECK_ANGLES.at(-1)}°,
+    on range, top height and flight time, and the widest relative gap was{" "}
+    {CHECK_WORST}. Setting “Air density” to 0 removes the same term and lands
+    in the same place.
+  </p>
+
+  <p>
+    Put the air back and the same ball gives a second sum. k is
+    ρ·C<sub>d</sub>·A ÷ 2m, which comes to {K_TEXT} per metre, so 1/k is about{" "}
+    {K_RECIPROCAL} m. At launch the air slows the ball by k·v₀², or{" "}
+    <strong>{LAUNCH_DRAG} m/s²</strong>, while gravity pulls at{" "}
+    {PROJECTILE_GRAVITY_MS2} m/s². So at the opening {SPEED} m/s,{" "}
+    {LAUNCH_VERDICT}.
+  </p>
+
+  <p>
+    For this ball the two are level at the terminal speed of {TERMINAL} m/s.
+    Launched faster, it starts with drag ahead of gravity; launched slower, it
+    starts with gravity ahead. Across the “Launch speed” range of{" "}
+    {PROJECTILE_SPEED_MIN_MS} to {PROJECTILE_SPEED_MAX_MS} m/s, k·v₀² runs from{" "}
+    {DRAG_SLOWEST} to {DRAG_FASTEST} m/s².
+  </p>
+
+  <p>
+    Robins's balls flew far faster than this throw, and this sum lands on{" "}
+    {ROBINS_SIDE} of the comparison he made. In this page's symbols, that
+    comparison, drag against weight, is k·v₀²/g, the same ratio that sets the
+    best angle in the model.
+  </p>
+
+  <h2 data-block="assumptions">Conditions that hold from launch to landing</h2>
+
+  <p>
+    Every path with air on this page is computed under these five conditions;
+    the dashed airless path keeps only the first and the fifth.
+  </p>
+
+  <ol>
+    <li>Gravity is fixed at {PROJECTILE_GRAVITY_MS2} m/s² and points straight down.</li>
+    <li>The air is one even block. Its density is whatever the “Air density” slider says.</li>
+    <li>Drag is ½·ρ·C<sub>d</sub>·A·|v|·v, always against the motion.</li>
+    <li>The drag coefficient is one fixed number for the whole flight.</li>
+    <li>The ball leaves from ground level over flat ground.</li>
+  </ol>
+
+  <p>
+    Two numbers behind those conditions are agreed values, not measurements. The 3rd CGPM
+    adopted {PROJECTILE_GRAVITY_MS2} m/s² as the standard value in 1901. The{" "}
+    {PROJECTILE_DENSITY_DEFAULT_KGM3} kg/m³ is the sea-level line of the ISO
+    Standard Atmosphere: 288.15 K, 101{"\u202f"}325 Pa, dry clean air. Real gravity
+    varies by a few parts in a thousand, which this model ignores. Real air is
+    rarely at that standard condition, which is why “Air density” has a slider.
+  </p>
+
+  <p>
+    The fourth condition is the weakest. Its default value,{" "}
+    {BASE.dragCoefficient}, is the least certain number on the page, which is
+    why it too has a slider. It is used with no Reynolds number attached, the
+    figure built from speed, size and the air that says what kind of flow
+    wraps the ball.
+  </p>
+
+  <p class="note"><a href="#sliders">Back to the sliders ↑</a></p>
+
+  <h2 data-block="limits">Where one fixed drag coefficient stops fitting the flow</h2>
+
+  <p>
+    Speed moves a real ball's drag coefficient, while moving “Launch speed”
+    leaves this one alone. For a sphere, the coefficient traces a curve against
+    Reynolds number. NASA
+    Glenn gives the sphere range as {CD_LOW} to {CD_HIGH} and names no single
+    value. This ball at {SPEED} m/s in sea-level air sits near a Reynolds number
+    of {REYNOLDS}. Above that, the flow around it changes and the coefficient
+    falls sharply, a drop Achenbach measured on smooth spheres. The page does
+    not model that drop, and nothing warns when the setting stops fitting the
+    flow. Surface roughness, which shifts the coefficient too, is absent.
+  </p>
+
+  <p>
+    <strong>No spin.</strong> A spinning ball feels a force across its path.
+    This model has no spin term, so no path here is pushed off to the side.
+    It has no lift term either, so the lift that backspin adds is outside
+    it.
+  </p>
+
+  <p>
+    The air's density holds one value along the whole path, while real air thins with height, so a real
+    ball climbs into thinner air. There is no wind and no
+    damp. Launching from ground level over flat ground keeps the airless
+    comparison fair; uneven ground, a raised launch point and the Earth's spin
+    all fall outside it.
+  </p>
+
+  <p>
+    The stepper's error shrinks as the fourth power of the step, but it never reaches zero.
+    For the default baseball throw, a {STEP_COARSE} s step misses the settled range by {STEP_COARSE_GAP}.
+    Halving the default {PROJECTILE_STEP_SECONDS} s step moves that range by{" "}
+    {STEP_HALVED_GAP}, far below anything the screen shows. The number on screen
+    is still the stepper's approximation to the equations.
+  </p>
+
+  <p class="note"><a href="#sliders">Back to the sliders ↑</a></p>
+
+  <h2 data-block="about">About this page</h2>
+
+  <p class="note">
+    The airless results come from a formula the stepper never calls. The unit
+    tests hold the two within a relative gap of {CHECK_TOLERANCE} at{" "}
+    {fmtCountWord(CHECK_ANGLES.length)} launch angles. The tests also measure
+    how fast the stepper converges, and they pin the headline figures:{" "}
+    {OPT_ANGLE}, {OPT_RANGE} m, the {fmtCountWord(FLAT_RANGES.length)} flat-peak
+    ranges, k and the {CHECK_FORMULA} m airless range. What I could not check is
+    listed on the About page, under <a href="/about#how-i-check">How I check things</a>.
+  </p>
+
+  <p><strong>Sources.</strong></p>
+
+  <ul class="sources">
+    <li>
+      CGPM, 1901. <em>Declaration 2 of the 3rd CGPM</em>, on the standard value of
+      gravity. No DOI; <a
+      href="https://www.bipm.org/en/committees/cg/cgpm/3-1901/resolution-2">official
+      text linked</a>. It adopts 980.665 cm/s², the {PROJECTILE_GRAVITY_MS2} m/s² used here.
+    </li>
+    <li>
+      ISO, 1975. <em>ISO 2533:1975, Standard Atmosphere</em>. Sold; <a
+      href="https://www.iso.org/standard/7472.html">catalogue entry linked</a>.
+      Its sea-level line is the {PROJECTILE_DENSITY_DEFAULT_KGM3} kg/m³ default.
+    </li>
+    <li>
+      NASA Glenn Research Center. <em>Shape Effects on Drag</em>. No DOI; <a
+      href="https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/shape-effects-on-drag/">official
+      text linked</a>. The sphere range of {CD_LOW} to {CD_HIGH} is from here.
+    </li>
+    <li>
+      Achenbach, E., 1972. Experiments on the flow past spheres at very high
+      Reynolds numbers. <em>Journal of Fluid Mechanics</em> 54(3), 565–575. <a
+      href="https://doi.org/10.1017/S0022112072000874">doi:10.1017/S0022112072000874</a>.
+    </li>
+    <li>
+      Johnson, W., 1986. Benjamin Robins' new principles of gunnery.{" "}
+      <em>International Journal of Impact Engineering</em> 4(4), 205–219. <a
+      href="https://doi.org/10.1016/0734-743X(86)90014-X">doi:10.1016/0734-743X(86)90014-X</a>.
+    </li>
+    <li>
+      Robins, B., 1742. <em>New Principles of Gunnery</em>. No stable link. The
+      first record of the pendulum measurements.
+    </li>
+  </ul>
+
+  <RelatedTools slug={SLUG} />
+
+  <script>
+    import "@widgets/projectile-with-drag/widget.js";
+  </script>
+</Base>

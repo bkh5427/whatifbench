@@ -104,9 +104,17 @@ const AXIS_LABEL_WHOLE_MIN = 10;
 const BEAD_SEAT_NOTES = {
   622: 'most road and hybrid wheels',
   584: 'wider-tyre road and off-road wheels',
-  559: 'older off-road wheels',
+  559: 'off-road wheels',
   406: 'small-wheel and folding bicycles',
 };
+/**
+ * 반올림 허용오차(상대). 3.525·6.25·1.375 같은 정확한 동점이 부동소수에서 …4999로 떨어져
+ * `toFixed`가 0.5를 내림했다(gain "3.52", Near twin "6.2%", 배수 "1.37×"). 사이트 규칙은 0.5 올림이다.
+ * 2026-10-03 오라클(shown.test.js)이 잡았다. 샤워 vs 욕조의 `display_format_fixed`와 같은 방식이다.
+ */
+const DISPLAY_ROUND_EPSILON = 1e-9;
+/** Near twin 칸의 상대차 자릿수(%). */
+const TWIN_GAP_DIGITS = 1;
 const RECOMPUTE_DELAY_MS = 110;
 const VALUE_PLACEHOLDER = '—';
 
@@ -170,15 +178,27 @@ const COLOR_FALLBACK_AXIS = '#2b2f33';
 const COLOR_FALLBACK_SURFACE = '#ffffff';
 
 // ── 문구 ───────────────────────────────────────────────────
-const LADDER_TITLE_X = 'Gear inches — how far one pedal turn takes you (log scale)';
+const LADDER_TITLE_X = 'Gear inches — size of the equivalent wheel (log scale)';
 const SPEED_TITLE_X = 'Cadence — pedal turns per minute (linear)';
 const SPEED_TITLE_Y = 'Speed, km/h (linear)';
 const TABLE_HEADINGS = ['Gear', 'Gear inches', 'Gain ratio', 'Development', 'Speed', 'Near twin'];
+/**
+ * 판정 배너의 머리말. **문턱(0.35)이 절반 아래라 break에 "most"를 쓰지 않는다** —
+ * 지울 수 있는 비율은 이 등급에서 36~50 %다. hold는 지울 것이 0개인지로 다시 갈린다:
+ * 0개면 짝도 0개라 "nothing"이 정확하고, 1개 이상이면 "almost nothing"은 과소 서술이다(2026-10-03 B6).
+ */
 const VERDICT_HEADLINE = {
-  hold: 'The model finds almost nothing repeated in this drivetrain.',
+  hold: 'The model finds a few repeats in this drivetrain.',
   edge: 'The model finds part of this drivetrain repeated.',
-  break: 'The model finds most of this drivetrain repeated.',
+  break: 'The model finds much of this drivetrain repeated.',
 };
+const VERDICT_HEADLINE_NONE = 'The model finds nothing repeated in this drivetrain.';
+/**
+ * hold 등급에서 지울 수 있는 조합이 꼭 1개일 때. "a few"는 하나를 여럿으로 부풀린다 —
+ * 483상태 중 247상태가 이 경우였다(2026-10-03 B6 r3).
+ */
+const VERDICT_HEADLINE_ONE = 'The model finds one repeat in this drivetrain.';
+const VERDICT_ONE_REMOVABLE = 1;
 const INVALID_HEADLINE = 'The model cannot read that setup yet.';
 /** 앞 칸에 숫자가 아닌 것이 들어왔을 때. 카세트와 달리 파서가 따로 없다. */
 const RING_TEXT_MESSAGE =
@@ -187,33 +207,55 @@ const RING_TEXT_MESSAGE =
 
 // ── 표시 함수 ──────────────────────────────────────────────
 
+/**
+ * 고정 자릿수 표기. **0.5는 올림**(크기 기준)이고, 반올림해서 0이 되면 부호를 버린다 —
+ * `toFixed`는 부동소수 오차로 동점을 내림한다(2026-10-03). 화면의 모든 고정 자릿수가 이것을 거친다.
+ */
+export function display_format_fixed(value, digits) {
+  const scale = 10 ** digits;
+  const scaled = Math.abs(value) * scale;
+  const rounded = Math.floor(scaled + 0.5 + DISPLAY_ROUND_EPSILON * Math.max(1, scaled));
+  const text = (rounded / scale).toFixed(digits);
+  return value < 0 && rounded !== 0 ? `-${text}` : text;
+}
+
 export function display_format_gear_inches(value) {
-  return Number.isFinite(value) ? value.toFixed(GEAR_INCH_DIGITS) : VALUE_PLACEHOLDER;
+  return Number.isFinite(value) ? display_format_fixed(value, GEAR_INCH_DIGITS) : VALUE_PLACEHOLDER;
 }
 
 export function display_format_gain_ratio(value) {
-  return Number.isFinite(value) ? value.toFixed(GAIN_RATIO_DIGITS) : VALUE_PLACEHOLDER;
+  return Number.isFinite(value) ? display_format_fixed(value, GAIN_RATIO_DIGITS) : VALUE_PLACEHOLDER;
 }
 
 export function display_format_development(value) {
-  return Number.isFinite(value) ? `${value.toFixed(DEVELOPMENT_DIGITS)} m` : VALUE_PLACEHOLDER;
+  return Number.isFinite(value) ? `${display_format_fixed(value, DEVELOPMENT_DIGITS)} m` : VALUE_PLACEHOLDER;
 }
 
 export function display_format_speed(value) {
-  return Number.isFinite(value) ? value.toFixed(SPEED_DIGITS) : VALUE_PLACEHOLDER;
+  return Number.isFinite(value) ? display_format_fixed(value, SPEED_DIGITS) : VALUE_PLACEHOLDER;
 }
 
 export function display_format_tolerance(percent) {
-  return `${percent.toFixed(TOLERANCE_DIGITS)}%`;
+  return `${display_format_fixed(percent, TOLERANCE_DIGITS)}%`;
 }
 
 /** 지분은 정수 퍼센트로. 조합이 22개면 한 개가 4.5포인트라 자릿수가 남는다. */
 export function display_format_share(fraction) {
-  return Number.isFinite(fraction) ? `${Math.round(fraction * PERCENT_SCALE)}%` : VALUE_PLACEHOLDER;
+  return Number.isFinite(fraction) ? `${display_format_fixed(fraction * PERCENT_SCALE, 0)}%` : VALUE_PLACEHOLDER;
 }
 
 export function display_format_factor(value) {
-  return Number.isFinite(value) ? `${value.toFixed(FACTOR_DIGITS)}×` : VALUE_PLACEHOLDER;
+  return Number.isFinite(value) ? `${display_format_fixed(value, FACTOR_DIGITS)}×` : VALUE_PLACEHOLDER;
+}
+
+/** Near twin 칸의 상대차(%). 6.25%가 "6.2%"로 내림되던 자리다(2026-10-03). */
+export function display_format_twin_gap(gap) {
+  return `${display_format_fixed(gap * PERCENT_SCALE, TWIN_GAP_DIGITS)}%`;
+}
+
+/** 크랭크 길이. 눈금 2.5 mm의 정밀도로 적는다. */
+export function display_format_crank(crankMm) {
+  return `${display_format_fixed(crankMm, CRANK_DIGITS)} mm`;
 }
 
 /** 조합 이름. 표의 행 제목이자 범례가 인용하는 이름이다. */
@@ -229,9 +271,9 @@ export function display_format_axis_number(value) {
   // 0은 유효한 눈금이다 (속도 y축은 0에서 시작한다) — 자리표시자로 삼키지 않는다.
   if (!Number.isFinite(value) || value < 0) return VALUE_PLACEHOLDER;
   if (value === 0) return '0';
-  if (value >= AXIS_LABEL_WHOLE_MIN) return String(Math.round(value));
+  if (value >= AXIS_LABEL_WHOLE_MIN) return display_format_fixed(value, 0);
   const decimals = Math.max(0, AXIS_LABEL_SIGNIFICANT - 1 - Math.floor(Math.log10(value)));
-  return value.toFixed(Math.min(decimals, AXIS_LABEL_DECIMALS_MAX));
+  return display_format_fixed(value, Math.min(decimals, AXIS_LABEL_DECIMALS_MAX));
 }
 
 /**
@@ -239,10 +281,14 @@ export function display_format_axis_number(value) {
  * 장비를 고르라는 말은 하지 않는다 — 이 페이지는 나눗셈만 한다.
  */
 export function display_describe_verdict(result) {
-  const headline =
-    result.combinationCount === 1
-      ? 'With one ring and one sprocket the model has a single ratio and nothing to compare it with.'
-      : VERDICT_HEADLINE[result.verdict];
+  let headline = VERDICT_HEADLINE[result.verdict];
+  if (result.combinationCount === 1) {
+    headline = 'With one ring and one sprocket the model has a single ratio and nothing to compare it with.';
+  } else if (result.removableCount === 0) {
+    headline = VERDICT_HEADLINE_NONE;
+  } else if (result.verdict === 'hold' && result.removableCount === VERDICT_ONE_REMOVABLE) {
+    headline = VERDICT_HEADLINE_ONE;
+  }
 
   const repeats =
     result.removableCount === 0
@@ -250,7 +296,7 @@ export function display_describe_verdict(result) {
         `close enough to call the same gear`
       : `At a ${display_format_tolerance(result.tolerancePercent)} tolerance the model can drop ` +
         `${num_format_count(result.removableCount)} of ${num_format_count(result.combinationCount)} combinations ` +
-        `and still reach every ratio the drivetrain has`;
+        `and still keep a gear within that tolerance of every ratio the drivetrain has`;
 
   const detail =
     `${repeats}. It puts the whole range at ${display_format_gear_inches(result.lowest.gearInches)} to ` +
@@ -278,7 +324,7 @@ export function display_describe_counting(result) {
   return (
     `Three ways to count the same repetition. ${num_format_count(result.removableCount)} of ` +
     `${num_format_count(result.combinationCount)} combinations (${display_format_share(result.removableShare)}) ` +
-    `can be deleted without losing a ratio at ${tolerance}. ` +
+    `can be deleted while every ratio keeps a gear within ${tolerance}. ` +
     `${num_format_count(result.pairedCount)} of ${num_format_count(result.combinationCount)} ` +
     `(${display_format_share(result.pairedShare)}) have a near twin somewhere in the drivetrain, which counts ` +
     `both halves of every pair. ${overlap}`
@@ -694,7 +740,7 @@ export function chart_render_speed(canvasEl, result, invalidMessage = null) {
   context.textAlign = 'center';
   context.textBaseline = 'top';
   for (const value of xTicks) {
-    context.fillText(String(Math.round(value)), toX(value), plotHeight + CHART_LABEL_GAP);
+    context.fillText(display_format_fixed(value, 0), toX(value), plotHeight + CHART_LABEL_GAP);
   }
 
   // ── 직선 다발 ──
@@ -764,9 +810,9 @@ export function chart_render_speed(canvasEl, result, invalidMessage = null) {
 /**
  * 속도 그래프의 캡션. 그림이 실제로 쓴 축 상한만 인용한다.
  *
- * 중복으로 판정된 선들은 정의상 서로 τ 안에 있어 이 축에서 선 굵기보다 가깝다.
- * **축을 더 조이지 않고 "구분 불가"라고 적는다** — 더 확대하면 나머지 선이
- * 창 밖으로 나가고, 안 적으면 독자가 별개의 선이라고 오독한다.
+ * 중복으로 판정된 선들은 서로 τ 안에 있어 이 축에서 가깝게 달린다. 그러나 **선 굵기보다
+ * 붙는다는 보장은 없다** — 기본 상태 50×17과 34×12는 120 rpm에서 약 5 px 떨어진다
+ * (2026-10-03 B6). 그래서 "구분 불가"가 아니라 "가깝게 달린다"고 적고, 축은 조이지 않는다.
  */
 export function chart_describe_speed(result, drawn) {
   const ceiling = drawn
@@ -775,14 +821,19 @@ export function chart_describe_speed(result, drawn) {
   const merged =
     result.pairedCount > 0
       ? ` ${num_format_count(result.pairedCount)} of the lines sit within ` +
-        `${display_format_tolerance(result.tolerancePercent)} of another and cannot be told apart at this scale; ` +
+        `${display_format_tolerance(result.tolerancePercent)} of another and run close together at this scale; ` +
         `the table below lists them separately rather than the axis being tightened around them.`
       : '';
+  // 링이 하나면 둘째 링의 점선이 없다 — 그 상태의 점선은 케이던스 커서뿐이다(2026-10-03 B6).
+  const styles =
+    result.chainrings.length > 1
+      ? 'Solid lines are the first front ring, dashed lines the second.'
+      : 'Every line belongs to the single front ring and is drawn solid.';
   return (
     `One straight line per combination, because at a fixed ratio the model makes speed exactly proportional to ` +
-    `cadence. Solid lines are the first front ring, dashed lines the second. The dashed vertical line is the ` +
-    `cadence slider at ${num_format_count(result.cadenceRpm)} rpm, and the dots on it are the km/h column of the ` +
-    `table. ${ceiling}${merged}`
+    `cadence. ${styles} The dashed vertical line is the ` +
+    `cadence slider at ${num_format_count(result.cadenceRpm)} rpm, and the dots on it are the 'Speed at ${result.cadenceRpm} rpm' ` +
+    `column of the table. ${ceiling}${merged}`
   );
 }
 
@@ -1001,7 +1052,7 @@ export function widget_mount(rootEl) {
   const toleranceSlider = control_build_slider(
     'gear-tolerance',
     'Duplicate tolerance (%)',
-    'Two combinations count as the same gear when their ratios differ by less than this. Nothing in a standard fixes it — move it and watch the answer move.',
+    'Two combinations count as the same gear when their ratios differ by less than this. The line is this page\'s choice — move it and watch the answer move.',
     {
       min: GEAR_TOLERANCE_MIN,
       max: GEAR_TOLERANCE_MAX,
@@ -1124,13 +1175,13 @@ export function widget_mount(rootEl) {
     toleranceSlider.input.value = String(current.tolerancePercent);
 
     widthSlider.output.textContent = `${current.tyreWidthMm} mm`;
-    crankSlider.output.textContent = `${current.crankMm.toFixed(CRANK_DIGITS)} mm`;
+    crankSlider.output.textContent = display_format_crank(current.crankMm);
     cadenceSlider.output.textContent = `${current.cadenceRpm} rpm`;
     toleranceSlider.output.textContent = display_format_tolerance(current.tolerancePercent);
 
     // 인덱스가 아니라 값이지만, 단위 없이 읽히면 "172.5"가 무엇인지 알 수 없다.
     widthSlider.input.setAttribute('aria-valuetext', `${current.tyreWidthMm} mm`);
-    crankSlider.input.setAttribute('aria-valuetext', `${current.crankMm.toFixed(CRANK_DIGITS)} mm`);
+    crankSlider.input.setAttribute('aria-valuetext', display_format_crank(current.crankMm));
     cadenceSlider.input.setAttribute('aria-valuetext', `${current.cadenceRpm} rpm`);
     toleranceSlider.input.setAttribute('aria-valuetext', display_format_tolerance(current.tolerancePercent));
 
@@ -1169,7 +1220,7 @@ export function widget_mount(rootEl) {
           display_format_development(combination.developmentM),
           `${display_format_speed(combination.speedKmh)} km/h`,
           twin
-            ? `${display_format_gear_name(result.combinations[twin.index])} (${(twin.gap * PERCENT_SCALE).toFixed(1)}%)`
+            ? `${display_format_gear_name(result.combinations[twin.index])} (${display_format_twin_gap(twin.gap)})`
             : VALUE_PLACEHOLDER,
         ]),
       );

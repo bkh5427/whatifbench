@@ -1,0 +1,537 @@
+---
+import Base from "@layouts/Base.astro";
+import Byline from "@components/Byline.astro";
+import RelatedTools from "@components/RelatedTools.astro";
+import Figure from "@components/Figure.astro";
+// 도해 셋. 설정(위젯 앞) → 메커니즘(반전 절) → 증명(손계산 절) 순이다 — 규약 §5.
+import TheSetup from "./_fig/TheSetup.astro";
+import WhyTheStartMatters from "./_fig/WhyTheStartMatters.astro";
+import TwoPaths from "./_fig/TwoPaths.astro";
+import { tools_read_category } from "@data/tools.js";
+import {
+  UNIT_KMH,
+  UNIT_MPH,
+  DISTANCE_DEFAULT_UNITS,
+  SPEED_UNITS,
+  SECONDS_PER_MINUTE,
+  SECONDS_PER_HOUR,
+  METRES_PER_KILOMETRE,
+  METRES_PER_MILE,
+  model_calculate_speed_range,
+  model_calculate_distance_to_metres,
+  model_calculate_speed_to_ms,
+  model_calculate_result,
+  model_calculate_increase_table,
+} from "@widgets/speed-vs-time-saved/model.js";
+import {
+  PRESETS,
+  display_format_minutes,
+  display_format_percent,
+} from "@widgets/speed-vs-time-saved/widget.js";
+
+// 등급·검수일은 Byline이 tools.js에서 읽는다. 페이지가 다시 말하지 않는다.
+const SLUG = "speed-vs-time-saved";
+const CATEGORY = "motion";
+const cat = tools_read_category(CATEGORY);
+
+// 브레드크럼 이름. 화면과 구조화 데이터가 **같은 상수 하나**를 읽는다.
+const CRUMB = "How Little Time Speeding Saves";
+
+// **본문은 처음부터 끝까지 km/h다.** 위젯의 “Units on screen” 토글은 화면만 바꾸고
+// 이 글은 따라가지 않는다 — 그래서 단위 라벨도 km/h 한 벌에서만 읽고, 본문이 그 사실을
+// 한 번 밝힌다(“How to read” 절). mph 분기를 두지 않는다: 정적 글이라 토글을 알 수 없다.
+const unit = SPEED_UNITS[UNIT_KMH];
+// 천 단위는 좁은 공백(U+202F) — 사이트 숫자 규약(writing-standard §6). 쉼표를 쓰지 않는다.
+const THOUSANDS_SEPARATOR = "\u202f";
+const thousands = (value) => value.toLocaleString("en-US").replace(/,/g, THOUSANDS_SEPARATOR);
+const distanceText = `${DISTANCE_DEFAULT_UNITS} ${unit.distanceLabel}`;
+
+// 리드 문단의 "다이얼 양 끝" — 표의 여덟 줄이 아니라 출발 속도 슬라이더 자체의
+// min·max다. +20 km/h는 표와 같은 증분(tableIncrease)을 그대로 쓴다.
+const dialDistanceMetres = model_calculate_distance_to_metres(DISTANCE_DEFAULT_UNITS, UNIT_KMH);
+const dialRange = model_calculate_speed_range(UNIT_KMH);
+const dialIncreaseKmh = unit.tableIncrease;
+const dialFastFrom = dialRange.fromMax;
+const dialFastTo = Math.min(dialRange.fromMax + dialIncreaseKmh, dialRange.toMax);
+
+const dialSlowEnd = model_calculate_result(
+  dialDistanceMetres,
+  model_calculate_speed_to_ms(dialRange.fromMin, UNIT_KMH),
+  model_calculate_speed_to_ms(dialRange.fromMin + dialIncreaseKmh, UNIT_KMH),
+  0,
+);
+const dialFastEnd = model_calculate_result(
+  dialDistanceMetres,
+  model_calculate_speed_to_ms(dialFastFrom, UNIT_KMH),
+  model_calculate_speed_to_ms(dialFastTo, UNIT_KMH),
+  0,
+);
+// 위젯 카드가 쓰는 것과 같은 자릿수 규칙(display_format_minutes)으로 적는다 —
+// 이 페이지만의 자릿수 규칙을 따로 만들지 않는다.
+const dialSlowMinutesText = display_format_minutes(dialSlowEnd.savedSeconds / SECONDS_PER_MINUTE);
+const dialFastMinutesText = display_format_minutes(dialFastEnd.savedSeconds / SECONDS_PER_MINUTE);
+
+// ── 반전 절의 표 ────────────────────────────────────────────
+// 행도 값도 모델이 낸다. 위젯의 표와 같은 함수를 부르므로 둘이 갈라질 수 없다.
+const TABLE_DELAY_SECONDS = 0;
+const tableRows = model_calculate_increase_table(dialDistanceMetres, TABLE_DELAY_SECONDS, UNIT_KMH);
+const tableRaiseText = `${dialIncreaseKmh} ${unit.speedLabel}`;
+const tableSpread = Math.round(
+  tableRows[0].result.savedSeconds / tableRows[tableRows.length - 1].result.savedSeconds,
+);
+
+// ── 손으로 세는 한 경우 ─────────────────────────────────────
+// 표의 대표 행과 같은 설정이다. 도해 3(TwoPaths)이 그리는 것도 이 경우다.
+const HAND_FROM = 40;
+const HAND_TO = 60;
+const HAND_DELAY_MINUTES = 6;
+const SECOND_DIGITS = 1;
+const SPEED_MS_DIGITS = 3;
+const HOUR_DIGITS = 4;
+
+const handFromMs = model_calculate_speed_to_ms(HAND_FROM, UNIT_KMH);
+const handToMs = model_calculate_speed_to_ms(HAND_TO, UNIT_KMH);
+const handPlain = model_calculate_result(dialDistanceMetres, handFromMs, handToMs, 0);
+const handDelayed = model_calculate_result(
+  dialDistanceMetres,
+  handFromMs,
+  handToMs,
+  HAND_DELAY_MINUTES * SECONDS_PER_MINUTE,
+);
+
+/** 1 km/h를 m/s로 바꾸는 나눗수. 정의값이라 본문에도 모델과 같은 상수에서 꺼낸다. */
+const KMH_TO_MS_DIVISOR = SECONDS_PER_HOUR / METRES_PER_KILOMETRE;
+const handMetresText = thousands(dialDistanceMetres);
+const handFromMsText = handFromMs.toFixed(SPEED_MS_DIGITS);
+const handToMsText = handToMs.toFixed(SPEED_MS_DIGITS);
+const handSecondsFromText = handPlain.movingFromSeconds.toFixed(SECOND_DIGITS);
+const handSecondsToText = handPlain.movingToSeconds.toFixed(SECOND_DIGITS);
+const handSecondsGapText = handPlain.savedSeconds.toFixed(SECOND_DIGITS);
+
+const handHoursFrom = DISTANCE_DEFAULT_UNITS / HAND_FROM;
+const handHoursTo = DISTANCE_DEFAULT_UNITS / HAND_TO;
+const handHoursGap = handHoursFrom - handHoursTo;
+
+const handMovingFromText = display_format_minutes(handPlain.movingFromSeconds / SECONDS_PER_MINUTE);
+const handMovingToText = display_format_minutes(handPlain.movingToSeconds / SECONDS_PER_MINUTE);
+const handSavedText = display_format_minutes(handPlain.savedSeconds / SECONDS_PER_MINUTE);
+const handShareText = display_format_percent(handPlain.savedShare);
+const handDelayedBeforeText = display_format_minutes(handDelayed.totalFromSeconds / SECONDS_PER_MINUTE);
+const handDelayedAfterText = display_format_minutes(handDelayed.totalToSeconds / SECONDS_PER_MINUTE);
+const handDelayedShareText = display_format_percent(handDelayed.savedShare);
+const handCeilingShareText = display_format_percent(handPlain.ceilingShare);
+// 천장 가운데 아직 남은 몫(1 − 지금 몫). "two thirds"를 손으로 적지 않는다.
+const handCeilingLeftText = display_format_percent(1 - handPlain.ceilingShare);
+
+// ── 화면 읽기 절 ────────────────────────────────────────────
+// 프리셋 값은 위젯의 PRESETS에서 읽는다 — 버튼과 본문이 갈라질 수 없다.
+// 라벨 린트가 “City run”을 따옴표째 찾으므로 이름만 따옴표에 넣고, 실어 오는 값은 말로 푼다.
+const cityPreset = PRESETS[UNIT_KMH][0];
+// mph 쪽 환산 계수. 본문 숫자는 모델 상수에서만 나온다.
+const metresPerMileText = thousands(METRES_PER_MILE);
+
+// ── 마무리 절의 연비 착시 ───────────────────────────────────
+// 10→20·20→50은 Larrick의 Action Teaching 온라인 퀴즈(2016)가 묻는 쌍이다 —
+// "replacing a 10 MPG vehicle with a 20 MPG vehicle, or replacing a 20 MPG vehicle
+// with a 50 MPG vehicle"(Online Quiz 절, 2026-10-03 WebFetch로 확인).
+// 논문 Study 1의 문항은 18→28·34→50 등 다섯 개로 따로 있다.
+// 이 페이지의 모델과 무관한 산수이므로 여기서 직접 센다 — 모델에는 연료 항이 없다.
+// 10 000마일 기준: 10000/10 − 10000/20 = 500갤런, 10000/20 − 10000/50 = 300갤런.
+const MPG_DISTANCE = 10000;
+const MPG_PAIRS = [
+  { from: 10, to: 20 },
+  { from: 20, to: 50 },
+];
+const mpgSaved = MPG_PAIRS.map((pair) => ({
+  ...pair,
+  gallons: Math.round(MPG_DISTANCE / pair.from - MPG_DISTANCE / pair.to),
+}));
+const mpgDistanceText = thousands(MPG_DISTANCE);
+const MPG_LABEL_YEAR = 2013;
+---
+
+<Base
+  title="How much time does driving faster actually save?"
+  description="In a constant-speed model, the same raise in speed buys wildly different minutes depending on where you started. Time saved is one subtraction of two fractions, and this page draws it."
+  category={CATEGORY}
+  crumbTool={true}
+  crumbLabel={CRUMB}
+>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Home</a> <span aria-hidden="true">›</span>
+    <a href={cat.href}>{cat.name}</a> <span aria-hidden="true">›</span>
+    {CRUMB}
+  </nav>
+
+  <h1>How much time does driving faster actually save?</h1>
+
+  <p class="deck">
+    From {tableRows[0].startUnits} to {tableRows[0].toUnits} {unit.speedLabel},
+    a {tableRaiseText} raise saves {tableSpread} times the minutes it saves from{" "}
+    {tableRows[tableRows.length - 1].startUnits} to{" "}
+    {tableRows[tableRows.length - 1].toUnits}. The table below holds the raise
+    at {tableRaiseText} and moves only the start.
+  </p>
+
+  <Byline slug={SLUG} />
+
+  <p class="lead">
+    Pushing the needle another {dialIncreaseKmh} {unit.speedLabel} sounds like a
+    fixed reward. It makes the same move wherever it starts, so the minutes it
+    hands back ought to be the same minutes too.
+  </p>
+
+  <p class="lead">
+    Over {distanceText}, the model disagrees. Going from {dialRange.fromMin} to{" "}
+    {dialRange.fromMin + dialIncreaseKmh} {unit.speedLabel} saves{" "}
+    {dialSlowMinutesText} minutes, while going from {dialFastFrom} to{" "}
+    {dialFastTo} saves {dialFastMinutesText} minutes. Both numbers come out of
+    the same subtraction.
+  </p>
+
+  <p class="lead">
+    <span class="lead-turn">And part of a trip can ignore the speedometer.</span>{" "}
+    Here, red lights and standing traffic are one fixed block that no speed
+    shortens. Add some with the slider labelled “Minutes stuck not moving”, and
+    two of the cards will part ways: “Time saved” stays put while “Share of the
+    trip saved” falls.
+  </p>
+
+  <Figure caption="One road driven twice: each run holds its own speed the whole way, and both sit through the same stopped minutes.">
+    <TheSetup />
+  </Figure>
+
+  <div data-widget="speed-vs-time-saved">
+    <noscript>
+      <p>
+        This space stays empty without scripts. The table in the next section and
+        the {distanceText} trip worked by hand later on carry the same arithmetic,
+        in {unit.speedLabel}.
+      </p>
+    </noscript>
+  </div>
+
+  <h2 data-block="reversal">The same {tableRaiseText}, priced by the speed you started from</h2>
+
+  <p>
+    Fix the trip at {distanceText} and the raise at {tableRaiseText}, then let
+    only the starting speed move along the dial. The model returns these
+    savings:
+  </p>
+
+  <div
+    class="widget-table-scroll"
+    role="region"
+    tabindex="0"
+    aria-label={`Time saved by the same ${tableRaiseText} raise at ${tableRows.length} starting speeds over ${distanceText}`}
+  >
+    <table class="widget-table">
+      <thead>
+        <tr>
+          <th scope="col">Starting speed</th>
+          <th scope="col">Raised to</th>
+          <th scope="col">Time saved</th>
+        </tr>
+      </thead>
+      <tbody>
+        {tableRows.map((row) => (
+          <tr>
+            <th scope="row">{row.startUnits} {unit.speedLabel}</th>
+            <td>{row.toUnits} {unit.speedLabel}</td>
+            <td>{display_format_minutes(row.result.savedSeconds / SECONDS_PER_MINUTE)} min</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    Every row adds the same {tableRaiseText}, yet the minutes it buys fall by a
+    factor of {tableSpread} from the first row to the last. So
+    "{tableRaiseText} faster" has no fixed price in this model. Trip length scales every row
+    alike, so the starting speed alone sets how the rows compare.
+  </p>
+
+  <Figure caption={`Trip time for ${distanceText} against the speed held, distance divided by speed. The two brackets are the same raise, taken once low on the dial and once high.`}>
+    <WhyTheStartMatters />
+  </Figure>
+
+  <p>
+    In the model, trip time falls steeply at low speeds and far less at high
+    ones.
+  </p>
+
+  <section class="howto" aria-labelledby="howto-title">
+    <h2 data-block="howto" id="howto-title">Where the saving shows up on screen</h2>
+
+    <p>
+      Four sliders set the trip: “How far you are going”, “The speed you were
+      doing”, “The speed you raise it to” and “Minutes stuck not moving”, and
+      the third can never sit below the second. Four buttons each load a whole trip at once, and each carries
+      its distance and speeds on its face; the first, “{cityPreset.name}”, loads{" "}
+      {cityPreset.distance} {unit.distanceLabel} from {cityPreset.from} to{" "}
+      {cityPreset.to} {unit.speedLabel}. The last control,
+      “Units on screen”, swaps the sliders, buttons and table between{" "}
+      {unit.speedLabel} and{" "}
+      {SPEED_UNITS[UNIT_MPH].speedLabel}. The model works in metres and metres
+      per second either way, and this page's text stays in {unit.speedLabel}.
+    </p>
+
+    <p>
+      Under the cards, a panel headed “The two trips, drawn on one scale” gives
+      each trip a bar. The solid part is moving time and the hatched part is the
+      delay, and the empty space at the end of the lower bar is the time saved.
+    </p>
+
+    <p>
+      The widget's curve plots “Time saved” against the raised speed, with the
+      starting speed held where you left it. It rises toward the dashed line the
+      legend names “Ceiling d/v₁”, the whole moving time of the first trip, and
+      never touches it; from a low starting speed it climbs steeply and then
+      flattens, while from a high one it runs almost straight, well below
+      the line. The vertical axis rescales with the distance and the starting speed, and the horizontal axis with the starting speed and the “Units on screen” setting, so a curve's height means little until you read the tick labels.
+    </p>
+
+    <p>
+      From the opening setting, push “Minutes stuck not moving” to{" "}
+      {HAND_DELAY_MINUTES}. The “Time saved” card stays at {handSavedText} while
+      “Share of the trip saved” falls from {handShareText} to {handDelayedShareText}.
+    </p>
+  </section>
+
+  <section class="math" aria-labelledby="math-title">
+    <h2 data-block="math" class="math-title" id="math-title">Why the saving shrinks as the dial climbs</h2>
+
+    <p>
+      Travel time at a held speed is one division, and the model is the
+      difference of two of them.
+    </p>
+
+    <div class="math-eq">
+      <span>t(v)</span><span class="op">=</span>
+      <span class="frac"><span class="frac-num">d</span><span class="sr-only"> divided by </span><span class="frac-den">v</span></span>
+      <span class="op">,</span>
+      <span>Δt</span><span class="op">=</span>
+      <span>d · ( 1/v₁ − 1/v₂ )</span>
+    </div>
+
+    <dl class="math-where">
+      <dt>d</dt><dd>how far the trip goes, in metres</dd>
+      <dt>v₁</dt><dd>the speed you were doing, in metres per second</dd>
+      <dt>v₂</dt><dd>the speed you raise it to, in metres per second</dd>
+      <dt>T</dt><dd>the delay — time spent not moving, in seconds</dd>
+      <dt>Δt</dt><dd>time saved, in seconds</dd>
+    </dl>
+
+    <p>
+      The whole trip is t(v) + T. The delay enters both trips at the same value,
+      so it cancels in the subtraction: <strong>Δt does not depend on T at
+      all</strong>. What T changes is the total underneath, which appears once
+      the saving is written as a share, Δt / (d/v₁ + T).
+    </p>
+
+    <p>As one fraction:</p>
+
+    <div class="math-eq">
+      <span>Δt</span><span class="op">=</span>
+      <span class="frac">
+        <span class="frac-num">d · (v₂ − v₁)</span>
+        <span class="frac-den">v₁ · v₂</span>
+      </span>
+    </div>
+
+    <p>
+      The raise sits on top, and both speeds multiplied together sit underneath.
+      As the dial climbs, the same raise is divided by a bigger and bigger
+      number.
+    </p>
+
+    <p class="math-check">
+      The formula also has a ceiling. Let v₂ grow without limit and d/v₂ shrinks
+      to zero, leaving Δt → d/v₁, the whole moving time of the first trip. No
+      speed can save more time than the trip was going to spend moving.
+    </p>
+  </section>
+
+  <h2 data-block="byhand">{distanceText} from {HAND_FROM} to {HAND_TO} {unit.speedLabel}, worked in two sets of units</h2>
+
+  <p>
+    The model computes in metres and seconds; this section runs the trip in
+    kilometres and hours as well. If the two give different answers, the model
+    has a unit bug.
+  </p>
+
+  <p>
+    Start with metres and seconds. {distanceText} is {handMetresText} m;{" "}
+    {HAND_FROM} {unit.speedLabel} is {HAND_FROM} ÷ {KMH_TO_MS_DIVISOR} ={" "}
+    {handFromMsText} m/s, and {HAND_TO} {unit.speedLabel} is {handToMsText} m/s.
+    Then {handMetresText} ÷ {handFromMsText} = {handSecondsFromText} s and{" "}
+    {handMetresText} ÷ {handToMsText} = {handSecondsToText} s, a gap of{" "}
+    {handSecondsGapText} s, or {handSavedText} min.
+  </p>
+
+  <p>
+    Now switch to kilometres and hours and never touch metres:{" "}
+    {DISTANCE_DEFAULT_UNITS} ÷ {HAND_FROM} = {handHoursFrom.toFixed(HOUR_DIGITS)} h
+    and {DISTANCE_DEFAULT_UNITS} ÷ {HAND_TO} = {handHoursTo.toFixed(HOUR_DIGITS)} h.
+    The gap is {handHoursGap.toFixed(HOUR_DIGITS)} h, which is {handSavedText} min
+    again.
+  </p>
+
+  <Figure caption="Left, metres and seconds through the model's own functions; right, kilometres and hours by plain division. No step is shared.">
+    <TwoPaths />
+  </Figure>
+
+  <p>
+    With {HAND_DELAY_MINUTES} minutes of delay added, the two trips take{" "}
+    {handDelayedBeforeText} and {handDelayedAfterText} minutes, and the
+    subtraction still gives {handSavedText}.
+  </p>
+
+  <p>
+    Last, the ceiling. At {HAND_FROM} {unit.speedLabel} the trip spends{" "}
+    {handMovingFromText} minutes moving, the figure on the “Ceiling on any saving”
+    card, so {handSavedText} minutes is {handCeilingShareText} of the most any
+    raise at all could give back. Every raise past {HAND_TO} {unit.speedLabel}{" "}
+    eats into the remaining {handCeilingLeftText}.
+  </p>
+
+  <h2 data-block="assumptions">What the model holds fixed before it divides</h2>
+
+  <p>
+    The model is two divisions and a subtraction, with no measured coefficient,
+    done in metres and metres per second and converted only for display.
+  </p>
+
+  <p>
+    <strong>The conversions.</strong> The factor 1 {unit.speedLabel} = 1/{KMH_TO_MS_DIVISOR}{" "}
+    m/s is exact by <em>definition</em>: the kilometre and the hour are fixed
+    multiples of SI units, so the divisor carries no uncertainty. The{" "}
+    {SPEED_UNITS[UNIT_MPH].speedLabel} side of the same toggle uses 1 mile ={" "}
+    {metresPerMileText} m, which NIST publishes as an exact equivalent. Both
+    sit at full precision at the top of the model file, and no number is typed
+    into the formula itself.
+  </p>
+
+  <p>
+    <strong>The trip.</strong> Four rules govern it. Each speed is held for the
+    whole distance, so no time goes into reaching it. Both trips follow the same
+    route, so they cover the same distance. The delay does not depend on speed:
+    signal waits and standing traffic are one lump that a faster trip neither
+    shortens nor lengthens. And each scenario is a single trip, with nothing
+    averaged over repetition.
+  </p>
+
+  <h2 data-block="limits">Where a real drive parts from two divisions</h2>
+
+  <p>
+    Real trips spend time getting up to speed and braking again, which makes
+    the model overstate the saving on short trips. On a run of {distanceText}{" "}
+    through town, with stops, that gap can matter.
+  </p>
+
+  <p>
+    Delays come from queues and signal timing, and a faster trip can reach a
+    red light sooner; the model reproduces no flow of traffic.
+  </p>
+
+  <p>
+    Roads also have limits, road types and conditions. The model knows
+    none of them: the sliders accept any pair their ranges allow, with no check
+    that the speeds entered can be reached.
+  </p>
+
+  <p>
+    The model counts minutes only; fuel, wear and risk are outside it.
+  </p>
+
+  <h2 data-block="closing">The same flip, printed on fuel labels</h2>
+
+  <p>
+    Richard Larrick and Jack Soll described the same shape in <em>Science</em>{" "}
+    in 2008 and called it the miles-per-gallon illusion. In their first study,
+    people ranked five fuel-economy upgrades, 18 to 28 and 34 to 50 miles per
+    gallon among them, by the fuel each would save. The illusion is reading
+    fuel saved as if it grew in a straight line with miles per gallon.
+  </p>
+
+  <p>
+    Larrick's own teaching quiz uses a simpler pair. Over{" "}
+    {mpgDistanceText} miles, going from {mpgSaved[0].from} to {mpgSaved[0].to}{" "}
+    miles per gallon saves {mpgSaved[0].gallons} gallons; going from{" "}
+    {mpgSaved[1].from} to {mpgSaved[1].to}, which sounds like the bigger win, saves{" "}
+    {mpgSaved[1].gallons}. Miles per gallon is distance per fuel, and the fuel
+    used per mile is one over it, the same flip this page draws with speed and
+    time.
+  </p>
+
+  <p>
+    Larrick later argued for adding the other side of the fraction, fuel per
+    distance, beside miles per gallon. United States labels have carried gallons per 100 miles
+    since model year {MPG_LABEL_YEAR}. A speedometer still shows only distance
+    per time, the side of the fraction on which a {tableRaiseText} raise looks
+    the same at every speed.
+  </p>
+
+  <h2 data-block="about">About this page</h2>
+
+  <p class="note">
+    The unit tests work every time figure on this page twice, once in metres
+    and seconds and once in kilometres and hours, and they pin the table rows
+    above to the digit shown; the gallon figures in the fuel-label section are
+    plain arithmetic outside the model and are not tested. What I could not check is listed on the About page, under <a
+    href="/about#how-i-check">How I check things</a>.
+  </p>
+
+  <p><strong>Sources.</strong></p>
+
+  <ul class="sources">
+    <li>
+      Larrick, R. P. and Soll, J. B., 2008. The MPG illusion. <em>Science</em>{" "}
+      320(5883), 1593–1594. <a
+      href="https://doi.org/10.1126/science.1154983">doi:10.1126/science.1154983</a>.
+    </li>
+    <li>
+      Larrick, R., 2016. <em>The MPG Illusion: How Cognitive Biases Fuel Climate
+      Change</em>. Action Teaching, 22 July 2016. No DOI; <a
+      href="https://www.actionteaching.org/award/mpg-illusion">official text
+      linked</a>. The author's own summary of the first study's design.
+    </li>
+    <li>
+      US Environmental Protection Agency and National Highway Traffic Safety
+      Administration, 2011. <em>Revisions and Additions to Motor Vehicle Fuel
+      Economy Label</em>, final rule, Federal Register, 6 July 2011. No DOI; <a
+      href="https://www.federalregister.gov/documents/2011/07/06/2011-14291/revisions-and-additions-to-motor-vehicle-fuel-economy-label">official
+      text linked</a>. It requires gallons per 100 miles on the label from model
+      year {MPG_LABEL_YEAR}.
+    </li>
+    <li>
+      BIPM, 2019. <em>The International System of Units (SI)</em>, 9th edition. <a href="https://doi.org/10.59161/AUEZ1291">doi:10.59161/AUEZ1291</a>.
+      For
+      the SI status of the kilometre and the hour.
+    </li>
+    <li>
+      Thompson, A. and Taylor, B. N., 2008. <em>Guide for the Use of the
+      International System of Units (SI)</em>. NIST Special Publication 811,
+      Appendix B. <a
+      href="https://doi.org/10.6028/NIST.SP.811e2008">doi:10.6028/NIST.SP.811e2008</a>.
+      For the exact metric equivalents of the foot and the mile.
+    </li>
+  </ul>
+
+  <RelatedTools slug={SLUG} />
+
+  <script>
+    import "@widgets/speed-vs-time-saved/widget.js";
+  </script>
+</Base>
+
+<style is:global>
+  /* 강제 색상 모드(Windows 고대비)에서는 배경색이 지워져 막대(.bar-fill)가 통째로 사라진다.
+     이 페이지의 막대만 색 조정을 끈다 — global.css를 건드리면 모든 위젯의 감사 기록이 무효가 된다. */
+  @media (forced-colors: active) {
+    .bar-fill {
+      forced-color-adjust: none;
+    }
+  }
+</style>

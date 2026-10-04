@@ -14,6 +14,10 @@ import {
   PROJECTILE_AREA_DEFAULT_M2,
   PROJECTILE_DENSITY_DEFAULT_KGM3,
   PROJECTILE_MASS_MIN_KG,
+  PROJECTILE_MASS_MAX_KG,
+  PROJECTILE_SPEED_MIN_MS,
+  PROJECTILE_SPEED_MAX_MS,
+  PROJECTILE_AREA_MIN_M2,
   PROJECTILE_MASS_AXIS,
   PROJECTILE_AREA_AXIS,
   PROJECTILE_PRESETS,
@@ -21,6 +25,7 @@ import {
   model_calculate_summary,
   model_calculate_sweep,
   model_calculate_log_index,
+  model_build_vacuum_path,
 } from './model.js';
 import {
   widget_mount,
@@ -36,6 +41,10 @@ import {
   display_describe_verdict,
   display_describe_path,
   display_describe_sweep,
+  display_format_resolution,
+  display_check_shape_distorted,
+  CHART_ARC_MIN_HEIGHT_PX,
+  CHART_SCALE_MISMATCH_MIN,
 } from './widget.js';
 import { fixture_create_dom } from '../_shared/dom-stub.js';
 
@@ -207,6 +216,59 @@ describe('표시 문자열', () => {
     }
   });
 
+  /**
+   * 2026-10-03 검수(B6) — 사거리 차만으로 "구분 불가"를 정하면 90°에서 정점이 30 m 갈려도
+   * "sit within 0.05 m"라고 적었고, 0°에서는 사거리 0의 원인을 "항력이 작아서"로 댔다.
+   */
+  it('0°·90°는 따로 말한다 — 90°에서 정점 30 m 차이를 "구분 불가"라고 하지 않는다', () => {
+    const base = model_build_default_parameters();
+    const vertical = model_calculate_summary({ ...base, angleDeg: 90 });
+    expect(vertical.apexLostMetres).toBeGreaterThan(29);
+    const verticalPath = display_describe_path(vertical, null);
+    expect(verticalPath).not.toContain('within 0.05 m');
+    expect(verticalPath).toContain('30.0 m lower');
+    const verticalVerdict = display_describe_verdict(vertical, model_calculate_sweep({ ...base, angleDeg: 90 })).detail;
+    expect(verticalVerdict).not.toContain('too small');
+    expect(verticalVerdict).toContain('At 90°');
+
+    const flatParams = { ...base, angleDeg: 0, massKg: PROJECTILE_MASS_MIN_KG };
+    const flat = model_calculate_summary(flatParams);
+    const flatVerdict = display_describe_verdict(flat, model_calculate_sweep(flatParams)).detail;
+    expect(flatVerdict).not.toContain('too small');
+    expect(flatVerdict).toContain('never leaves the ground');
+    expect(display_describe_path(flat, null)).not.toContain('too small');
+  });
+
+  it('구분 불가 판정문은 표의 차이 칸과 같은 숫자를 적는다 — "under 0.05"와 "−0.05"가 엇갈리지 않게', () => {
+    const params = { ...model_build_default_parameters(), areaM2: 1e-4, densityKgM3: 0.015 };
+    const summary = model_calculate_summary(params);
+    expect(summary.rangeLostMetres).toBeLessThan(0.05);
+    const detail = display_describe_verdict(summary, model_calculate_sweep(params)).detail;
+    expect(detail).not.toContain('under');
+    expect(detail).toContain(`a gap of ${display_format_metres(summary.rangeLostMetres)} m`);
+  });
+
+  it('궤적 축은 진공 경로에 맞춘다 — 질량·Cd·면적·밀도는 축을 움직이지 않는다', () => {
+    const base = model_build_default_parameters();
+    const spans = [
+      base,
+      { ...base, massKg: PROJECTILE_MASS_MIN_KG },
+      { ...base, dragCoefficient: 1.2 },
+      { ...base, areaM2: 0.2, densityKgM3: 1.5 },
+    ].map((params) => {
+      const summary = model_calculate_summary(params);
+      return [
+        chart_calculate_span([summary.vacuum.rangeMetres], 1.02),
+        summary.drag.rangeMetres <= summary.vacuum.rangeMetres,
+        summary.drag.apexHeightMetres <= summary.vacuum.apexHeightMetres,
+      ];
+    });
+    for (const item of spans) expect(item).toEqual(spans[0]);
+    expect(display_describe_path(model_calculate_summary(base), { spanX: 1, spanY: 1 })).toContain(
+      'only the angle and speed sliders rescale them',
+    );
+  });
+
   it('궤적 캡션이 그림이 실제로 쓴 축만 인용한다', () => {
     const summary = model_calculate_summary(model_build_default_parameters());
     const drawn = { spanX: 163.9, spanY: 25.6 };
@@ -349,7 +411,7 @@ describe('첫 렌더', () => {
     expect(classes.filter((name) => name.includes('legend-tail-2')).length).toBe(2);
     const text = dom.root.querySelectorAll('.widget-legend').map((el) => el.textContent).join(' ');
     expect(text).toContain('Solid');
-    expect(text).toContain('Dotted');
+    expect(text).toContain('Dashed');
   });
 
   it('캔버스 폭이 0이어도 캡션이 비지 않는다', () => {
@@ -564,5 +626,236 @@ describe('프리셋', () => {
       seen.add(dom.root.querySelector('.verdict').getAttribute('data-state'));
     }
     expect(seen).toEqual(new Set(['hold', 'edge', 'break']));
+  });
+});
+
+// ── B6 2회차 문구 (2026-10-03) ───────────────────────────────
+/**
+ * 사실 검사 B6 2회차가 찾은 문구 결함 여섯. 각 시험은 **옛 문장이 거짓이던 상태**를 직접 띄우고,
+ * 그 상태에서 새 문장이 이 분기가 실제로 잰 값만 말하는지 본다.
+ */
+const B6_MERGE_LIMIT_M = 0.05;
+const B6_THIN_AIR = { dragCoefficient: 0.47, areaM2: PROJECTILE_AREA_MIN_M2, densityKgM3: 0.015 };
+/** 진공 경로를 깔 점 개수와, 반대 방향 거리를 잴 때 몇 점마다 하나를 쓰는가. */
+const B6_VACUUM_PATH_POINTS = 4000;
+const B6_VACUUM_SAMPLE_EVERY = 10;
+/** 속력 76눈금 × 질량 양 끝 스윕. */
+const B6_SPEED_WALK_TIMEOUT_MS = 60000;
+
+function fixture_build_described(params, drawn = null) {
+  const summary = model_calculate_summary(params);
+  const sweep = model_calculate_sweep(params);
+  return { summary, sweep, verdict: display_describe_verdict(summary, sweep), path: display_describe_path(summary, drawn) };
+}
+
+/** 점에서 꺾은선까지의 최단 거리. */
+function test_calculate_polyline_distance(point, line) {
+  let best = Number.POSITIVE_INFINITY;
+  for (let index = 0; index < line.length - 1; index += 1) {
+    const start = line[index];
+    const end = line[index + 1];
+    const runX = end.x - start.x;
+    const runY = end.y - start.y;
+    const lengthSquared = runX * runX + runY * runY;
+    const along = lengthSquared > 0
+      ? Math.min(1, Math.max(0, ((point.x - start.x) * runX + (point.y - start.y) * runY) / lengthSquared))
+      : 0;
+    best = Math.min(best, Math.hypot(point.x - start.x - along * runX, point.y - start.y - along * runY));
+  }
+  return best;
+}
+
+/** 두 경로 사이 최대 거리(하우스도르프). 진공 쪽은 닫힌형으로 촘촘히 깐다. */
+function test_calculate_path_separation(params, summary) {
+  const vacuum = model_build_vacuum_path(params, B6_VACUUM_PATH_POINTS);
+  const fromDrag = Math.max(...summary.drag.points.map((point) => test_calculate_polyline_distance(point, vacuum)));
+  const fromVacuum = Math.max(
+    ...vacuum.filter((_, index) => index % B6_VACUUM_SAMPLE_EVERY === 0).map((point) => test_calculate_polyline_distance(point, summary.drag.points)),
+  );
+  return Math.max(fromDrag, fromVacuum);
+}
+
+function fixture_read_mass_hint(dom) {
+  const mass = fixture_read_sliders(dom)[SLIDER_INDEX.mass];
+  return dom.root.querySelector(`[id="${mass.getAttribute('aria-describedby')}"]`).textContent;
+}
+
+describe('B6 2회차 — 문구가 그 문형이 나오는 모든 상태에서 참이다', () => {
+  const base = model_build_default_parameters();
+
+  it('① barely·안 갈리는 90° 캡션은 잰 두 차이만 말한다 — 화면 구분도, 경로 전체가 0.05 m 안이라는 것도 주장하지 않는다', () => {
+    const barely = { ...base, ...B6_THIN_AIR };
+    const vertical = { ...barely, angleDeg: 90 };
+    // 사거리 차 0.026 m·정점 차 0.0497 m로 둘 다 문턱 아래인데, 두 경로 사이 최대 거리는 0.05 m를 넘는다.
+    // 옛 문장 "sit within 0.05 m of each other"가 거짓이던 자리다.
+    const wide = { angleDeg: 85, speedMs: 80, massKg: 1, dragCoefficient: 0.47, areaM2: 4e-4, densityKgM3: 0.005 };
+    const sentence =
+      'The model still has an air term at this launch, but here it moves the range and the highest point by less than 0.05 m each.';
+    for (const params of [barely, vertical, wide]) {
+      const { summary, path } = fixture_build_described(params);
+      expect(summary.drag.hasDrag).toBe(true);
+      expect(Math.max(summary.rangeLostMetres, summary.apexLostMetres)).toBeLessThan(B6_MERGE_LIMIT_M);
+      expect(path).toBe(sentence);
+      expect(path).not.toContain('told apart');
+      expect(path).not.toContain('of each other');
+    }
+    const wideSummary = model_calculate_summary(wide);
+    expect(test_calculate_path_separation(wide, wideSummary)).toBeGreaterThan(B6_MERGE_LIMIT_M);
+  });
+
+  it('② 진공 문장이 두 경로가 함께 쓰는 것을 빠짐없이 댄다 (도→라디안 변환 포함)', () => {
+    const { verdict } = fixture_build_described({ ...base, dragCoefficient: 0 });
+    expect(verdict.merged).toBe(true);
+    expect(verdict.detail).toContain(
+      'a step-by-step integrator and a one-line formula that share only the input check, ' +
+        'the degree-to-radian conversion and the value of g — and they agree.',
+    );
+  });
+
+  it('③ 질량 힌트 — 시작 공기에서는 모든 속력에서 10 g → 5 kg에 표시 최적각이 45° 쪽으로 움직이고, 공기항이 작으면 45.0°에 머문다', () => {
+    const { dom } = widget_build_mounted();
+    expect(fixture_read_mass_hint(dom)).toBe(
+      'Only the drag term is divided by mass, so a heavier object of the same size is slowed less by the same drag. ' +
+        'With the drag coefficient at 0.47, the cross-section at d = 73 mm and the air density at 1.225 kg/m³, ' +
+        'sliding from 10 g to 5 kg moves the optimal angle in the lower chart back toward 45° at every launch speed; ' +
+        'with a smaller air term it can already read 45.0° at 10 g and stay there.',
+    );
+    // 힌트의 조건(시작 공기) 그대로, 속력 슬라이더의 모든 눈금에서.
+    for (let speedMs = PROJECTILE_SPEED_MIN_MS; speedMs <= PROJECTILE_SPEED_MAX_MS; speedMs += 1) {
+      const [light, heavy] = [PROJECTILE_MASS_MIN_KG, PROJECTILE_MASS_MAX_KG].map(
+        (massKg) => model_calculate_sweep({ ...base, speedMs, massKg }).optimum.angleDeg,
+      );
+      expect(heavy, `${speedMs} m/s`).toBeGreaterThan(light);
+      expect(heavy, `${speedMs} m/s`).toBeLessThanOrEqual(45);
+      expect(display_format_angle(heavy), `${speedMs} m/s`).not.toBe(display_format_angle(light));
+    }
+    // 옛 문장("With air in the model … creep back toward 45°")이 거짓이던 상태 — 양 끝 다 45.0°.
+    const thin = { ...base, speedMs: PROJECTILE_SPEED_MIN_MS, ...B6_THIN_AIR, dragCoefficient: 0.01 };
+    for (const massKg of [PROJECTILE_MASS_MIN_KG, PROJECTILE_MASS_MAX_KG]) {
+      expect(display_format_angle(model_calculate_sweep({ ...thin, massKg }).optimum.angleDeg)).toBe('45.0°');
+    }
+  }, B6_SPEED_WALK_TIMEOUT_MS);
+
+  it('④ 착지 시간 차가 0.00 s로 찍히는 apart 상태는 "0.00 s sooner"라고 쓰지 않는다', () => {
+    const { summary, path } = fixture_build_described({ ...base, angleDeg: 1 });
+    expect(summary.rangeLostMetres).toBeGreaterThanOrEqual(B6_MERGE_LIMIT_M);
+    expect(display_format_seconds(summary.vacuum.flightSeconds - summary.drag.flightSeconds)).toBe('0.00');
+    expect(path).toContain('short of the dashed one; the two landing times differ by less than 0.01 s.');
+    expect(path).not.toContain('0.00 s');
+    // 차이가 찍히는 상태는 그대로 숫자를 적는다.
+    expect(fixture_build_described(base).path).toMatch(/short of the dashed one and \d+\.\d\d s sooner\./);
+  });
+
+  it('⑤ 잃은 비율·최적각 이동이 반올림해 0이면 "0%"·"0.0 degrees"를 단정하지 않는다', () => {
+    expect([0, 1, 2].map(display_format_resolution)).toEqual(['1', '0.1', '0.01']);
+    const params = { ...base, ...B6_THIN_AIR, areaM2: 0.000108192 };
+    const { summary, sweep, verdict } = fixture_build_described(params);
+    expect(Math.max(summary.rangeLostMetres, summary.apexLostMetres)).toBeGreaterThanOrEqual(B6_MERGE_LIMIT_M);
+    expect((1 - summary.rangeRatio) * 100).toBeLessThan(0.5);
+    expect(Math.abs(45 - sweep.optimum.angleDeg)).toBeLessThan(0.05);
+    expect(verdict.detail).toContain('— less than 1% of the distance gone.');
+    expect(verdict.detail).toContain('The peak has moved less than 0.1 degrees off the vacuum answer of 45°');
+    expect(verdict.detail).not.toContain(' 0% ');
+    expect(verdict.detail).not.toContain('0.0 degrees');
+    // 기본 설정은 숫자를 그대로 적는다.
+    const usual = fixture_build_described(base).verdict.detail;
+    expect(usual).toMatch(/— \d+% of the distance gone\. The peak has moved \d+\.\d degrees off/);
+  });
+
+  it('⑥ 0°·90°에서는 "호의 모양" 문장을 빼고, 그 사이 각도에서는 남긴다', () => {
+    // 그림 크기는 데스크톱 스텁(폭 900 px → 그림 822×230 px). 축척 차가 커서 ③이 걸리지 않는다.
+    const drawn = { spanX: 1, spanY: 1, plotWidth: 822, plotHeight: 230 };
+    const shape = 'so the arc on screen is not its true shape';
+    for (const params of [{ ...base, angleDeg: 0 }, { ...base, angleDeg: 90 }, { ...base, angleDeg: 0, dragCoefficient: 0 }]) {
+      const caption = display_describe_path(model_calculate_summary(params), drawn);
+      expect(caption).toContain('The axes run to');
+      expect(caption).not.toContain(shape);
+      expect(caption).not.toContain('same scale');
+    }
+    for (const angleDeg of [0.5, 40, 89.5]) {
+      expect(display_describe_path(model_calculate_summary({ ...base, angleDeg }), drawn)).toContain(shape);
+    }
+  });
+});
+
+// ── B6 3회차 (2026-10-03) ──────────────────────────────────────
+
+describe('B6 3회차 — "호의 모양" 문장을 그려진 것으로 판정한다', () => {
+  const base = model_build_default_parameters();
+  const shape = 'They are not to the same scale as each other, so the arc on screen is not its true shape.';
+  /** 스텁 폭: 데스크톱 900 px(그림 822×230), 폰 300 px(그림 222×230). */
+  const WIDTH_DESKTOP_PX = 900;
+  const WIDTH_PHONE_PX = 300;
+
+  function fixture_read_path_note(search, width) {
+    const { dom, widget_reset } = widget_build_mounted({ search, width });
+    const note = dom.root.querySelectorAll('.legend-note')[0].textContent;
+    const label = dom.root.querySelectorAll('canvas')[0].getAttribute('aria-label');
+    widget_reset();
+    dom.restore();
+    openDom = null;
+    expect(label).toBe(note);
+    expect(note).toContain('The axes run to');
+    return note;
+  }
+
+  it('정점이 1 px 미만으로 그려지면(1°·5~6 m/s, 수평 선분) 문장을 뺀다 — 항력 있음·공기항 0 둘 다', () => {
+    for (const width of [WIDTH_DESKTOP_PX, WIDTH_PHONE_PX]) {
+      for (const search of ['?th=1&v0=5', '?th=1&v0=6', '?th=1&v0=5&cd=0', '?th=1&v0=6&cd=0', '?th=1&v0=5&rho=0.015&cd=0.01']) {
+        expect(fixture_read_path_note(search, width), `${search} @${width}`).not.toContain('same scale');
+      }
+    }
+    // 같은 각도라도 정점이 1 px 이상이면 문장이 남는다(1°·40 m/s: 정점 0.0249 m → 5.7 px).
+    expect(fixture_read_path_note('?th=1&v0=40', WIDTH_DESKTOP_PX)).toContain(shape);
+  });
+
+  it('두 축의 px/m 비가 10% 미만으로 다르면 문장을 뺀다 — 폰의 3.5%, 데스크톱의 46°', () => {
+    // 10°·5 m/s: 두 축 끝이 다 1 m(최소 폭). 폰 그림 222×230 px → 축척 차 3.6%, 데스크톱 822×230 → 257%.
+    expect(fixture_read_path_note('?th=10&v0=5', WIDTH_PHONE_PX)).not.toContain('same scale');
+    expect(fixture_read_path_note('?th=10&v0=5', WIDTH_DESKTOP_PX)).toContain(shape);
+    // 46°·40 m/s(데스크톱): 822/166.3 px/m 대 230/46.4 px/m — 0.3% 차이. 40°는 24% 차이.
+    expect(fixture_read_path_note('?th=46&v0=40', WIDTH_DESKTOP_PX)).not.toContain('same scale');
+    expect(fixture_read_path_note('?th=40&v0=40', WIDTH_DESKTOP_PX)).toContain(shape);
+  });
+
+  it('0°·90° 분기와 겹치지 않는다 — 90°는 축척이 크게 달라도, 0°는 정점이 0 px라도 각도 분기가 먼저다', () => {
+    for (const width of [WIDTH_DESKTOP_PX, WIDTH_PHONE_PX]) {
+      for (const search of ['?th=0', '?th=90', '?th=90&cd=0', '?th=0&v0=5']) {
+        const note = fixture_read_path_note(search, width);
+        expect(note).not.toContain('same scale');
+      }
+    }
+    expect(fixture_read_path_note('?th=90', WIDTH_DESKTOP_PX)).toMatch(/^At 90° both paths run up and down/);
+    expect(fixture_read_path_note('?th=0', WIDTH_DESKTOP_PX)).toMatch(/^At 0° neither path leaves the ground/);
+  });
+
+  it('문턱 양쪽: 정점 높이 1 px·축척 차 10%가 정확히 경계다 (상수를 바꾸면 걸린다)', () => {
+    expect(CHART_ARC_MIN_HEIGHT_PX).toBe(1);
+    expect(CHART_SCALE_MISMATCH_MIN).toBe(0.1);
+    const summary = model_calculate_summary({ ...base, angleDeg: 30 });
+    const apex = summary.vacuum.apexHeightMetres;
+    // 세로: spanY를 정점이 0.99 px / 1.01 px로 그려지게 잡는다. 가로는 축척 차가 크게.
+    const tall = (px) => ({ spanY: (apex * 230) / px, plotHeight: 230 });
+    const wide = (drawn) => ({ ...drawn, spanX: drawn.spanY, plotWidth: 230 * 4 });
+    expect(display_check_shape_distorted(summary, wide(tall(0.99)))).toBe(false);
+    expect(display_check_shape_distorted(summary, wide(tall(1.01)))).toBe(true);
+    // 가로: 같은 세로 축에서 px/m 비가 1.099 / 1.101.
+    const plain = { spanX: 200, spanY: 200, plotHeight: 230 };
+    expect(display_check_shape_distorted(summary, { ...plain, plotWidth: 230 * 1.099 })).toBe(false);
+    expect(display_check_shape_distorted(summary, { ...plain, plotWidth: 230 * 1.101 })).toBe(true);
+    expect(display_check_shape_distorted(summary, { ...plain, plotWidth: 230 / 1.101 })).toBe(true);
+    expect(display_check_shape_distorted(summary, { ...plain, plotWidth: 230 / 1.099 })).toBe(false);
+    // 그림이 없으면 판정하지 않는다.
+    expect(display_check_shape_distorted(summary, null)).toBe(false);
+  });
+
+  it('Shot put 프리셋의 면적 손잡이가 "d = 96 mm"를 찍는다 (95 mm 하한 아래 94.58 mm를 95로 반올림해 보이던 결함)', () => {
+    const shot = PROJECTILE_PRESETS.find((item) => item.key === 'shot');
+    expect(display_format_area(shot.areaM2)).toBe('7.231 × 10⁻³ m² (d = 96 mm sphere)');
+    expect(display_format_mass(shot.massKg)).toBe('4.087 kg');
+    const { dom } = widget_build_mounted();
+    fixture_pick_preset(dom, 'shot');
+    const area = fixture_read_sliders(dom)[SLIDER_INDEX.area];
+    expect(area.getAttribute('aria-valuetext')).toBe('7.231 × 10⁻³ m² (d = 96 mm sphere)');
   });
 });
